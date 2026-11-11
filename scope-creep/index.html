@@ -465,6 +465,8 @@ function placeTag(){
   v3.set(-o.s.w/2, o.s.h, DEPTH/2).applyMatrix4(o.mesh.matrixWorld).project(camera);
   const tw = tag.offsetWidth, th = tag.offsetHeight;
   let x = (v3.x*0.5+0.5)*view.W, y = (-v3.y*0.5+0.5)*view.H - th - 8;
+  // phone: never let it climb into the headline, tuck it onto the face instead
+  if (!wide && reg){ const floorY = reg.cy - reg.rh/2; if (y < floorY){ x += 8; y = (-v3.y*0.5+0.5)*view.H + 8; } }
   x = Math.min(Math.max(x, 8), view.W - tw - 8);
   y = Math.min(Math.max(y, 8), view.H - th - 8);
   tag.style.transform = `translate(${x}px,${y}px)`;
