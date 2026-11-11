@@ -1,0 +1,474 @@
+[
+  {
+    "id": "spectra",
+    "name": "Spectra Museum",
+    "wing": "software",
+    "one_line": "The website for Spectra, India's first multi-sensory museum in Ahmedabad. You don't scroll a page, you walk through all eight rooms.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Museum website"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Designed and built the site, landing to booking."
+      },
+      {
+        "label": "Rooms",
+        "value": "8"
+      },
+      {
+        "label": "Museum",
+        "value": "60,000 sq ft, Ahmedabad"
+      }
+    ],
+    "writeup": [
+      "Spectra is a 60,000 sq ft immersive museum in Ahmedabad with eight rooms. The old site was a slow brochure with photos of rooms you'd rather be standing in.",
+      "So the new landing page has no photos. Every room is drawn live in the browser and you walk from one to the next: scroll moves you forward, each room has a door, and the last one opens on the tickets. Photos and videos of the real rooms sit one click deeper, under Know more."
+    ],
+    "link": "https://spectra-museum-site.vercel.app",
+    "logo": "software/spectra/logo.png",
+    "hero": "software/spectra/live-01.jpg",
+    "gallery": [
+      "software/spectra/live-02.jpg",
+      "software/spectra/live-03.jpg",
+      "software/spectra/live-04.jpg",
+      "software/spectra/live-05.jpg",
+      "software/spectra/live-06.jpg",
+      "software/spectra/live-07.jpg",
+      "software/spectra/live-08.jpg",
+      "software/spectra/live-09.jpg",
+      "software/spectra/live-10.jpg",
+      "software/spectra/live-11.jpg",
+      "software/spectra/03.jpg"
+    ],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "Strong. All eight rooms captured fresh. No capture of the Know more media or the Plan your visit page. The live site opens on a Diwali offer popup, which was closed before capture."
+  },
+  {
+    "id": "sorted",
+    "name": "sorted",
+    "wing": "software",
+    "one_line": "Sorts a whole shoot on your laptop. 3,677 photos off one camera, nothing uploaded anywhere. Offline, on purpose.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Mac app"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Built it: the Mac app, the vision pipeline, the site."
+      },
+      {
+        "label": "Photos off one camera",
+        "value": "3,677"
+      },
+      {
+        "label": "On a 2020 MacBook Air",
+        "value": "11 min"
+      },
+      {
+        "label": "Bytes uploaded",
+        "value": "0"
+      }
+    ],
+    "writeup": [
+      "sorted is a Mac app that reads the whole disk and lets you search it in plain words. Type \"fishing boats\" and the boats come up, photos and 4K clips in the same grid. Drop in one photo of a person and it finds every other frame of them. Then it hands you folders.",
+      "The first real run was a Sony A7R V shoot: 3,677 photos, 147 GB, 61 megapixels each. A 2020 MacBook Air, the base 8 GB one, made it searchable in 10 minutes 42 seconds. Nothing was uploaded, because there is nowhere for it to upload to."
+    ],
+    "link": "https://kirtan-00.github.io/sorted/",
+    "logo": "software/sorted/logo.png",
+    "hero": "software/sorted/live-01.jpg",
+    "gallery": [
+      "software/sorted/client-pick.jpg",
+      "software/sorted/products.jpg",
+      "software/sorted/numbers.jpg",
+      "software/sorted/drive.jpg",
+      "software/sorted/live-03.jpg",
+      "software/sorted/sorting-poster.jpg"
+    ],
+    "video": "software/sorted/sorting.mp4",
+    "screens_withheld": false,
+    "gaps": "Strong. The site's lilac sections were left out on purpose (no-purple rule). The write-up drops the first of three approved paragraphs to fit two."
+  },
+  {
+    "id": "cravache",
+    "name": "CravAche",
+    "wing": "software",
+    "one_line": "A pixel survival game about running an Indian ad agency. Briefs pile up, clients change their minds, and your staff need sleep.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Game"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Made the whole game: design, art direction, code."
+      },
+      {
+        "label": "Plays in",
+        "value": "The browser, saves itself as you go"
+      }
+    ],
+    "writeup": [
+      "CravAche is an ad agency in pixels. You hire the team, take the briefs, ship the work and try to keep the clients from eating you alive.",
+      "Everything in it happened to someone I know: the 11 p.m. brief, the change request that undoes the whole film, the voicemail you don't play twice. When you retire, the game prints your career obituary: the abuses you survived, the dumbest change request you took, and the best gaali you heard."
+    ],
+    "link": "https://cravache.vercel.app",
+    "logo": "software/cravache/logo.png",
+    "hero": "software/cravache/live-01.jpg",
+    "gallery": [
+      "software/cravache/live.jpg",
+      "software/cravache/live-03.jpg"
+    ],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "Thin. Two title-screen frames and one gameplay frame. No capture of the retirement card or a busy mid-game day; the game was not played during capture. The dusk title frame (live-03) has a purple sky."
+  },
+  {
+    "id": "deepdive",
+    "name": "Deepdive Marketing",
+    "wing": "software",
+    "one_line": "A marketing page with 150K+ followers that mostly runs itself. It finds the story, makes the post and publishes it, every day.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "IG autopilot"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Built the engine that finds, makes and posts it."
+      },
+      {
+        "label": "Followers",
+        "value": "150K+"
+      }
+    ],
+    "writeup": [
+      "Deepdive Marketing is an Instagram page about ads, brands and the business behind them, followed by 150K+ marketers, founders and operators.",
+      "Behind it is one server. It finds the day's stories, writes them, designs the posts and reels, and publishes them on a fixed schedule. I set the rules and check on it. It does the rest."
+    ],
+    "link": "https://instagram.com/thedeepdivemarketing",
+    "logo": "software/deepdive/logo.png",
+    "hero": "software/deepdive/live-02.jpg",
+    "gallery": [
+      "software/deepdive/live-01.jpg",
+      "software/deepdive/01.jpg"
+    ],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "Only the public Instagram profile and grid, no view of the engine or its dashboard. Every frame carries third-party ad stills and Instagram's own interface."
+  },
+  {
+    "id": "deepdive-blog",
+    "name": "Deepdive Blog",
+    "wing": "software",
+    "one_line": "One long read a day on why an ad worked. Written, published and posted to LinkedIn without me touching it.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Daily writing"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Built the site and the pipeline that writes and posts it."
+      }
+    ],
+    "writeup": [
+      "Deepdive's blog takes apart one campaign a day: what it said, why it landed, and who it was for.",
+      "It runs itself. Every morning a pipeline picks the story, writes the post, publishes it, and that evening posts a teaser to the Deepdive Marketing LinkedIn page with a link back."
+    ],
+    "link": "https://thedeepdivemarketing.com/",
+    "logo": "software/deepdive-blog/logo.png",
+    "hero": "software/deepdive-blog/live-01.jpg",
+    "gallery": [
+      "software/deepdive-blog/live-02.jpg",
+      "software/deepdive-blog/live-03.jpg",
+      "software/deepdive-blog/live-04.jpg"
+    ],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "Good. Front page only; no capture of a single article page or of the LinkedIn teaser. The collaboration form was not captured or touched."
+  },
+  {
+    "id": "sportified",
+    "name": "The Sportified",
+    "wing": "software",
+    "one_line": "A World Cup that posted itself. Fixtures in at midnight, posts and reels out by breakfast, nobody at the desk.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "IG autopilot"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Built it, designed the look, ran it through the World Cup."
+      },
+      {
+        "label": "Post types",
+        "value": "Nine, from results to player spotlights"
+      }
+    ],
+    "writeup": [
+      "The Sportified is a football page built for the 2026 World Cup, for people who want to feel like fans without watching every match.",
+      "It ran itself. Every night it pulled the fixtures and results, designed the posts and reels for the day, and published them. Who won, the one moment, the stakes for today, the player to watch."
+    ],
+    "link": "https://instagram.com/thesportified",
+    "logo": "software/sportified/logo.png",
+    "hero": "software/sportified/live-01.jpg",
+    "gallery": [],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "Very thin. One capture of the public Instagram grid and the logo. No existing screenshots and no view of the engine. The grid shows match footage of real players."
+  },
+  {
+    "id": "vibe-raas-led",
+    "name": "Vibe Raas LED",
+    "wing": "software",
+    "one_line": "One laptop, three LED walls, eight visuals that dance to the mixer. Works with no internet.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "LED visuals"
+      },
+      {
+        "label": "Client",
+        "value": "The Vibe Tribe"
+      },
+      {
+        "label": "Year",
+        "value": "2026"
+      },
+      {
+        "label": "Role",
+        "value": "Wrote the software, designed the visuals."
+      },
+      {
+        "label": "LED walls",
+        "value": "3"
+      },
+      {
+        "label": "Visuals",
+        "value": "8"
+      },
+      {
+        "label": "Colourways",
+        "value": "4"
+      }
+    ],
+    "writeup": [
+      "Ohm and I brought back The Vibe Tribe, his event company, for Navratri 2026: Vibe Raas, a garba night at Tathastu Party Plot, Ognaj. A revived company has no systems, so I built them.",
+      "Three LED walls: a 50 ft stage screen and two side screens. We wanted them to move with the music, not loop a video, so I wrote the software. It listens to the mixer and drives eight hand-built visuals drawn from Gujarati textile and folk motifs: Tunnel, Stripes, Mandala, Ghoomar, Patola, Jali, Damru and Shiv."
+    ],
+    "link": null,
+    "logo": "software/vibe-raas-led/logo.png",
+    "hero": "software/vibe-raas-led/led-05.jpg",
+    "gallery": [
+      "software/vibe-raas-led/led-01.jpg",
+      "software/vibe-raas-led/led-02.jpg",
+      "software/vibe-raas-led/led-03.jpg",
+      "software/vibe-raas-led/led-04.jpg",
+      "software/vibe-raas-led/led-06.jpg",
+      "software/vibe-raas-led/led-07.jpg",
+      "software/vibe-raas-led/led-08.jpg",
+      "software/vibe-raas-led/led-09.jpg",
+      "software/vibe-raas-led/led-10.jpg",
+      "software/vibe-raas-led/led-11.jpg",
+      "software/vibe-raas-led/led-12.jpg",
+      "software/vibe-raas-led/sheet-3.jpg"
+    ],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "No live link (the event is over). Every image is a render out of the software; there is no photo or video of the walls on the night."
+  },
+  {
+    "id": "vibe-raas-tickets",
+    "name": "Vibe Raas Pass",
+    "wing": "software",
+    "one_line": "Sellers text the bot \"malhar 10 pass for 350\". It sends back a QR pass. 677 passes went out on 80 orders.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Ticket system"
+      },
+      {
+        "label": "Client",
+        "value": "The Vibe Tribe"
+      },
+      {
+        "label": "Year",
+        "value": "2026"
+      },
+      {
+        "label": "Role",
+        "value": "Built it, ran it at the counter."
+      },
+      {
+        "label": "Passes",
+        "value": "677"
+      },
+      {
+        "label": "Orders",
+        "value": "80"
+      },
+      {
+        "label": "Pickups",
+        "value": "60"
+      }
+    ],
+    "writeup": [
+      "Ohm and I brought back The Vibe Tribe, his event company, for Navratri 2026: Vibe Raas, a garba night at Tathastu Party Plot, Ognaj. A revived company has no systems, so I built them.",
+      "Passes were sold by a team of sellers, not a website, and the organisers ran everything off an Excel sheet. I put a Telegram bot in front of it. A seller types the sale the way they'd say it, the bot sends back a QR pass, and at the venue a phone scans it and hands over the right number of physical passes."
+    ],
+    "link": null,
+    "logo": "software/vibe-raas-tickets/logo.png",
+    "hero": "software/vibe-raas-tickets/sheet-3.jpg",
+    "gallery": [
+      "software/vibe-raas-tickets/pass-01.jpg",
+      "software/vibe-raas-tickets/pass-02.jpg"
+    ],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "No live link (the event is over). No screenshot of the Telegram bot chat itself. Scanner screens show buyer names, prices and QR codes that the source notes say are seed data.",
+    "held_gallery": [
+      "software/vibe-raas-tickets/pass-03.jpg",
+      "software/vibe-raas-tickets/pass-04.jpg",
+      "software/vibe-raas-tickets/pass-05.jpg",
+      "software/vibe-raas-tickets/pass-06.jpg"
+    ]
+  },
+  {
+    "id": "clapper",
+    "name": "Clapper",
+    "wing": "software",
+    "one_line": "A shot logger for the phone in your pocket on set. Ten people use it for real. Two have exported. Working on the other eight.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "On-set app"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Designed and built it, from the ROLL button to the Premiere XML."
+      },
+      {
+        "label": "People use it for real",
+        "value": "10"
+      },
+      {
+        "label": "Shots read off one PDF",
+        "value": "137/137"
+      },
+      {
+        "label": "Bars of signal needed",
+        "value": "0"
+      }
+    ],
+    "writeup": [
+      "Clapper is the log, on the phone already in your pocket. Hit ROLL when the camera rolls, tap what happens (close-up, a flub, the keeper), hit CUT. It numbers every clip exactly the way the camera does, so at wrap the editor gets a timeline where C0248 in the log is C0248 on the card.",
+      "It runs offline, needs no account to log, and lives at clapper.in. Ten people use it for real. Two have exported. I am working on the other eight."
+    ],
+    "link": "https://clapper.in",
+    "logo": "software/clapper/logo.png",
+    "hero": null,
+    "gallery": [],
+    "video": null,
+    "screens_withheld": true,
+    "gaps": "Text only by the owner's rule. Logo only; no screenshots or video were copied and the site was not loaded."
+  },
+  {
+    "id": "fitkit",
+    "name": "Fitkit Pro",
+    "wing": "software",
+    "one_line": "A wrist band I already owned, bent into the app I actually wanted. Built for two: me and my girlfriend.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Personal health app"
+      },
+      {
+        "label": "Year",
+        "value": "2026"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Users",
+        "value": "Two, each in their own walled-off copy"
+      }
+    ],
+    "writeup": [
+      "I had a fitness band and an app that forgot me between conversations. So I took the hardware and shaped the software around it.",
+      "Fitkit pulls the band's heart, sleep and movement data every morning, works out readiness, strain and sleep need, and keeps a coach that remembers what happened last week. Two people use it, each in their own walled-off copy."
+    ],
+    "link": null,
+    "logo": null,
+    "hero": null,
+    "gallery": [],
+    "video": null,
+    "screens_withheld": true,
+    "gaps": "Text only by the owner's rule. No logo exists, no link, no images."
+  },
+  {
+    "id": "fourside-studios",
+    "name": "Fourside Studios",
+    "wing": "software",
+    "one_line": "Custom software I built for Fourside Studios. It generates their bills and keeps their accounts.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Billing software"
+      },
+      {
+        "label": "Status",
+        "value": "Sealed"
+      },
+      {
+        "label": "Role",
+        "value": "Built it for them, start to finish."
+      }
+    ],
+    "writeup": [
+      "Fourside Studios needed their billing and accounts in one place, built around how they actually work. So I built it for them.",
+      "It generates their bills and keeps their accounts. It's their internal tool, so it stays sealed: you can read about it, you can't open it."
+    ],
+    "link": null,
+    "logo": null,
+    "hero": null,
+    "gallery": [],
+    "video": null,
+    "screens_withheld": true,
+    "gaps": "Text only by the owner's rule. No logo exists, no link, no images. copy.js marks it classified, not live."
+  }
+]

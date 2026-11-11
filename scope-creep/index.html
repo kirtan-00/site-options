@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kirtan Purohit</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1211;
+    --ink:#eef1f0;
+    --muted:#9aa6a3;
+    --ask:#ffd60a;
+    --askInk:#111312;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+    font-family:'Bricolage Grotesque',system-ui,sans-serif;font-optical-sizing:auto;-webkit-font-smoothing:antialiased}
+  body{height:100dvh;width:100vw;position:fixed;inset:0}
+  #gl{position:fixed;inset:0;width:100vw;height:100dvh;display:block;touch-action:none;outline:none}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+
+  /* Copy column */
+  .copy{position:fixed;left:clamp(20px,5vw,80px);top:0;bottom:0;width:min(40vw,560px);
+    display:flex;flex-direction:column;justify-content:center;pointer-events:none;z-index:2}
+  .who{position:fixed;left:clamp(20px,5vw,80px);top:clamp(18px,4vh,40px);z-index:3;line-height:1.2}
+  .who b{display:block;font-weight:700;font-size:18px;letter-spacing:-.01em}
+  .who span{color:var(--muted);font-size:15px}
+  .kicker{color:var(--muted);font-size:clamp(15px,1.25vw,18px);margin-bottom:14px;font-weight:500}
+  h1{font-weight:800;font-size:clamp(44px,5.6vw,92px);line-height:.94;letter-spacing:-.022em;
+    font-variation-settings:"opsz" 96;text-wrap:balance}
+  h1 .em{color:var(--ask)}
+  .askwrap{margin-top:clamp(26px,4.5vh,48px);pointer-events:auto;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+  .asklabel{font-size:15px;color:var(--muted);font-weight:500}
+  .ask{background:var(--ask);color:var(--askInk);font-weight:700;font-size:clamp(18px,1.55vw,23px);
+    letter-spacing:-.01em;line-height:1.15;padding:16px 22px 17px;border-radius:18px 18px 18px 4px;
+    text-align:left;max-width:100%;transition:transform .18s cubic-bezier(.2,.8,.2,1)}
+  .ask:hover{transform:translateY(-2px)}
+  .ask:active{transform:translateY(1px) scale(.985)}
+  .ask:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+  .ask .sub{display:block;font-weight:500;font-size:14px;margin-top:6px;opacity:.72}
+  .ask.done{background:transparent;color:var(--ink);border:1.5px solid rgba(238,241,240,.35);border-radius:14px;font-size:17px;padding:12px 18px}
+  .hint{font-size:15px;color:var(--muted);margin-top:4px;max-width:30ch}
+
+  /* Floating tag on the slab you can open */
+  #tag{position:fixed;left:0;top:0;z-index:2;pointer-events:none;transform:translate(-9999px,0);
+    background:#f4f6f5;color:#101312;border-radius:10px;padding:8px 12px 9px;font-size:14px;line-height:1.15;white-space:nowrap;
+    transition:opacity .2s}
+  #tag b{display:block;font-size:16px;font-weight:700;letter-spacing:-.01em}
+  #tag span{opacity:.65}
+
+  /* Contact */
+  .contact{position:fixed;right:clamp(16px,3vw,40px);top:clamp(16px,3.4vh,36px);z-index:20;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+  .contact button{background:var(--ink);color:#0e1211;font-weight:700;font-size:16px;padding:11px 18px;border-radius:999px}
+  .contact button:focus-visible{outline:3px solid var(--ask);outline-offset:3px}
+  .contact p{background:var(--ink);color:#0e1211;font-size:15px;padding:10px 14px;border-radius:12px;max-width:260px;display:none}
+  .contact.open p{display:block}
+
+  /* Project view */
+  #proj{position:fixed;inset:0;z-index:10;background:var(--bg);display:grid;
+    grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:center;
+    padding:clamp(80px,10vh,110px) clamp(20px,5vw,80px) clamp(30px,6vh,70px);
+    opacity:0;visibility:hidden;transition:opacity .28s ease,visibility 0s linear .28s}
+  #proj.on{opacity:1;visibility:visible;transition:opacity .28s ease}
+  #proj .media{width:100%;height:100%;min-height:0;display:flex;align-items:center;justify-content:center}
+  #proj .media img,#proj .media video{max-width:100%;max-height:100%;border-radius:10px;display:block;object-fit:contain}
+  #proj h2{font-weight:800;font-size:clamp(40px,4.4vw,72px);line-height:.95;letter-spacing:-.03em;margin-bottom:18px}
+  #proj p{font-size:clamp(18px,1.45vw,22px);line-height:1.35;color:#cfd6d4;max-width:32ch}
+  #proj .back{margin-top:30px;background:var(--ink);color:#0e1211;font-weight:700;font-size:17px;padding:13px 22px;border-radius:999px}
+  #proj .back:focus-visible{outline:3px solid var(--ask);outline-offset:3px}
+
+  @media (max-width:760px){
+    .who b{font-size:16px}.who span{font-size:13px}
+    .copy{left:20px;right:20px;width:auto;top:clamp(72px,10dvh,92px);bottom:auto;justify-content:flex-start}
+    .kicker{font-size:14px;margin-bottom:8px}
+    h1{font-size:clamp(32px,9.6vw,44px)}
+    .askwrap{position:fixed;left:16px;right:16px;bottom:max(16px,env(safe-area-inset-bottom));margin:0;align-items:stretch;gap:6px}
+    .asklabel{font-size:13px;padding-left:4px}
+    .ask{font-size:19px;padding:14px 18px 15px;width:100%}
+    .ask .sub{font-size:13px}
+    .hint{display:none}
+    .contact{top:16px;right:16px}
+    .contact button{font-size:14px;padding:9px 14px}
+    #proj{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;align-items:start;padding:70px 20px 24px;gap:18px}
+    #proj .media{align-items:flex-end}
+    #proj h2{font-size:34px;margin-bottom:10px}
+    #proj p{font-size:16px}
+    #proj .back{margin-top:16px;width:100%}
+  }
+  @media (prefers-reduced-motion:reduce){ .ask,#proj,#tag{transition:none} }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="gl" aria-label="A pile of project slabs. Tap a slab to open that project."></canvas>
+
+<div class="who"><b>Kirtan Purohit</b><span>Producer, filmmaker, developer. Ahmedabad.</span></div>
+
+<div class="copy">
+  <div class="kicker" id="kicker">Revision 1</div>
+  <h1 id="head">The brief: one 30 second film.</h1>
+  <div class="askwrap">
+    <div class="asklabel" id="asklabel">The client, one more time</div>
+    <button class="ask" id="ask"><span id="askText">Can you also build the website?</span><span class="sub" id="askSub">Say yes. It goes on the pile.</span></button>
+    <div class="hint" id="hint">Or tap the slab to open the film.</div>
+  </div>
+</div>
+
+<div id="tag"><b id="tagName">Zepto</b><span id="tagSub">Tap to open</span></div>
+
+<div class="contact" id="contact">
+  <button id="contactBtn" aria-expanded="false">Contact me</button>
+  <p>Email goes here once Kirtan confirms it.</p>
+</div>
+
+<section id="proj" aria-hidden="true">
+  <div class="media" id="projMedia"></div>
+  <div>
+    <h2 id="projName"></h2>
+    <p id="projLine"></p>
+    <button class="back" id="back">Back</button>
+  </div>
+</section>
+
+<script type="module">
+import * as THREE from 'three';
+
+const C = '../content/';
+// Each slab: a real project. Asks are generic client-speak; numbers only where the manifest has them.
+const SLABS = [
+  { id:'zepto', name:'Zepto', tag:'Monthly reels', img:'media/zepto/rakhi-02.jpg', crop:[0,1,0,1],
+    video:'media/zepto/rakhi-loop.mp4', hero:'media/zepto/rakhi-02.jpg', w:1.5, h:2.667,
+    line:"A ten-minute delivery brand can't wait ten days for a reel. Every month I turn their briefs into reels at their speed, and sometimes I'm the one in them." },
+  { id:'spectra', name:'Spectra Museum', tag:'Museum website', img:'software/spectra/live-01.jpg', crop:[0,1,0,1],
+    hero:'software/spectra/live-01.jpg', w:3.0, h:1.875,
+    ask:'Can you also build the website?',
+    line:"The website for Spectra, India's first multi-sensory museum in Ahmedabad. You don't scroll a page, you walk through all eight rooms." },
+  { id:'sorted', name:'sorted', tag:'Mac app', img:'software/sorted/live-01.jpg', crop:[.22,.78,.06,1],
+    video:'software/sorted/sorting.mp4', hero:'software/sorted/sorting-poster.jpg', w:2.0, h:2.07,
+    ask:'Can you also sort the 3,677 photos?',
+    line:"Sorts a whole shoot on your laptop. 3,677 photos off one camera, nothing uploaded anywhere. Offline, on purpose." },
+  { id:'crav-social', name:'Crav Social', tag:'Concept, shoot, edit', img:'media/crav-social/holi-03.jpg', crop:[0,1,0,1],
+    video:'media/crav-social/holi-loop.mp4', hero:'media/crav-social/holi-03.jpg', w:1.5, h:2.667,
+    ask:'Can you also run the whole page?',
+    line:"A page I ran end to end: the idea, the camera, the cut. Over 50 million views while it was mine." },
+  { id:'deepdive', name:'Deepdive Marketing', tag:'IG autopilot', img:'software/deepdive/live-02.jpg', crop:[.175,.846,.075,1],
+    hero:'software/deepdive/live-02.jpg', w:2.3, h:2.0,
+    ask:'Can it also post itself? Every day?',
+    line:"A marketing page with 150K+ followers that mostly runs itself. It finds the story, makes the post and publishes it, every day." },
+  { id:'vibe-raas-led', name:'Vibe Raas LED', tag:'LED visuals', img:'software/vibe-raas-led/led-05.jpg', crop:[0,1,0,1],
+    hero:'software/vibe-raas-led/led-05.jpg', w:3.0, h:1.875,
+    ask:'Can you also do the three LED walls?',
+    line:"One laptop, three LED walls, eight visuals that dance to the mixer. Works with no internet." },
+  { id:'vibe-raas-tickets', name:'Vibe Raas Pass', tag:'Ticket system', img:'software/vibe-raas-tickets/sheet-3.jpg', crop:[0,1,0,1],
+    hero:'software/vibe-raas-tickets/sheet-3.jpg', w:2.8, h:1.645,
+    ask:'Can you also sort out the passes?',
+    line:"Sellers text the bot \"malhar 10 pass for 350\". It sends back a QR pass. 677 passes went out on 80 orders." },
+  { id:'cravache', name:'CravAche', tag:'Game', img:'software/cravache/live-01.jpg', crop:[0,1,0,1],
+    hero:'software/cravache/live-01.jpg', w:3.2, h:2.0,
+    ask:'Can you also make it a game?',
+    line:"A pixel survival game about running an Indian ad agency. Briefs pile up, clients change their minds, and your staff need sleep." },
+];
+// Headline after n slabs are on the pile.
+const HEADS = [
+  null,
+  'The brief: one 30 second film.',
+  'The brief: one film. And a <span class="em">website</span>.',
+  'The brief: a film, a website and <span class="em">3,677 photos</span>.',
+  'The brief is now <span class="em">four</span> briefs.',
+  'Five. It is still called one brief.',
+  'Six. Same deadline.',
+  'Seven. "Small thing, one last change."',
+  'Delivered.',
+];
+
+// Planned resting spots: [x, baseY, z, yaw]. Each slab sits on one below it, nothing hangs in air.
+const LAYOUT_WIDE = [
+  [-2.30, 0.000, 0.20,  0.06],
+  [ 0.15, 0.000,-0.70, -0.05],
+  [ 0.35, 1.875,-0.75,  0.08],
+  [ 2.45, 0.000, 0.35, -0.10],
+  [-2.25, 2.667, 0.15, -0.06],
+  [ 2.45, 2.667, 0.30,  0.07],
+  [ 0.20, 3.945,-0.70, -0.04],
+  [ 0.00, 5.590,-0.65,  0.05],
+];
+const LAYOUT_TALL = [
+  [-1.10, 0.000, 0.20,  0.06],
+  [ 0.90, 0.000,-0.60, -0.06],
+  [ 1.10, 1.875,-0.65,  0.07],
+  [-1.05, 2.667, 0.25, -0.08],
+  [ 1.00, 3.945,-0.60,  0.05],
+  [-0.70, 5.334, 0.20, -0.05],
+  [ 1.00, 5.945,-0.60,  0.06],
+  [-0.20, 7.209, 0.20, -0.04],
+];
+const DEPTH = 0.42;
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+window.__timeScale = 1;
+
+// ---------- renderer / scene ----------
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const BG = new THREE.Color('#0e1211');
+scene.background = BG;
+scene.fog = new THREE.Fog(BG, 22, 60);
+
+const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 200);
+
+// Floor: dark poured concrete, noise drawn on a canvas.
+function concrete(){
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  const g = c.getContext('2d');
+  g.fillStyle = '#2a302f'; g.fillRect(0,0,512,512);
+  const d = g.getImageData(0,0,512,512);
+  for (let i=0;i<d.data.length;i+=4){
+    const n = (Math.random()-0.5)*18;
+    d.data[i]+=n; d.data[i+1]+=n; d.data[i+2]+=n;
+  }
+  g.putImageData(d,0,0);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(14,14); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(200,200),
+  new THREE.MeshStandardMaterial({ color:'#ffffff', map:concrete(), roughness:.92, metalness:0 }));
+floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; scene.add(floor);
+
+scene.add(new THREE.HemisphereLight('#dfe8ea', '#0a0d0c', 0.55));
+const key = new THREE.DirectionalLight('#ffffff', 3.1);
+key.castShadow = true;
+key.shadow.mapSize.set(2048,2048);
+key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
+key.shadow.radius = 4;
+scene.add(key); scene.add(key.target);
+const rim = new THREE.DirectionalLight('#cfe3ff', 1.1);
+scene.add(rim); scene.add(rim.target);
+const fill = new THREE.DirectionalLight('#ffffff', 0.45);
+scene.add(fill); scene.add(fill.target);
+
+const stone = new THREE.MeshStandardMaterial({ color:'#3b4241', roughness:.78, metalness:0 });
+const stoneTop = new THREE.MeshStandardMaterial({ color:'#4a5251', roughness:.7, metalness:0 });
+
+// ---------- textures ----------
+const loader = new THREE.TextureLoader();
+const maxAniso = renderer.capabilities.getMaxAnisotropy();
+function loadTex(s){
+  return new Promise((res, rej)=> loader.load(C + s.img, t=>{
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso;
+    // cover-fit the crop window onto the slab face
+    const iw = t.image.width, ih = t.image.height;
+    let [u0,u1,v0,v1] = s.crop;
+    const cw = (u1-u0)*iw, ch = (v1-v0)*ih, face = s.w/s.h;
+    if (cw/ch > face){ const nw = ch*face/iw, cx=(u0+u1)/2; u0=cx-nw/2; u1=cx+nw/2; }
+    else { const nh = cw/face/ih, cy=(v0+v1)/2; v0=cy-nh/2; v1=cy+nh/2; }
+    t.repeat.set(u1-u0, v1-v0); t.offset.set(u0, 1-v1);
+    res(t);
+  }, undefined, rej));
+}
+
+// ---------- slabs ----------
+const slabs = [];   // live slab objects
+let count = 0;
+let layout = LAYOUT_WIDE;
+let wide = true;
+
+function makeSlab(i, tex){
+  const s = SLABS[i];
+  const face = new THREE.MeshStandardMaterial({ map:tex, roughness:.42, metalness:0,
+    emissive:'#ffffff', emissiveMap:tex, emissiveIntensity:.32 });
+  const geo = new THREE.BoxGeometry(s.w, s.h, DEPTH);
+  geo.translate(0, s.h/2, 0); // pivot at the base so squash reads as weight
+  const mesh = new THREE.Mesh(geo, [stone, stone, stoneTop, stone, face, stone]);
+  mesh.castShadow = true; mesh.receiveShadow = true;
+  mesh.userData.index = i;
+  scene.add(mesh);
+  return {
+    i, mesh, face, s,
+    y:0, vy:0, landed:false,
+    // springs: [value, velocity]
+    rx:[0,0], rz:[0,0], ry:[0,0], px:[0,0], pz:[0,0],
+    sq:[0,0], dip:[0,0], lift:[0,0], glow:[0,0],
+  };
+}
+
+function target(i){ return layout[i]; }
+
+function spring(st, to, k, c, dt){
+  const a = -k*(st[0]-to) - c*st[1];
+  st[1] += a*dt; st[0] += st[1]*dt;
+}
+function springIdle(st, to){ return Math.abs(st[0]-to) < 1e-4 && Math.abs(st[1]) < 1e-3; }
+
+function placeAtRest(o){
+  const [x,y,z,yaw] = target(o.i);
+  o.px=[x,0]; o.pz=[z,0]; o.ry=[yaw,0]; o.rx=[0,0]; o.rz=[0,0];
+  o.y = y; o.vy = 0; o.landed = true;
+}
+
+let textures = [];
+let shake = 0, shakeT = 0;
+
+function addSlab(){
+  if (count >= SLABS.length) return;
+  const i = count;
+  const o = makeSlab(i, textures[i]);
+  slabs.push(o);
+  count++;
+  if (reduce || i === 0){ placeAtRest(o); }
+  else {
+    const [x,y,z,yaw] = target(i);
+    const side = (i % 2 ? 1 : -1);
+    o.px = [x + side*0.18, 0]; o.pz = [z + 0.2, 0];
+    o.ry = [yaw + side*0.22, 0]; o.rx = [-0.10, 0]; o.rz = [side*0.16, 0];
+    const b = bounds(count);
+    o.y = y + Math.max(3.2, b.maxY - y - o.s.h*0.4); o.vy = -1;
+    o.delay = 0.16; o.mesh.visible = false; // let the camera make room first
+  }
+  updateCopy();
+  frameCamera(false);
+  hoverIdx = -1;
+  wake();
+}
+
+function bounds(n){
+  let minX=1e9,maxX=-1e9,maxY=0,minZ=1e9,maxZ=-1e9;
+  for (let i=0;i<n;i++){
+    const [x,y,z] = layout[i], s = SLABS[i];
+    minX=Math.min(minX,x-s.w/2); maxX=Math.max(maxX,x+s.w/2);
+    maxY=Math.max(maxY,y+s.h); minZ=Math.min(minZ,z); maxZ=Math.max(maxZ,z);
+  }
+  return {minX,maxX,maxY,minZ,maxZ};
+}
+
+// ---------- camera framing ----------
+const AZ = -0.30, EL = 0.16;
+const cam = { cx:[0,0], cy:[0,0], cz:[0,0], d:[10,0] };
+let camGoal = { cx:0, cy:0, cz:0, d:10 };
+let view = { W:1, H:1 };
+
+let reg = null;
+function region(){
+  const W = view.W, H = view.H;
+  if (wide) return { cx:.70*W, cy:.53*H, rw:.50*W, rh:.76*H };
+  // phone: the pile owns the space between the headline and the client's button
+  const top = document.querySelector('.copy').getBoundingClientRect().bottom + 14;
+  const bot = document.querySelector('.askwrap').getBoundingClientRect().top - 10;
+  return { cx:.5*W, cy:(top+bot)/2, rw:.9*W, rh:Math.max(120, bot-top) };
+}
+function frameCamera(snap){
+  const b = bounds(Math.max(count,1));
+  const r = reg = region();
+  const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+  const fh = 2*Math.max(r.cy, view.H - r.cy);
+  // width seen across the slab front, padded for the three-quarter turn and depth
+  const bw = (b.maxX - b.minX) * Math.cos(AZ) + 1.2*Math.abs(Math.sin(AZ)) + 0.2;
+  const bh = b.maxY + 0.35;
+  const d1 = bw * fh / (2*tanH*r.rw);
+  const d2 = bh * fh / (2*tanH*r.rh) * 1.04;
+  camGoal = { cx:(b.minX+b.maxX)/2, cy:b.maxY*0.5, cz:(b.minZ+b.maxZ)/2, d:Math.max(d1,d2) };
+  if (snap || reduce){ cam.cx=[camGoal.cx,0]; cam.cy=[camGoal.cy,0]; cam.cz=[camGoal.cz,0]; cam.d=[camGoal.d,0]; }
+  fitShadow(b);
+}
+function fitShadow(b){
+  const cx=(b.minX+b.maxX)/2, cy=b.maxY/2;
+  const R = Math.max(b.maxX-b.minX, b.maxY)*0.75 + 3;
+  const kc = key.shadow.camera;
+  kc.left=-R; kc.right=R; kc.top=R; kc.bottom=-R; kc.near=1; kc.far=80; kc.updateProjectionMatrix();
+  key.target.position.set(cx,cy*0.6,0);
+  key.position.set(cx-9, cy+16, 14);
+  rim.target.position.set(cx,cy,0); rim.position.set(cx+12, cy+6, -12);
+  fill.target.position.set(cx,cy,0); fill.position.set(cx+10, 3, 12);
+}
+
+function applyCamera(){
+  const r = reg || region();
+  const fw = 2*Math.max(r.cx, view.W - r.cx), fh = 2*Math.max(r.cy, view.H - r.cy);
+  const ox = fw/2 - r.cx, oy = fh/2 - r.cy;
+  camera.aspect = fw/fh;
+  camera.setViewOffset(fw, fh, ox, oy, view.W, view.H);
+  const d = cam.d[0];
+  let tx = cam.cx[0], ty = cam.cy[0], tz = cam.cz[0];
+  let px = tx + Math.sin(AZ)*Math.cos(EL)*d, py = ty + Math.sin(EL)*d, pz = tz + Math.cos(AZ)*Math.cos(EL)*d;
+  if (shake > 0.0005){
+    const k = shake * d * 0.012;
+    const t = shakeT*60;
+    px += Math.sin(t*1.7)*k; py += Math.sin(t*2.3+1)*k; tx += Math.sin(t*1.3+2)*k*0.5;
+  }
+  camera.position.set(px,py,pz);
+  scene.fog.near = d*1.05; scene.fog.far = d*3.2;
+  camera.lookAt(tx,ty,tz);
+}
+
+function resize(){
+  const W = innerWidth, H = innerHeight;
+  view = { W, H };
+  const nowWide = W/H > 0.9 && W > 760;
+  if (nowWide !== wide){ wide = nowWide; layout = wide ? LAYOUT_WIDE : LAYOUT_TALL; slabs.forEach(placeAtRest); }
+  layout = wide ? LAYOUT_WIDE : LAYOUT_TALL;
+  renderer.setSize(W, H, false);
+  frameCamera(true);
+  wake();
+}
+
+// ---------- copy ----------
+const $ = id => document.getElementById(id);
+function updateCopy(){
+  $('head').innerHTML = HEADS[count] || HEADS[1];
+  $('kicker').textContent = count >= SLABS.length ? 'Revision 8 of a 30 second film' : 'Revision ' + Math.max(count,1);
+  const next = SLABS[count];
+  if (next){
+    $('askText').textContent = next.ask;
+    $('askSub').textContent = count === 1 ? 'Say yes. It goes on the pile.' : 'Say yes again.';
+    $('asklabel').textContent = count === 1 ? 'The client, one more thing' : 'The client, again';
+    $('ask').classList.remove('done');
+    $('hint').textContent = count === 1 ? 'Or tap the slab to open the film.' : 'Tap any slab to open it.';
+  } else {
+    $('askText').textContent = 'Start a new brief';
+    $('askSub').textContent = '';
+    $('asklabel').textContent = 'Every slab is a real project. Tap one.';
+    $('ask').classList.add('done');
+    $('hint').textContent = '';
+  }
+}
+
+$('ask').addEventListener('click', ()=>{
+  if (projOpen) return;
+  if (count >= SLABS.length){ resetPile(); return; }
+  addSlab();
+});
+
+function resetPile(){
+  for (let k = slabs.length-1; k>=1; k--){ const o = slabs[k]; scene.remove(o.mesh); o.mesh.geometry.dispose(); o.face.dispose(); }
+  slabs.length = 1; count = 1;
+  updateCopy(); frameCamera(false); wake();
+}
+
+// ---------- tag on the slab you can open ----------
+const tag = $('tag');
+let hoverIdx = -1;
+const v3 = new THREE.Vector3();
+function placeTag(){
+  const idx = hoverIdx >= 0 ? hoverIdx : (slabs.length ? slabs.length-1 : -1);
+  if (idx < 0 || projOpen){ tag.style.transform = 'translate(-9999px,0)'; return; }
+  const o = slabs[idx];
+  if (!o.landed){ tag.style.opacity = 0; return; }
+  tag.style.opacity = 1;
+  $('tagName').textContent = o.s.name;
+  $('tagSub').textContent = (o.s.tag ? o.s.tag + '. ' : '') + 'Tap to open';
+  // sit just above the slab's top-left front edge, so the face stays clear
+  v3.set(-o.s.w/2, o.s.h, DEPTH/2).applyMatrix4(o.mesh.matrixWorld).project(camera);
+  const tw = tag.offsetWidth, th = tag.offsetHeight;
+  let x = (v3.x*0.5+0.5)*view.W, y = (-v3.y*0.5+0.5)*view.H - th - 8;
+  x = Math.min(Math.max(x, 8), view.W - tw - 8);
+  y = Math.min(Math.max(y, 8), view.H - th - 8);
+  tag.style.transform = `translate(${x}px,${y}px)`;
+}
+
+// ---------- picking ----------
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pick(ev){
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((ev.clientX-r.left)/r.width)*2-1, -((ev.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(ndc, camera);
+  const hit = ray.intersectObjects(slabs.map(o=>o.mesh), false)[0];
+  return hit ? hit.object.userData.index : -1;
+}
+let down = null;
+canvas.addEventListener('pointerdown', e=>{ down = { x:e.clientX, y:e.clientY, idx:pick(e) }; });
+canvas.addEventListener('pointerup', e=>{
+  if (!down) return;
+  const moved = Math.hypot(e.clientX-down.x, e.clientY-down.y);
+  const idx = pick(e);
+  if (moved < 10 && idx >= 0 && idx === down.idx) openProject(idx);
+  down = null;
+});
+canvas.addEventListener('pointermove', e=>{
+  if (e.pointerType !== 'mouse') return;
+  const idx = pick(e);
+  canvas.style.cursor = idx >= 0 ? 'pointer' : 'default';
+  if (idx !== hoverIdx){ hoverIdx = idx; wake(); }
+});
+canvas.addEventListener('pointerleave', ()=>{ if (hoverIdx !== -1){ hoverIdx=-1; wake(); } });
+
+// ---------- project view ----------
+let projOpen = false;
+function openProject(i){
+  const s = SLABS[i];
+  const m = $('projMedia'); m.innerHTML = '';
+  if (s.video){
+    const v = document.createElement('video');
+    Object.assign(v, { src:C+s.video, poster:C+s.hero, muted:true, loop:true, autoplay:true, playsInline:true });
+    v.setAttribute('playsinline',''); v.setAttribute('muted','');
+    m.appendChild(v); v.play().catch(()=>{});
+  } else {
+    const im = new Image(); im.src = C+s.hero; im.alt = s.name; m.appendChild(im);
+  }
+  $('projName').textContent = s.name;
+  $('projLine').textContent = s.line;
+  $('proj').classList.add('on'); $('proj').setAttribute('aria-hidden','false');
+  projOpen = true; placeTag();
+  $('back').focus({ preventScroll:true });
+}
+function closeProject(){
+  $('proj').classList.remove('on'); $('proj').setAttribute('aria-hidden','true');
+  const v = $('projMedia').querySelector('video'); if (v) v.pause();
+  projOpen = false; wake();
+}
+$('back').addEventListener('click', closeProject);
+addEventListener('keydown', e=>{ if (e.key === 'Escape' && projOpen) closeProject(); });
+
+// contact
+$('contactBtn').addEventListener('click', ()=>{
+  const c = $('contact'); const on = !c.classList.contains('open');
+  c.classList.toggle('open', on); $('contactBtn').setAttribute('aria-expanded', String(on));
+});
+
+// ---------- simulation ----------
+const G = 46;
+let awake = true, last = performance.now(), acc = 0;
+function wake(){ awake = true; }
+
+function step(dt){
+  let busy = false;
+  for (const o of slabs){
+    const [x,y,z,yaw] = target(o.i);
+    spring(o.px, x, 70, 13, dt); spring(o.pz, z, 70, 13, dt);
+    spring(o.ry, yaw, 90, 12, dt); spring(o.rx, 0, 110, 11, dt); spring(o.rz, 0, 110, 11, dt);
+    if (o.delay > 0){ o.delay -= dt; if (o.delay <= 0) o.mesh.visible = true; busy = true; continue; }
+    if (!o.landed){
+      o.vy -= G*dt; o.y += o.vy*dt;
+      if (o.y <= y){
+        o.y = y; const impact = -o.vy; o.vy = 0; o.landed = true;
+        o.sq[1] += impact*0.55;                 // squash on contact
+        o.rz[1] += (o.i%2? -1:1)*impact*0.035;  // small rock as it seats
+        o.rx[1] += impact*0.02;
+        shake = Math.min(0.9, shake + impact*0.045); shakeT = 0;
+        // the slab it lands on takes the hit
+        const below = supporter(o.i);
+        if (below) below.dip[1] -= impact*0.03;
+        placeTagSoon = true;
+      }
+      busy = true;
+    }
+    spring(o.sq, 0, 420, 16, dt);
+    spring(o.dip, 0, 380, 15, dt);
+    spring(o.lift, hoverIdx === o.i ? 1 : 0, 260, 26, dt);
+    if (!(springIdle(o.px,x)&&springIdle(o.pz,z)&&springIdle(o.ry,yaw)&&springIdle(o.rx,0)&&springIdle(o.rz,0)&&springIdle(o.sq,0)&&springIdle(o.dip,0)&&springIdle(o.lift,hoverIdx===o.i?1:0))) busy = true;
+  }
+  spring(cam.cx, camGoal.cx, 110, 21, dt); spring(cam.cy, camGoal.cy, 110, 21, dt);
+  spring(cam.cz, camGoal.cz, 110, 21, dt); spring(cam.d, camGoal.d, 100, 20, dt);
+  if (!(springIdle(cam.cx,camGoal.cx)&&springIdle(cam.cy,camGoal.cy)&&springIdle(cam.cz,camGoal.cz)&&springIdle(cam.d,camGoal.d))) busy = true;
+  if (shake > 0.0005){ shake *= Math.exp(-dt*7.5); shakeT += dt; busy = true; } else shake = 0;
+  return busy;
+}
+let placeTagSoon = false;
+
+function supporter(i){
+  const [x,y,z] = layout[i];
+  if (y === 0) return null;
+  let best = null, bd = 1e9;
+  for (const o of slabs){
+    if (o.i === i) continue;
+    const [ox,oy,oz] = layout[o.i];
+    const top = oy + o.s.h;
+    if (Math.abs(top - y) < 0.02){ const dd = Math.abs(ox-x)+Math.abs(oz-z); if (dd<bd){bd=dd;best=o;} }
+  }
+  return best;
+}
+
+// Which slab sits on which, so a dip in one carries everything above it.
+function stackOffset(o, memo){
+  if (memo.has(o.i)) return memo.get(o.i);
+  const below = supporter(o.i);
+  let off = 0;
+  if (below && below.landed){
+    const sqDrop = below.s.h * 0.06 * below.sq[0];
+    off = stackOffset(below, memo) + below.dip[0] - sqDrop;
+  }
+  memo.set(o.i, off);
+  return off;
+}
+
+function syncMeshes(){
+  const memo = new Map();
+  for (const o of slabs){
+    const base = o.landed ? stackOffset(o, memo) : 0;
+    const m = o.mesh;
+    const lift = o.lift[0];
+    m.position.set(o.px[0], o.y + base + o.dip[0] + lift*0.06, o.pz[0] + lift*0.14);
+    m.rotation.set(o.rx[0], o.ry[0], o.rz[0]);
+    const sq = o.sq[0];
+    m.scale.set(1 + sq*0.03, 1 - sq*0.06, 1 + sq*0.03);
+    o.face.emissiveIntensity = 0.32 + lift*0.12;
+  }
+}
+
+function frame(now){
+  requestAnimationFrame(frame);
+  let dt = Math.min((now - last)/1000, 1/20) * window.__timeScale;
+  last = now;
+  if (!awake && !placeTagSoon) return;
+  // fixed timestep for stable springs
+  acc += dt; let busy = false; const h = 1/240; let n = 0;
+  while (acc >= h && n < 80){ busy = step(h) || busy; acc -= h; n++; }
+  if (window.__timeScale === 0) busy = true;
+  syncMeshes(); applyCamera();
+  renderer.render(scene, camera);
+  placeTag(); placeTagSoon = false;
+  if (!busy) awake = false;
+}
+
+// ---------- boot ----------
+addEventListener('resize', resize);
+window.__state = () => ({ count, settled: !awake, wide });
+(async ()=>{
+  resize();
+  textures = await Promise.all(SLABS.map(loadTex));
+  await document.fonts.ready.catch(()=>{});
+  addSlab();
+  frameCamera(true);
+  syncMeshes(); applyCamera();
+  renderer.render(scene, camera);
+  placeTag();
+  requestAnimationFrame(()=>{ window.__ready = true; });
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
