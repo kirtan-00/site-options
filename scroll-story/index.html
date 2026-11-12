@@ -7,7 +7,7 @@
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=block" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=block" rel="stylesheet">
 <style>
 :root{--ink:#0b0e11;--ice:#e9eef1;--acid:#d4f53c;--cobalt:#1f4fff;--dim:rgba(233,238,241,.10);--vh:1vh}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -24,7 +24,7 @@ body{-webkit-font-smoothing:antialiased}
 .stmt{position:absolute;left:0;right:0;top:50%;transform-origin:50% 50%;padding:0 6vw;max-width:1500px;margin:0 auto}
 .stmt p{line-height:1.02;letter-spacing:-.01em}
 .l1{font-weight:800;font-size:clamp(30px,4.8vw,80px);margin-bottom:.35em}
-.l2{font-weight:800;font-size:clamp(42px,7.6vw,128px);margin-bottom:.45em}
+.l2{font-family:"Bowlby One","Bricolage Grotesque",sans-serif;font-weight:400;font-size:clamp(42px,7.6vw,128px);margin-bottom:.45em}
 .l3{font-weight:500;font-size:clamp(18px,2vw,30px)}
 .w{display:inline-block;position:relative;transform-style:preserve-3d}
 .w .g{color:var(--dim)}
@@ -549,7 +549,7 @@ function frame(now) {
 /* ---------- boot ---------- */
 async function boot() {
   setVH(true);
-  await Promise.all([document.fonts.load('800 100px "Bricolage Grotesque"'), document.fonts.load('500 20px "Bricolage Grotesque"')]);
+  await Promise.all([document.fonts.load('400 100px "Bowlby One"'), document.fonts.load('800 100px "Bricolage Grotesque"'), document.fonts.load('500 20px "Bricolage Grotesque"')]);
   const [fontJson, soft, media] = await Promise.all([
     new TTFLoader().loadAsync('bricolage-800.ttf'),
     fetch(CONTENT + 'software/manifest.json').then(r => r.json()),
