@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kirtan Purohit scroll story</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=block" rel="stylesheet">
+<style>
+:root{--ink:#0b0e11;--ice:#e9eef1;--acid:#d4f53c;--cobalt:#1f4fff;--dim:rgba(233,238,241,.10);--vh:1vh}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--ice);font-family:"Bricolage Grotesque",system-ui,sans-serif;overflow-x:hidden}
+body{-webkit-font-smoothing:antialiased}
+#gl{position:fixed;left:0;top:0;z-index:0;display:block}
+#opener{position:relative;z-index:3;height:calc(var(--vh)*100);background:#050607;display:grid;place-items:center}
+#opener p{font-weight:500;font-size:clamp(18px,2vw,26px);color:#7c8790}
+.sp{position:relative;z-index:0;pointer-events:none}
+.layer{position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:1;pointer-events:none;visibility:hidden}
+
+/* chapter 1 */
+#L1{perspective:1100px}
+.stmt{position:absolute;left:0;right:0;top:50%;transform-origin:50% 50%;padding:0 6vw;max-width:1500px;margin:0 auto}
+.stmt p{line-height:1.02;letter-spacing:-.01em}
+.l1{font-weight:800;font-size:clamp(30px,4.8vw,80px);margin-bottom:.35em}
+.l2{font-weight:800;font-size:clamp(42px,7.6vw,128px);margin-bottom:.45em}
+.l3{font-weight:500;font-size:clamp(18px,2vw,30px)}
+.w{display:inline-block;position:relative;transform-style:preserve-3d}
+.w .g{color:var(--dim)}
+.w .s{position:absolute;left:0;top:0;transform-origin:50% 92%;opacity:0;will-change:transform,opacity;white-space:nowrap}
+.w.hl .s{color:var(--acid)}
+
+/* number labels */
+.nlabel{position:absolute;left:50%;transform:translateX(-50%);font-weight:500;font-size:clamp(18px,1.9vw,28px);color:var(--ice);white-space:nowrap}
+
+/* hand-off */
+.handoff{position:absolute;left:0;right:0;top:0;bottom:0;padding:clamp(84px,13vh,150px) 5vw 7vh;display:flex;flex-direction:column;justify-content:center;gap:clamp(20px,4.5vh,48px)}
+.ap{font-weight:800;font-size:clamp(46px,8.4vw,150px);line-height:.95;perspective:900px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:1.6vw}
+.tile .ph{aspect-ratio:4/3;overflow:hidden;border-radius:3px;background:transparent}
+.tile img{width:100%;height:100%;object-fit:cover;display:block;opacity:0}
+.tile figcaption{font-weight:500;font-size:clamp(15px,1.35vw,21px);margin-top:12px;opacity:0}
+@media (max-width:700px){
+  .tiles{grid-template-columns:repeat(2,1fr);gap:14px 12px}
+  .handoff{padding:96px 20px 40px}
+}
+
+/* contact */
+#contact{position:fixed;top:18px;right:18px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#cbtn{background:var(--acid);color:var(--ink);border:0;box-shadow:0 0 0 1.5px var(--ink);border-radius:999px;padding:12px 20px;font:500 16px/1 "Bricolage Grotesque",system-ui,sans-serif;cursor:pointer}
+#cbtn:focus-visible{outline:2px solid var(--acid);outline-offset:3px}
+#cmsg{background:var(--acid);color:var(--ink);box-shadow:0 0 0 1.5px var(--ink);padding:12px 16px;border-radius:12px;font:500 15px/1.3 "Bricolage Grotesque",system-ui,sans-serif;max-width:250px}
+#cmsg[hidden]{display:none}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<canvas id="gl" aria-hidden="true"></canvas>
+
+<section id="opener"><p>3D opener goes here</p></section>
+
+<!-- scroll spacers: each one is a chapter's scroll length -->
+<div class="sp" data-ch="statement" style="height:calc(var(--vh)*230)"></div>
+<div class="sp" data-ch="collage" style="height:calc(var(--vh)*165)"></div>
+<div class="sp" data-ch="odometer" style="height:calc(var(--vh)*140)"></div>
+<div class="sp" data-ch="tunnel" style="height:calc(var(--vh)*150)"></div>
+<div class="sp" data-ch="stack" style="height:calc(var(--vh)*140)"></div>
+<div class="sp" data-ch="handoff" style="height:calc(var(--vh)*150)"></div>
+
+<div class="layer" id="L1">
+  <div class="stmt" id="stmt">
+    <p class="l1 words" data-text="Films on set. Software on screen." data-hl="0|3"></p>
+    <p class="l2 words" data-text="I'm Kirtan Purohit and I can make that happen." data-hl="6|7|8"></p>
+    <p class="l3 words" data-text="Creative producer, filmmaker and developer."></p>
+  </div>
+</div>
+<div class="layer" id="Lodo"><div class="nlabel" id="labOdo"></div></div>
+<div class="layer" id="Lstack"><div class="nlabel" id="labStack"></div></div>
+<div class="layer" id="L4">
+  <div class="handoff">
+    <h2 class="ap words" data-text="All projects"></h2>
+    <div class="tiles" id="tiles"></div>
+  </div>
+</div>
+
+<div id="contact">
+  <button id="cbtn" type="button" aria-expanded="false" aria-controls="cmsg">Contact me</button>
+  <p id="cmsg" hidden>Email goes here once Kirtan confirms it.</p>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { TTFLoader } from 'three/addons/loaders/TTFLoader.js';
+import { Font } from 'three/addons/loaders/FontLoader.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+
+/* Real values drop in here later. Strings like '150K+' or '3,677' work too. */
+const NUMBERS = [
+  { value: '000', label: 'number to come' },
+  { value: '00',  label: 'number to come' },
+  { value: '000', label: 'number to come' },
+];
+
+const CONTENT = '../content/';
+const COLLAGE = [
+  'software/spectra/live-01.jpg','media/zepto/friendship-03.jpg','software/sorted/sorting-poster.jpg','software/cravache/live-01.jpg',
+  'software/spectra/live-03.jpg','software/deepdive/live-02.jpg','media/crav-social/holi-02.jpg','software/spectra/live-06.jpg',
+  'software/sportified/live-01.jpg','software/sorted/client-pick.jpg','software/spectra/live-02.jpg','media/crav-social/holi-03.jpg',
+  'software/deepdive-blog/live-02.jpg','software/cravache/live.jpg','software/spectra/live-07.jpg','software/spectra/live-11.jpg',
+];
+/* tile ids come from the manifests; image overrides where the hero breaks the colour rules */
+const TILE_IDS = [
+  { id: 'spectra' },
+  { id: 'sorted', img: 'software/sorted/client-pick.jpg' },
+  { id: 'zepto', img: 'media/zepto/friendship-03.jpg' },
+  { id: 'cravache' },
+];
+
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PHONE = Math.min(innerWidth, innerHeight) < 600;
+const C = { ink: 0x0b0e11, ice: 0xe9eef1, acid: 0xd4f53c, cobalt: 0x1f4fff };
+
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const rng = (p, a, b) => clamp((p - a) / (b - a));
+const eOut = t => 1 - Math.pow(1 - t, 3);
+const eIn = t => t * t * t;
+const eIO = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const hash = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const RMK = RM ? 0.15 : 1; // rotation strength under reduced motion
+
+/* ---------- contact ---------- */
+const cbtn = document.getElementById('cbtn'), cmsg = document.getElementById('cmsg');
+cbtn.addEventListener('click', () => { const open = cmsg.hidden; cmsg.hidden = !open; cbtn.setAttribute('aria-expanded', String(open)); });
+
+/* ---------- words ---------- */
+const wordEls = { };
+document.querySelectorAll('.words').forEach(el => {
+  const words = el.dataset.text.split(' ');
+  const hl = (el.dataset.hl || '').split('|');
+  el.textContent = '';
+  const list = [];
+  words.forEach((w, i) => {
+    const s = document.createElement('span');
+    s.className = 'w' + (hl.includes(String(i)) ? ' hl' : '');
+    const g = document.createElement('span'); g.className = 'g'; g.textContent = w;
+    const so = document.createElement('span'); so.className = 's'; so.textContent = w;
+    s.append(g, so);
+    el.append(s, document.createTextNode(' '));
+    list.push(so);
+  });
+  el._solid = list;
+});
+const stmtWords = [...document.querySelectorAll('#stmt .words')].flatMap(el => el._solid);
+const apWords = document.querySelector('.ap')._solid;
+function setWord(s, r) {
+  s.style.opacity = r.toFixed(3);
+  if (RM) { s.style.transform = 'none'; return; }
+  s.style.transform = `translateY(${((1 - r) * 0.18).toFixed(3)}em) rotateX(${((1 - r) * -88).toFixed(2)}deg)`;
+}
+
+/* ---------- three ---------- */
+const canvas = document.getElementById('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.setClearColor(C.ink, 1);
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(C.ink, 9, 46);
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 200);
+camera.position.set(0, 0, 10);
+scene.add(new THREE.HemisphereLight(0xf2f6f8, 0x161b20, 1.15));
+const key = new THREE.DirectionalLight(0xffffff, 2.4); key.position.set(-4, 6, 8); scene.add(key);
+const fill = new THREE.DirectionalLight(0xdfe8ff, 0.7); fill.position.set(6, -3, 5); scene.add(fill);
+
+let W = innerWidth, H = innerHeight, ASP = W / H;
+const TAN = Math.tan(THREE.MathUtils.degToRad(17.5));
+const visHAt = d => 2 * d * TAN;
+let VH = visHAt(10), VW = VH * ASP; // visible size on the z=0 plane
+
+/* ---------- loading ---------- */
+function loadImg(src) {
+  return new Promise((res, rej) => { const i = new Image(); i.decoding = 'async'; i.onload = () => res(i); i.onerror = () => rej(src); i.src = src; });
+}
+const MAXTEX = PHONE ? 560 : 900;
+function downTex(img) {
+  const s = Math.min(1, MAXTEX / Math.max(img.width, img.height));
+  const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  t.userData.aspect = img.width / img.height;
+  return t;
+}
+function coverUV(tex, aspect) { // crop texture to a target aspect, centred
+  const ia = tex.userData.aspect;
+  tex.repeat.set(1, 1); tex.offset.set(0, 0);
+  if (ia > aspect) { tex.repeat.x = aspect / ia; tex.offset.x = (1 - tex.repeat.x) / 2; }
+  else { tex.repeat.y = ia / aspect; tex.offset.y = (1 - tex.repeat.y) / 2; }
+  tex.needsUpdate = true;
+}
+const sideMat = new THREE.MeshStandardMaterial({ color: 0x232a31, roughness: .7 });
+const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+function slabMesh(tex, fog = true) {
+  const front = new THREE.MeshStandardMaterial({ map: tex, roughness: .62, fog });
+  const m = new THREE.Mesh(boxGeo, [sideMat, sideMat, sideMat, sideMat, front, sideMat]);
+  return m;
+}
+
+/* ---------- chapter: collage ---------- */
+const collage = { group: new THREE.Group(), slabs: [] };
+scene.add(collage.group);
+function layoutCollage() {
+  const cols = ASP > 1.2 ? 5 : ASP > 0.8 ? 4 : 3;
+  const rows = ASP > 1.2 ? 3 : ASP > 0.8 ? 4 : 5;
+  const gw = VW * 1.08, gh = VH * 1.08, cw = gw / cols, ch = gh / rows;
+  collage.slabs.forEach((s, k) => {
+    if (k >= cols * rows) { s.visible = false; s.userData.off = true; return; }
+    s.userData.off = false;
+    const c = k % cols, r = Math.floor(k / cols);
+    const sc = 0.84 + hash(k + 7) * 0.12;
+    const w = cw * sc, h = ch * sc;
+    const T = s.userData.T = {
+      x: -gw / 2 + cw * (c + .5) + (hash(k + 3) - .5) * cw * .08,
+      y: gh / 2 - ch * (r + .5) + (hash(k + 5) - .5) * ch * .08,
+      z: (hash(k + 11) - .5) * 0.9,
+      rz: (hash(k + 13) - .5) * 0.05,
+      w, h, d: Math.min(w, h) * 0.07,
+    };
+    coverUV(s.material[4].map, w / h);
+  });
+}
+function updateCollage(p) {
+  const g = collage.group;
+  const on = p > -0.16 && p < 1.12;
+  g.visible = on; if (!on) return;
+  const push = eIO(rng(p, 0.42, 0.72));
+  collage.slabs.forEach((s, i) => {
+    if (s.userData.off) return;
+    const T = s.userData.T, h1 = hash(i + 21), h2 = hash(i + 41), h3 = hash(i + 61);
+    const a = -0.14 + h1 * 0.26;
+    const f = eOut(rng(p, a, a + 0.34));
+    s.visible = f > 0.001 || p > a;
+    const sx = T.x * 0.22 + (h2 - .5) * 2.4, sy = T.y * 0.22 + (h3 - .5) * 1.6, sz = -24 - h1 * 22;
+    let x = lerp(sx, T.x, f), y = lerp(sy, T.y, f), z = lerp(sz, T.z, f) + push * 0.7;
+    let rx = lerp((h2 - .5) * 1.8, 0, f) * RMK, ry = lerp((h3 - .5) * 2.4, 0, f) * RMK, rz = lerp((h1 - .5) * 1.4, T.rz, f) * RMK;
+    // part: split down the middle, slabs swing out like doors
+    const q = eIn(rng(p, 0.64, 1.08));
+    const dir = Math.abs(T.x) < 0.05 * VW ? (h2 > .5 ? 1 : -1) : Math.sign(T.x);
+    x += dir * q * VW * (0.95 + h2 * 0.5);
+    y += (h3 - .5) * q * 1.4;
+    z += q * (2.5 + h1 * 3.5);
+    ry += dir * q * 1.4 * RMK;
+    s.position.set(x, y, z);
+    s.rotation.set(rx, ry, rz);
+    s.scale.set(T.w, T.h, T.d);
+  });
+}
+
+/* ---------- chapter: odometer ---------- */
+let FONT = null;
+const odo = { group: new THREE.Group(), drums: [], mats: [], label: document.getElementById('labOdo'), layer: document.getElementById('Lodo'), H: 0.72 };
+scene.add(odo.group);
+const STEP = Math.PI * 2 / 10, R = 1.5;
+function buildOdo() {
+  const num = NUMBERS[0];
+  odo.label.textContent = num.label;
+  const face = new THREE.MeshStandardMaterial({ color: C.ice, roughness: .36, fog: false, transparent: true });
+  const side = new THREE.MeshStandardMaterial({ color: C.cobalt, roughness: .5, fog: false, transparent: true });
+  const core = new THREE.MeshStandardMaterial({ color: 0x151a1f, roughness: .8, fog: false, transparent: true });
+  odo.mats = [face, side, core];
+  const geos = {};
+  let midY = null; // vertical centre of the digits, so commas and plus signs keep their baseline
+  const glyph = ch => {
+    if (!geos[ch]) {
+      const g = new TextGeometry(ch, { font: FONT, size: 1, height: 0.34, curveSegments: PHONE ? 4 : 6, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.018, bevelSegments: 2 });
+      g.computeBoundingBox(); const bb = g.boundingBox;
+      if (midY === null) midY = (bb.min.y + bb.max.y) / 2;
+      g.userData = { w: bb.max.x - bb.min.x, h: bb.max.y - bb.min.y };
+      g.translate(-(bb.min.x + bb.max.x) / 2, -midY, -(bb.min.z + bb.max.z) / 2); geos[ch] = g;
+    }
+    return geos[ch];
+  };
+  let dw = 0; for (let d = 0; d < 10; d++) dw = Math.max(dw, glyph(String(d)).userData.w);
+  odo.H = glyph('0').userData.h;
+  const chars = [...num.value];
+  const widths = chars.map(ch => /\d/.test(ch) ? dw : glyph(ch).userData.w);
+  const gap = 0.12;
+  const total = widths.reduce((a, b) => a + b, 0) + gap * (chars.length - 1);
+  odo.width = total;
+  let x = -total / 2, j = 0;
+  const nd = chars.filter(c => /\d/.test(c)).length;
+  chars.forEach((ch, i) => {
+    const cx = x + widths[i] / 2; x += widths[i] + gap;
+    if (/\d/.test(ch)) {
+      const drum = new THREE.Group(); drum.position.x = cx;
+      for (let k = 0; k < 10; k++) {
+        const m = new THREE.Mesh(glyph(String(k)), [face, side]);
+        const phi = -k * STEP;
+        m.position.set(0, R * Math.sin(phi), R * Math.cos(phi));
+        m.rotation.x = -phi;
+        drum.add(m);
+      }
+      drum.userData = { target: +ch, rev: 1 + j };
+      j++;
+      odo.group.add(drum); odo.drums.push(drum);
+    } else {
+      const m = new THREE.Mesh(glyph(ch), [face, side]); m.position.set(cx, 0, R); odo.group.add(m);
+    }
+  });
+  odo.nd = nd;
+}
+const _v = new THREE.Vector3();
+function toScreen(obj, x, y, z) { obj.updateMatrixWorld(true); _v.set(x, y, z); obj.localToWorld(_v); _v.project(camera); return { x: (_v.x + 1) / 2 * W, y: (1 - _v.y) / 2 * H }; }
+function updateOdo(p) {
+  const g = odo.group;
+  const on = p > -0.3 && p < 1.01;
+  g.visible = on; odo.layer.style.visibility = on ? 'visible' : 'hidden';
+  if (!on) return;
+  const s = Math.min(VW * 0.72 / odo.width, VH * 0.3 / odo.H);
+  const e = eOut(rng(p, -0.12, 0.72));
+  odo.drums.forEach(d => {
+    const b = -d.userData.target * STEP + (1 - e) * d.userData.rev * Math.PI * 2 * (RM ? 0.25 : 1);
+    d.rotation.x = b;
+    // digits shrink as they turn away from the window, so the resting number reads cleanly
+    for (let k = 0; k < 10; k++) {
+      let a = (-k * STEP - b) % (Math.PI * 2); if (a > Math.PI) a -= Math.PI * 2; if (a < -Math.PI) a += Math.PI * 2;
+      const t = clamp((0.62 - Math.abs(a)) / 0.42), sc = t * t * (3 - 2 * t);
+      const m = d.children[k]; m.visible = sc > 0.15; m.scale.setScalar(Math.max(sc, 0.01));
+    }
+  });
+  const enter = eOut(rng(p, -0.3, 0.12));
+  const q = eIn(rng(p, 0.8, 1.0));
+  g.scale.setScalar(s);
+  g.position.set(0, VH * 0.06 - (1 - enter) * VH * 0.9, -R * s + q * 6.5);
+  const ry = lerp(-0.5, 0.16, eIO(rng(p, -0.1, 1))) * RMK;
+  g.rotation.set(lerp(0.32, -0.06, eIO(rng(p, -0.1, 0.9))) * RMK, ry, 0);
+  g.position.x = -Math.sin(ry) * R * s; // keep the front digits centred while the drum yaws
+  const o = 1 - q;
+  odo.mats.forEach(m => { m.opacity = o; m.depthWrite = o > 0.98; });
+  const sc = toScreen(g, 0, -odo.H * 0.5 - 0.3, R);
+  odo.label.style.top = (sc.y).toFixed(1) + 'px';
+  odo.label.style.opacity = (Math.min(enter * 1.2, 1) * o).toFixed(3);
+}
+
+/* ---------- chapter: tunnel ---------- */
+const tun = { group: new THREE.Group(), mats: [], A: 4, L: 64 };
+scene.add(tun.group);
+function panelCanvas(value, label, size, hero) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d');
+  g.fillStyle = '#e9eef1'; g.fillRect(0, 0, size, size);
+  g.strokeStyle = '#1f4fff'; g.lineWidth = size * 0.008; g.strokeRect(g.lineWidth / 2, g.lineWidth / 2, size - g.lineWidth, size - g.lineWidth);
+  g.fillStyle = '#1f4fff'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  let fs = size * (hero ? 0.36 : 0.44);
+  g.font = `800 ${fs}px "Bricolage Grotesque"`;
+  const mw = g.measureText(value).width; if (mw > size * (hero ? 0.62 : 0.8)) { fs *= size * (hero ? 0.62 : 0.8) / mw; g.font = `800 ${fs}px "Bricolage Grotesque"`; }
+  g.fillText(value, size / 2, size * (hero ? 0.53 : 0.58));
+  g.font = `500 ${size * (hero ? 0.05 : 0.075)}px "Bricolage Grotesque"`;
+  g.fillText(label, size / 2, size * (hero ? 0.64 : 0.8));
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+function buildTunnel() {
+  const { A, L } = tun; const num = NUMBERS[1];
+  const wallTex = panelCanvas(num.value, num.label, PHONE ? 512 : 1024, false);
+  wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping; wallTex.repeat.set(1, L / A);
+  const wallMat = new THREE.MeshBasicMaterial({ map: wallTex, transparent: true, fog: true });
+  const geo = new THREE.PlaneGeometry(A, L);
+  for (let k = 0; k < 4; k++) {
+    const holder = new THREE.Group(); holder.rotation.z = k * Math.PI / 2;
+    const m = new THREE.Mesh(geo, wallMat); m.rotation.x = -Math.PI / 2; m.position.set(0, -A / 2, 12 - L / 2);
+    holder.add(m); tun.group.add(holder);
+  }
+  const capTex = panelCanvas(num.value, num.label, PHONE ? 768 : 1024, true);
+  const capMat = new THREE.MeshBasicMaterial({ map: capTex, transparent: true, fog: true });
+  const cap = new THREE.Mesh(new THREE.PlaneGeometry(A, A), capMat); cap.position.z = 12 - L; tun.group.add(cap);
+  tun.mats = [wallMat, capMat];
+}
+function updateTunnel(p) {
+  const g = tun.group; const on = p > -0.02 && p < 1.04; g.visible = on; if (!on) return;
+  const { A, L } = tun;
+  const d = Math.max(6.6, (0.62 * A) / (2 * TAN * ASP));
+  const f = eIO(rng(p, -0.05, 0.8));
+  g.position.z = lerp(-9, L - 2 - d, f);
+  g.rotation.z = lerp(-Math.PI / 2, 0, eIO(rng(p, -0.05, 0.78))) * RMK;
+  const o = rng(p, -0.02, 0.12) * (1 - rng(p, 0.93, 1.03));
+  tun.mats.forEach(m => { m.opacity = o; m.depthWrite = o > 0.98; });
+}
+
+/* ---------- chapter: stack ---------- */
+const stk = { group: new THREE.Group(), label: document.getElementById('labStack'), layer: document.getElementById('Lstack') };
+scene.add(stk.group);
+function rasterize(value, rowsTarget) {
+  const fs = 240, c = document.createElement('canvas'), g = c.getContext('2d');
+  g.font = `800 ${fs}px "Bricolage Grotesque"`;
+  const w = Math.ceil(g.measureText(value).width) + 40, h = Math.ceil(fs * 1.25);
+  c.width = w; c.height = h;
+  g.font = `800 ${fs}px "Bricolage Grotesque"`; g.fillStyle = '#fff'; g.textBaseline = 'alphabetic';
+  g.fillText(value, 20, fs);
+  const cell = fs * 0.74 / rowsTarget;
+  const data = g.getImageData(0, 0, w, h).data;
+  const cols = Math.floor(w / cell), rows = Math.floor(h / cell);
+  let cells = [];
+  for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) {
+    const px = Math.floor((q + .5) * cell), py = Math.floor((r + .5) * cell);
+    if (data[(py * w + px) * 4 + 3] > 120) cells.push({ c: q, r });
+  }
+  const minc = Math.min(...cells.map(o => o.c)), maxc = Math.max(...cells.map(o => o.c));
+  const minr = Math.min(...cells.map(o => o.r)), maxr = Math.max(...cells.map(o => o.r));
+  cells = cells.map(o => ({ c: o.c - minc, r: o.r - minr }));
+  return { cells, cols: maxc - minc + 1, rows: maxr - minr + 1 };
+}
+function buildStack() {
+  const num = NUMBERS[2];
+  stk.label.textContent = num.label;
+  const grid = rasterize(num.value, PHONE ? 9 : 10);
+  grid.cells.sort((a, b) => (b.r - a.r) || (a.c - b.c));
+  stk.grid = grid;
+  const geo = new THREE.BoxGeometry(0.9, 0.88, 1.25);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: .45, fog: false });
+  stk.mesh = new THREE.InstancedMesh(geo, mat, grid.cells.length);
+  stk.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  stk.mesh.setColorAt(0, new THREE.Color());
+  stk.group.add(stk.mesh);
+  // ghost outline of the empty number, so the first frames are not empty
+  const cpx = 40, c = document.createElement('canvas'); c.width = grid.cols * cpx; c.height = grid.rows * cpx;
+  const g = c.getContext('2d'); g.strokeStyle = 'rgba(233,238,241,.38)'; g.lineWidth = 2;
+  grid.cells.forEach(o => g.strokeRect(o.c * cpx + 4, o.r * cpx + 4, cpx - 8, cpx - 8));
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  stk.ghostMat = new THREE.MeshBasicMaterial({ map: t, transparent: true, fog: false, depthWrite: false });
+  stk.ghost = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), stk.ghostMat);
+  stk.group.add(stk.ghost);
+}
+const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _s = new THREE.Vector3(), _c = new THREE.Color();
+const cAcid = new THREE.Color(C.acid), cIce = new THREE.Color(C.ice);
+function updateStack(p) {
+  const g = stk.group; const on = p > -0.03 && p < 1.01; g.visible = on; stk.layer.style.visibility = on ? 'visible' : 'hidden'; if (!on) return;
+  const { cells, cols, rows } = stk.grid;
+  const u = Math.min(VW * 0.8 / cols, VH * 0.4 / rows);
+  const N = cells.length, dropH = VH * 1.1;
+  cells.forEach((o, k) => {
+    const t0 = 0.02 + (k / N) * 0.62, f = rng(p, t0, t0 + 0.1);
+    const tx = (o.c - (cols - 1) / 2) * u, ty = ((rows - 1) / 2 - o.r) * u;
+    const fall = Math.pow(1 - f, 2) * dropH;
+    _p.set(tx, ty + fall, 0); _s.setScalar(f > 0 ? u : 0.00001);
+    _m.compose(_p, _q, _s); stk.mesh.setMatrixAt(k, _m);
+    _c.copy(cAcid).lerp(cIce, rng(p, t0 + 0.1, t0 + 0.32)); stk.mesh.setColorAt(k, _c);
+  });
+  stk.mesh.instanceMatrix.needsUpdate = true; stk.mesh.instanceColor.needsUpdate = true;
+  stk.ghost.scale.set(cols * u, rows * u, 1); stk.ghost.position.z = -0.7 * u;
+  const enter = eOut(rng(p, -0.03, 0.1));
+  const q = eIn(rng(p, 0.8, 1.0));
+  stk.ghostMat.opacity = enter * (1 - rng(p, 0.6, 0.8));
+  g.position.set(0, VH * 0.07 - q * VH * 1.3 + (1 - enter) * VH * 0.4, 0);
+  g.rotation.set(0.38 * RMK, lerp(0.6, -0.22, eIO(rng(p, -0.1, 1))) * RMK, 0);
+  const sc = toScreen(g, 0, -(rows / 2) * u - u * 0.9, 0.6 * u);
+  stk.label.style.top = sc.y.toFixed(1) + 'px';
+  stk.label.style.opacity = (rng(p, -0.02, 0.1) * (1 - q)).toFixed(3);
+}
+
+/* ---------- chapter: hand-off ---------- */
+const hand = { group: new THREE.Group(), slabs: [], tiles: [], layer: document.getElementById('L4') };
+scene.add(hand.group);
+function tileRects() {
+  hand.tiles.forEach((t, i) => {
+    const r = t.ph.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    hand.slabs[i].userData.T = { x: (cx / W - .5) * VW, y: (.5 - cy / H) * VH, w: r.width / W * VW, h: r.height / H * VH };
+  });
+}
+function updateHand(p) {
+  const on = p > -0.06; hand.group.visible = on && p < 0.9;
+  hand.layer.style.visibility = on ? 'visible' : 'hidden';
+  if (!on) return;
+  const enter = eOut(rng(p, -0.06, 0.2));
+  const dw = Math.min(VW * 0.5, VH * 0.62 * 4 / 3), dh = dw * 3 / 4;
+  hand.slabs.forEach((s, i) => {
+    const T = s.userData.T;
+    const f = eIO(rng(p, 0.16 + i * 0.09, 0.5 + i * 0.09));
+    const dx = (i - 1.5) * 0.06, dy = (i - 1.5) * -0.05 - (1 - enter) * VH * 1.1, dz = -1.4 - (3 - i) * 0.22;
+    const x = lerp(dx, T.x, f), y = lerp(dy, T.y, f), z = lerp(dz, 0, f) + Math.sin(Math.PI * f) * 1.6;
+    s.position.set(x, y, z);
+    s.rotation.set((1 - enter) * 0.9 * RMK, Math.sin(Math.PI * f) * 0.35 * (i < 2 ? -1 : 1) * RMK, lerp((i - 1.5) * 0.11, 0, f) * RMK);
+    const w = lerp(dw, T.w, f), h = lerp(dh, T.h, f);
+    s.scale.set(w, h, Math.min(w, h) * 0.06);
+  });
+  apWords.forEach((s, i) => setWord(s, eOut(rng(p, 0.3 + i * 0.12, 0.46 + i * 0.12))));
+  const img = rng(p, 0.8, 0.88), cap = rng(p, 0.8, 0.92);
+  hand.tiles.forEach(t => { t.img.style.opacity = img.toFixed(3); t.cap.style.opacity = cap.toFixed(3); });
+  hand.layer.style.pointerEvents = p > 0.9 ? 'auto' : 'none';
+}
+
+/* ---------- chapter: statement (DOM) ---------- */
+const L1 = document.getElementById('L1'), stmt = document.getElementById('stmt');
+function updateStatement(p) {
+  const on = p < 1.1; L1.style.visibility = on ? 'visible' : 'hidden'; if (!on) return;
+  const N = stmtWords.length;
+  stmtWords.forEach((s, i) => { const a = 0.16 + (i / N) * 0.6; setWord(s, eOut(rng(p, a, a + 0.1))); });
+  const q = rng(p, 0.86, 1.08);
+  stmt.style.transform = RM ? `translateY(-50%)` : `translateY(-50%) translateZ(${(-q * 700).toFixed(1)}px) rotateX(${(q * 24).toFixed(2)}deg)`;
+  stmt.style.opacity = (1 - q).toFixed(3);
+}
+
+/* ---------- timeline ---------- */
+const chapters = [...document.querySelectorAll('.sp')].map(el => ({ el, name: el.dataset.ch, start: 0, len: 1 }));
+const UPD = { statement: updateStatement, collage: updateCollage, odometer: updateOdo, tunnel: updateTunnel, stack: updateStack, handoff: updateHand };
+function measure() {
+  chapters.forEach(c => { c.start = c.el.offsetTop - H; c.len = c.el.offsetHeight; });
+  const last = chapters[chapters.length - 1];
+  last.len = Math.max(1, (document.documentElement.scrollHeight - H) - last.start); // last chapter hits 1 at max scroll
+}
+function update(y) {
+  chapters.forEach(c => UPD[c.name]((y - c.start) / c.len));
+}
+
+let lastW = 0;
+function setVH(force) {
+  if (force || innerWidth !== lastW) { document.documentElement.style.setProperty('--vh', (innerHeight / 100) + 'px'); lastW = innerWidth; }
+}
+function resize() {
+  setVH(false);
+  W = innerWidth; H = innerHeight; ASP = W / H;
+  renderer.setSize(W, H, true);
+  document.querySelectorAll('.layer').forEach(l => { l.style.height = H + 'px'; l.style.width = W + 'px'; });
+  camera.aspect = ASP; camera.updateProjectionMatrix();
+  VH = visHAt(10); VW = VH * ASP;
+  if (collage.slabs.length) layoutCollage();
+  if (hand.slabs.length) tileRects();
+  measure();
+  dirty = true;
+}
+
+/* ---------- loop ---------- */
+let cur = scrollY, prev = -1, dirty = true, lastT = performance.now(), started = false;
+function frame(now) {
+  const dt = Math.min(64, now - lastT) / 16.667; lastT = now;
+  const target = scrollY;
+  if (RM) cur = target;
+  else { cur += (target - cur) * (1 - Math.pow(1 - 0.12, dt)); if (Math.abs(target - cur) < 0.3) cur = target; }
+  if (started && (cur !== prev || dirty)) {
+    update(cur); renderer.render(scene, camera); prev = cur; dirty = false;
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ---------- boot ---------- */
+async function boot() {
+  setVH(true);
+  await Promise.all([document.fonts.load('800 100px "Bricolage Grotesque"'), document.fonts.load('500 20px "Bricolage Grotesque"')]);
+  const [fontJson, soft, media] = await Promise.all([
+    new TTFLoader().loadAsync('bricolage-800.ttf'),
+    fetch(CONTENT + 'software/manifest.json').then(r => r.json()),
+    fetch(CONTENT + 'media/manifest.json').then(r => r.json()),
+  ]);
+  FONT = new Font(fontJson);
+  const byId = Object.fromEntries([...soft, ...media].map(p => [p.id, p]));
+  const tileData = TILE_IDS.map(t => ({ name: byId[t.id].name, img: t.img || byId[t.id].hero }));
+
+  // tiles DOM
+  const tilesEl = document.getElementById('tiles');
+  tileData.forEach(t => {
+    const fig = document.createElement('figure'); fig.className = 'tile';
+    fig.innerHTML = `<div class="ph"><img alt="" src="${CONTENT + t.img}"></div><figcaption></figcaption>`;
+    fig.querySelector('img').alt = t.name; fig.querySelector('figcaption').textContent = t.name;
+    tilesEl.appendChild(fig);
+    hand.tiles.push({ ph: fig.querySelector('.ph'), img: fig.querySelector('img'), cap: fig.querySelector('figcaption') });
+  });
+
+  const imgs = await Promise.all([...COLLAGE, ...tileData.map(t => t.img)].map(src => loadImg(CONTENT + src)));
+  COLLAGE.forEach((src, i) => { const m = slabMesh(downTex(imgs[i])); collage.group.add(m); collage.slabs.push(m); });
+  tileData.forEach((t, i) => {
+    const tex = downTex(imgs[COLLAGE.length + i]); coverUV(tex, 4 / 3);
+    const m = slabMesh(tex, false); m.material.forEach(x => x.fog = false);
+    hand.group.add(m); hand.slabs.push(m);
+  });
+
+  buildOdo(); buildTunnel(); buildStack();
+  resize();
+  // upload everything once so scrolling never stalls on a texture
+  scene.traverse(o => { o.frustumCulled = false; });
+  [collage, hand].forEach(c => c.group.visible = true);
+  odo.group.visible = tun.group.visible = stk.group.visible = true;
+  renderer.compile(scene, camera);
+  renderer.render(scene, camera);
+  started = true; dirty = true; cur = scrollY;
+  update(cur); renderer.render(scene, camera); prev = cur;
+  requestAnimationFrame(() => requestAnimationFrame(() => { window.__ready = true; }));
+}
+addEventListener('resize', resize);
+requestAnimationFrame(frame);
+boot().catch(e => { console.error(e); window.__ready = true; });
+</script>
+</body>
+</html>
