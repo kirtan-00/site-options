@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kirtan Purohit break through</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230c0d0f'/%3E%3Cpath d='M7 6h7v8l6-8h8l-8 10 8 10h-8l-6-8v8H7z' fill='%23f1f2f0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=block" rel="stylesheet">
+<style>
+@property --p{syntax:'<number>';inherits:true;initial-value:0}
+:root{--ink:#0c0d0f;--fg:#f1f2f0;--inv:#0c0d0f;--p:0;--g:20px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--ink);color:var(--fg);font-family:"Bricolage Grotesque",system-ui,sans-serif;overflow:hidden;height:100%}
+body.final,html:has(body.final),body.open,html:has(body.open){overflow-x:hidden;overflow-y:auto;height:auto}
+body.open #gl{touch-action:pan-y}
+body.open #skip{display:none}
+body.open #scrollcue{display:flex}
+#aim.away{opacity:0}
+body{transition:background-color .6s}
+#hero{position:relative;height:100vh;height:100svh;overflow:hidden}
+#after{position:relative;z-index:1}
+body{-webkit-font-smoothing:antialiased}
+#gl{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none;cursor:none;opacity:0;transition:opacity .8s}
+#gl.on{opacity:1}
+body.final #gl{cursor:default;touch-action:pan-y}
+#veil{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:0}
+
+/* the cursor carries the instruction, so nobody has to look for it */
+/* one motion language: arrive (.2,.8,.2,1), move (.7,0,.2,1), leave (.6,0,.85,.3); 120 / 240 / 480 / 760 / 1100ms */
+:root{--arrive:cubic-bezier(.2,.8,.2,1);--move:cubic-bezier(.7,0,.2,1);--leave:cubic-bezier(.6,0,.85,.3)}
+#aim{position:fixed;left:0;top:0;z-index:3;pointer-events:none;color:var(--fg);will-change:transform;transition:opacity .48s var(--arrive)}
+/* the ring only matters for crumple: a thin line that fills as you hold */
+#aim i{display:none;position:absolute;left:-18px;top:-18px;width:36px;height:36px;border-radius:50%;
+  background:conic-gradient(currentColor calc(var(--p) * 1turn),transparent 0);
+  -webkit-mask:radial-gradient(circle,transparent 15px,#000 15.5px);mask:radial-gradient(circle,transparent 15px,#000 15.5px)}
+#aim[data-how=crumple] i{display:block}
+#aim i::after{content:"";position:absolute;inset:0;border-radius:50%;border:1.5px solid color-mix(in srgb,currentColor 45%,transparent)}
+#aim b{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:currentColor}
+/* the cue is set type with a hand-drawn stroke under it, not a chip */
+#aim span{position:absolute;left:24px;top:-10px;white-space:nowrap;font:500 15px/1 "Bricolage Grotesque",system-ui,sans-serif;color:var(--fg);padding-bottom:9px;-webkit-text-stroke:4px var(--inv);paint-order:stroke fill;transition:opacity .48s var(--arrive),transform .48s var(--arrive)}
+#aim[data-how=crumple]:not(.touch) span{left:30px}
+#aim span svg{position:absolute;left:0;bottom:0;width:100%;height:7px;overflow:visible}
+#aim span path{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100}
+#aim.drawn span path{stroke-dashoffset:0;transition:stroke-dashoffset .48s var(--arrive)}
+#aim.flip span{left:auto;right:24px}
+#aim.flip[data-how=crumple] span{right:30px}
+#aim.touch{left:50%;top:var(--aimy,58%)}
+#aim.touch span{left:0;top:30px;transform:translateX(-50%)}
+#aim.touch.at{left:0;top:0}
+#aim.nolabel span{opacity:0}
+#aim.hide,#aim.up{opacity:0;transition:opacity .12s var(--leave)}
+#aim.hide span{transform:translateY(6px)}
+#aim.touch.hide span{transform:translate(-50%,6px)}
+/* on touch, the gesture plays as motion until the first try */
+#aim.demo[data-how=shatter] b{animation:kp-pulse 1.3s cubic-bezier(.2,.7,.2,1) infinite}
+#aim.demo[data-how=cut] b{animation:kp-slide 1.6s cubic-bezier(.65,0,.35,1) infinite}
+#aim.demo[data-how=crumple] i{animation:kp-fill 1.8s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes kp-pulse{0%,55%,100%{transform:scale(1)}12%{transform:scale(2.6)}30%{transform:scale(1)}}
+@keyframes kp-slide{0%,8%{transform:translateX(-60px)}55%,63%{transform:translateX(60px)}100%{transform:translateX(-60px)}}
+@keyframes kp-fill{0%,8%{--p:0}70%,85%{--p:1}100%{--p:0}}
+
+#dock{position:absolute;left:var(--g);right:var(--g);bottom:calc(14px + env(safe-area-inset-bottom));z-index:2;display:flex;align-items:center;justify-content:flex-start;gap:18px;pointer-events:none;color:var(--fg);font-weight:500;font-size:15px;transition:opacity .48s var(--arrive),transform .48s var(--arrive)}
+#dock.swap{opacity:0;transform:translateY(8px);transition-duration:.24s;transition-timing-function:var(--leave)}
+#count{font-variant-numeric:tabular-nums;white-space:nowrap}
+#count b{font-weight:800}
+#count .of{opacity:.5}
+#line{width:min(200px,26vw);height:1.5px;background:color-mix(in srgb,var(--fg) 30%,transparent);position:relative}
+#line i{position:absolute;left:0;top:0;bottom:0;background:var(--fg);width:0;transition:width .9s cubic-bezier(.7,0,.2,1)}
+#skip{font:500 15px/1 "Bricolage Grotesque",system-ui,sans-serif;color:var(--fg);background:none;border:0;padding:14px 8px;text-decoration:underline;text-underline-offset:4px;cursor:pointer;pointer-events:auto}
+#skip:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+#scrollcue{display:none;align-items:center;gap:10px;padding:7px 0;font-weight:800;font-size:16px}
+#scrollcue i{width:1.5px;height:30px;background:currentColor;transform-origin:top;animation:drop 1.6s cubic-bezier(.7,0,.2,1) infinite}
+@keyframes drop{0%{transform:scaleY(0)}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+body.final #skip{display:none}
+body.final #scrollcue{display:flex}
+@media (prefers-reduced-motion: reduce){#aim.demo b,#aim.demo i,#scrollcue i{animation:none!important}}
+
+#contact{position:fixed;top:18px;right:18px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#cbtn{background:var(--fg);color:var(--inv);border:0;border-radius:999px;padding:12px 20px;font:500 16px/1 "Bricolage Grotesque",system-ui,sans-serif;cursor:pointer}
+#cbtn:focus-visible{outline:2px solid var(--fg);outline-offset:3px}
+#cmsg{background:var(--fg);color:var(--inv);padding:12px 16px;border-radius:12px;font:500 15px/1.3 "Bricolage Grotesque",system-ui,sans-serif;max-width:250px}
+#cmsg[hidden]{display:none}
+/* past the landing the sections change colour under it, so Contact me becomes a black pill with an off-white ring: it reads on every one */
+#cbtn,#cmsg{transition:background-color .3s,color .3s,box-shadow .3s}
+body.past #cbtn,body.past #cmsg{background:#0c0d0f;color:#f1f2f0;box-shadow:0 0 0 1.5px #f1f2f0}
+body.past #cbtn:focus-visible{outline-color:#0c0d0f}
+@media (max-width:700px){#dock{gap:12px}}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "d3-delaunay":"https://cdn.jsdelivr.net/npm/d3-delaunay@6.0.4/+esm"
+}}
+</script>
+</head>
+<body>
+<section id="hero" aria-label="Kirtan Purohit">
+<canvas id="gl"></canvas>
+<div id="veil"></div>
+<div id="aim"><i></i><b></b><span><em id="aimtxt" style="font-style:normal"></em><svg viewBox="0 0 100 7" preserveAspectRatio="none" aria-hidden="true"><path pathLength="100" d="M1 4.2C14 2.6 27 5.4 41 3.9S69 2.2 82 4.1 95 4.6 99 3.3"/></svg></span></div>
+<div id="dock">
+  <span id="count"></span><span id="line"><i id="linefill"></i></span>
+  <button id="skip" type="button">Skip to the work</button>
+  <span id="scrollcue"><i></i>Scroll for the work</span>
+</div>
+</section>
+<div id="contact">
+  <button id="cbtn" type="button" aria-expanded="false" aria-controls="cmsg">Contact me</button>
+  <p id="cmsg" hidden>Email goes here once Kirtan confirms it.</p>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { Delaunay } from 'd3-delaunay';
+
+const TOUCH = matchMedia('(pointer: coarse)').matches, PHONE = matchMedia('(max-width: 700px)').matches;
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* One entry per layer of the page. Each layer comes apart a different way, with one gesture. Lines come from the project write-ups. */
+/* Default: a new colour every time the name breaks. Single-colour versions: ?p=green, ?p=yellow or ?p=teal. */
+const PALETTES = {
+  mix:    [{ bg: '#0c0d0f', a: '#f1f2f0', b: '#f2a7b6', hl: '#f2a7b6' }, { bg: '#c9d8f7', a: '#0c0d0f', b: '#1c3bb0', hl: '#1c3bb0' }, { bg: '#f2a7b6', a: '#0c0d0f', b: '#1c3bb0', hl: '#1c3bb0' }, { bg: '#0f2545', a: '#c9d8f7', b: '#f2a7b6', hl: '#f2a7b6' }],
+  green:  [{ bg: '#0c0d0f', a: '#f1f2f0', b: '#3c9a66', hl: '#3c9a66' }, { bg: '#154734', a: '#f1f2f0', b: '#0c0d0f', hl: '#f1f2f0' }, { bg: '#d7ddd6', a: '#0c0d0f', b: '#154734', hl: '#154734' }, { bg: '#f1f2f0', a: '#0c0d0f', b: '#154734', hl: '#154734' }],
+  yellow: [{ bg: '#0c0d0f', a: '#f1f2f0', b: '#f2c12e', hl: '#f2c12e' }, { bg: '#f2c12e', a: '#0c0d0f', b: '#0c0d0f', hl: '#0c0d0f' }, { bg: '#2b2e33', a: '#f1f2f0', b: '#f2c12e', hl: '#f2c12e' }, { bg: '#f1f2f0', a: '#0c0d0f', b: '#0c0d0f', hl: '#0c0d0f' }],
+  teal:   [{ bg: '#0c0d0f', a: '#f1f2f0', b: '#4aa9a4', hl: '#4aa9a4' }, { bg: '#0e4f55', a: '#f1f2f0', b: '#0c0d0f', hl: '#f1f2f0' }, { bg: '#bccaca', a: '#0c0d0f', b: '#0e4f55', hl: '#0e4f55' }, { bg: '#f1f2f0', a: '#0c0d0f', b: '#0e4f55', hl: '#0e4f55' }],
+};
+const PAL = PALETTES[new URLSearchParams(location.search).get('p')] || PALETTES.mix;
+/* what the sections below the landing read: the palette, and when the landing is finished */
+window.KP = { palette: PAL, ink: '#0c0d0f', paper: '#f1f2f0', content: '../content/', final: false };
+const lum = h => { const c = new THREE.Color(h); return 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b; };
+/* edges are the face colour pushed darker, never lighter, so a piece reads as thick card */
+const tone = (i, rest) => { const p = PAL[i], dark = lum(p.bg) < 0.35; return Object.assign({ bg: p.bg, a: p.a, b: p.b, hl: p.hl, fg: dark ? '#f1f2f0' : '#0c0d0f', edge: '#' + new THREE.Color(p.bg).multiplyScalar(0.85).getHexString() }, rest); };
+/* Kirtan's own words. Shown on every layer after the first break */
+const ROLE = 'Creative producer and developer';
+const RMCUE = TOUCH ? 'Tap for the next page' : 'Click for the next page';
+const STAGES = [
+  tone(0, { how: 'shatter', layout: 'stack', cue: TOUCH ? 'Tap to shatter' : 'Click to shatter', head: [['Films', 1], ['on set.', 0], ['Software', 1], ['on screen.', 0]], lines: [] }),
+  tone(1, { how: 'cut', layout: 'set', role: true, cue: TOUCH ? 'Swipe across to cut' : 'Drag across to cut', head: [['On set', 0]], lines: ['Zepto: their briefs turned into reels, every month.', 'Crav Social: over 50 million views while it was mine.', 'Palladium: festive films, the big one a Christmas CGI film for Palladium Mumbai.'] }),
+  tone(2, { how: 'crumple', layout: 'screen', role: true, cue: 'Press and hold to crumple', head: [['On screen', 0]], lines: ['Spectra Museum: a site you walk through, all eight rooms.', 'Deepdive Marketing: 150K+ followers, mostly runs itself.', 'The Sportified: a World Cup that posted itself.'] }),
+  tone(3, { final: true, layout: 'final', head: [[ROLE, 0]], lines: [] }),
+];
+const D0 = 10, SP = 1.5, TH = 0.012, OVER = 1.3;
+const G = PHONE ? 20 : Math.round(Math.max(32, Math.min(56, innerWidth * 0.035)));   // the one left edge
+document.documentElement.style.setProperty('--g', G + 'px');
+
+/* easing */
+const clamp01 = x => Math.max(0, Math.min(1, x));
+const easeOutQuart = t => 1 - Math.pow(1 - t, 4), easeInOutQuart = t => t < .5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+/* the shared "arrive" curve, cubic-bezier(.2,.8,.2,1), so WebGL and CSS move alike */
+const bezier = (x1, y1, x2, y2) => t => { if (t <= 0 || t >= 1) return clamp01(t); let s = t; for (let n = 0; n < 8; n++) { const x = 3 * (1 - s) * (1 - s) * s * x1 + 3 * (1 - s) * s * s * x2 + s * s * s - t, d = 3 * (1 - s) * (1 - s) * x1 + 6 * (1 - s) * s * (x2 - x1) + 3 * s * s * (1 - x2); if (Math.abs(d) < 1e-6) break; s = clamp01(s - x / d); } return 3 * (1 - s) * (1 - s) * s * y1 + 3 * (1 - s) * s * s * y2 + s * s * s; };
+const ARRIVE = bezier(.2, .8, .2, 1);
+const easeOutExpo =t => t >= 1 ? 1 : 1 - Math.pow(2, -10 * t), easeInQuad = t => t * t, easeInCubic = t => t * t * t;
+
+/* ---------- page bits ---------- */
+const $ = id => document.getElementById(id);
+const cbtn = $('cbtn'), cmsg = $('cmsg');
+cbtn.addEventListener('click', () => { cmsg.hidden = !cmsg.hidden; cbtn.setAttribute('aria-expanded', String(!cmsg.hidden)); });
+const aimEl = $('aim'), aimTxt = $('aimtxt'), veil = $('veil'); if (TOUCH) aimEl.classList.add('touch');
+const pad = n => String(n).padStart(2, '0');
+const cueOf = s => RM ? RMCUE : (s.cue || '');
+function showStage(i, instant = false) {
+  const s = STAGES[i], rs = document.documentElement.style;
+  rs.setProperty('--fg', s.fg); rs.setProperty('--inv', s.bg);
+  document.body.classList.toggle('final', !!s.final);
+  $('count').innerHTML = `<b>${pad(i + 1)}</b> <span class="of">/ ${pad(STAGES.length)}</span>`;
+  $('linefill').style.width = `${(i + 1) / STAGES.length * 100}%`;
+  setCue(cueOf(s)); aimEl.dataset.how = RM ? '' : (s.how || '');
+  if (TOUCH && !RM) aimEl.classList.add('demo');
+  if (TOUCH && walls[i] && walls[i].aimY) aimEl.style.setProperty('--aimy', walls[i].aimY + 'px');
+  if (s.final) aimEl.classList.add('hide');
+  arrive(i, 0, instant);
+}
+/* the cue's underline draws on each time it appears or changes */
+function drawCue() { aimEl.classList.remove('drawn'); void aimEl.offsetWidth; aimEl.classList.add('drawn'); }
+function setCue(t) { if (aimTxt.textContent !== t) { aimTxt.textContent = t; if (!aimEl.classList.contains('hide')) drawCue(); } }
+function showAim() { const was = aimEl.classList.contains('hide'); aimEl.classList.remove('hide'); if (was) drawCue(); }
+/* staged arrival, timed into the end of the dolly: copy at 0, dock and prompt at 120ms, cue at 240ms */
+function land(i, instant = false) {
+  showStage(i, instant);
+  const s = STAGES[i];
+  after(instant ? 0 : 0.12, () => $('dock').classList.remove('swap'));
+  if (!s.final) after(instant ? 0 : 0.24, showAim);
+}
+
+let seed = 11; const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+
+/* ---------- scene ---------- */
+const canvas = $('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const DPR = Math.min(devicePixelRatio || 1, 2); renderer.setPixelRatio(DPR);
+const TS = Math.max(DPR, 2);   // texture scale: text stays sharp even on 1x screens
+renderer.localClippingEnabled = true; renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(PAL[0].bg);
+const camera = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.1, 100);
+renderer.setSize(innerWidth, innerHeight, false);
+const VH = 2 * D0 * Math.tan(THREE.MathUtils.degToRad(15)), VW = VH * camera.aspect, WW = VW * OVER, WH = VH * OVER;
+const UNIT = Math.sqrt(VW * VH);
+
+/* the light only throws the front layer's shadow onto the layer behind it */
+const sun = new THREE.DirectionalLight(0xffffff, 1); sun.castShadow = true; sun.shadow.mapSize.set(PHONE ? 1024 : 2048, PHONE ? 1024 : 2048);
+const sc = sun.shadow.camera; sc.left = -WW / 2; sc.right = WW / 2; sc.top = WH / 2; sc.bottom = -WH / 2; sc.near = 0.5; sc.far = 30; sun.shadow.bias = -0.0006;
+scene.add(sun, sun.target);
+const shade = new THREE.Mesh(new THREE.PlaneGeometry(WW * 1.2, WH * 1.2), new THREE.ShadowMaterial({ opacity: 0.38, depthWrite: false })); shade.receiveShadow = true; shade.renderOrder = 2; scene.add(shade);
+function placeLight(i) { sun.target.position.set(0, 0, -(i + 1) * SP); sun.position.set(-1.5, 2.1, -(i + 1) * SP + 9); shade.position.z = -(i + 1) * SP + TH / 2 + 0.004; shade.visible = i < STAGES.length - 1; }
+
+function makeTex(cv) {
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  tex.generateMipmaps = false; tex.minFilter = THREE.LinearFilter; tex.magFilter = THREE.LinearFilter;
+  return tex;
+}
+
+/* ---------- where things sit on each layer ---------- */
+const CR = (() => { const r = cbtn.getBoundingClientRect(); return { left: r.left || innerWidth - 140, bottom: r.bottom || 58 }; })();
+const COPY_TOP = 37;   // the centre of the Contact button
+function layout(i, g) {
+  const s = STAGES[i], W = innerWidth, H = innerHeight;
+  g.font = `400 100px "Bowlby One"`; const m = Math.max(g.measureText('KIRTAN').width, g.measureText('PUROHIT').width);
+  const base = PHONE ? (W - 2 * G) / m * 100 : Math.min(0.84 * W / m * 100, H * 0.27);
+  const dockTop = H - 72;
+  let fs = base, align = 'center', x = W / 2, kY, pY, copyAt = 'top', aimY;
+  const cap = f => f * 0.72, gapOf = f => f * 0.9;
+  if (PHONE) {
+    align = 'left'; x = G;
+    if (s.layout === 'screen') { kY = CR.bottom + 30 + cap(fs); pY = kY + gapOf(fs); copyAt = 'bottom'; }
+    else { pY = dockTop - 22; kY = pY - gapOf(fs); }
+  } else if (s.layout === 'stack') { const top = H * 0.5 - (cap(fs) + gapOf(fs)) / 2; kY = top + cap(fs); pY = kY + gapOf(fs); }
+  else if (s.layout === 'set') { fs = base * 0.6; align = 'left'; x = G; pY = dockTop - 28; kY = pY - gapOf(fs); }
+  else if (s.layout === 'screen') { fs = base * 0.6; align = 'right'; x = W - G; kY = CR.bottom + 34 + cap(fs); pY = kY + gapOf(fs); copyAt = 'bottom'; }
+  else { fs = Math.min(base * 1.12, 0.92 * W / m * 100, H * 0.3); const top = H * 0.5 - (cap(fs) + gapOf(fs)) / 2; kY = top + cap(fs); pY = kY + gapOf(fs); }
+  return { fs, align, x, kY, pY, nameTop: kY - cap(fs), nameBottom: pY, copyAt, copyBottom: dockTop - 24 };
+}
+
+/* the name, baked into the breakable sheet */
+function nameCanvas(i) {
+  const s = STAGES[i], W = innerWidth, H = innerHeight, cw = Math.min(4096, Math.round(W * OVER * TS)), k = cw / (W * OVER), ch = Math.round(cw * WH / WW);
+  const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch; const g = cv.getContext('2d');
+  g.fillStyle = s.bg; g.fillRect(0, 0, cw, ch);
+  const ox = (cw - W * k) / 2, oy = (ch - H * k) / 2, X = x => ox + x * k, Y = y => oy + y * k;
+  const L = layout(i, g);
+  g.textAlign = L.align; g.textBaseline = 'alphabetic'; g.font = `400 ${L.fs * k}px "Bowlby One"`;
+  g.fillStyle = s.a; g.fillText('KIRTAN', X(L.x), Y(L.kY));
+  g.fillStyle = s.b; g.fillText('PUROHIT', X(L.x), Y(L.pY));
+  return { cv, k, ox, oy, L };
+}
+
+/* the copy block, on its own transparent canvas so it can arrive after the camera lands */
+function copyCanvas(i, L) {
+  const s = STAGES[i], W = innerWidth, H = innerHeight, k = Math.min(TS, 4096 / W);
+  const cv = document.createElement('canvas'); cv.width = Math.round(W * k); cv.height = Math.round(H * k); const g = cv.getContext('2d');
+  const left = G, maxW = PHONE ? W - 2 * G : Math.min(W * 0.5, 720);
+  const room = y => (L.copyAt === 'top' && y < CR.bottom + 2 && left + maxW > CR.left - 16) ? CR.left - 16 - left : maxW;   // never run under Contact me
+  const label = s.lines.length > 0;
+  const hs = label ? 16 : Math.max(22, Math.min(36, W * 0.024));
+  const ls = Math.max(20, Math.min(26, W * 0.017));
+  const ops = [];   // [font, colour, text, x, baselineY]
+  const capOf = f => { g.font = f; const mt = g.measureText('H'); return mt.actualBoundingBoxAscent || 0.7 * parseFloat(f.match(/(\d+(\.\d+)?)px/)[1]); };
+  /* lay out runs of [text, font, colour] with wrapping, starting at the cap top y */
+  function flow(runs, size, lh, y) {
+    let x = left, base = y + capOf(runs[0][1]);
+    for (const [txt, font, col] of runs) {
+      g.font = font; const space = g.measureText(' ').width;
+      for (const word of txt.split(' ')) {
+        if (!word) continue; g.font = font; const w = g.measureText(word).width;
+        if (x > left && x + w > left + room(base - size)) { x = left; base += lh; }
+        ops.push([font, col, word, x, base]); x += w + space;
+      }
+    }
+    return base;
+  }
+  const headFont = `800 ${hs}px "Bricolage Grotesque"`;
+  let y = COPY_TOP, last;
+  if (s.role) { const rs = Math.max(26, Math.min(44, W * 0.03)); last = flow([[ROLE, `800 ${rs}px "Bricolage Grotesque"`, s.fg]], rs, rs * 1.1, y); y = last + rs * 0.8; }
+  last = flow(s.head.map(([t, hl]) => [t, headFont, label ? s.hl : (hl ? s.hl : s.fg)]), hs, hs * 1.15, y);
+  y = last + (label ? 16 : 0);
+  for (const line of s.lines) {
+    const c = line.indexOf(': '), name = line.slice(0, c + 1), rest = line.slice(c + 2);
+    last = flow([[name, `800 ${ls}px "Bricolage Grotesque"`, s.hl], [rest, `500 ${ls}px "Bricolage Grotesque"`, s.fg]], ls, ls * 1.28, y);
+    y = last + ls * 0.62;
+  }
+  const height = last + ls * 0.3 - COPY_TOP;
+  let dy = 0;
+  if (L.copyAt === 'bottom') dy = (L.copyBottom - (last + 4)) ;
+  g.setTransform(k, 0, 0, k, 0, 0);
+  for (const [font, col, word, x, base] of ops) { g.font = font; g.fillStyle = col; g.textBaseline = 'alphabetic'; g.textAlign = 'left'; g.fillText(word, x, base + dy); }
+  return { cv, top: COPY_TOP + dy, bottom: last + dy, height };
+}
+
+/* ---------- fracture patterns ---------- */
+function cellsFrom(pts) {
+  const out = [], vor = Delaunay.from(pts).voronoi([-WW / 2, -WH / 2, WW / 2, WH / 2]);
+  for (let i = 0; i < pts.length; i++) {
+    const poly = vor.cellPolygon(i); if (!poly || poly.length < 4) continue;
+    let cx = 0, cy = 0; const ring = poly.slice(0, -1); ring.forEach(([x, y]) => { cx += x; cy += y; }); cx /= ring.length; cy /= ring.length;
+    const geo = new THREE.ExtrudeGeometry(new THREE.Shape(ring.map(([x, y]) => new THREE.Vector2(x, y))), { depth: TH, bevelEnabled: false });
+    const pos = geo.attributes.position, uv = geo.attributes.uv;
+    for (let v = 0; v < pos.count; v++) uv.setXY(v, (pos.getX(v) + WW / 2) / WW, (pos.getY(v) + WH / 2) / WH);
+    geo.translate(-cx, -cy, -TH / 2);
+    out.push({ geo, cx, cy, n: rnd() });
+  }
+  return out;
+}
+/* graded from the hit: small pieces where it struck, big slabs far away */
+function gradedCells(P) {
+  const N = PHONE ? 90 : 140, pts = [];
+  const far = Math.max(...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => Math.hypot(a * WW / 2 - P.x, b * WH / 2 - P.y)));
+  let tries = 0;
+  while (pts.length < N && tries++ < N * 20) {
+    const r = far * Math.pow(rnd(), 1.15), th = rnd() * Math.PI * 2, x = P.x + Math.cos(th) * r, y = P.y + Math.sin(th) * r;
+    if (Math.abs(x) < WW / 2 && Math.abs(y) < WH / 2) pts.push([x, y]);
+  }
+  return cellsFrom(pts);
+}
+function gridCells(N) {
+  const cell = Math.sqrt(WW * WH / N), pts = [];
+  for (let y = -WH / 2 + cell / 2; y < WH / 2; y += cell) for (let x = -WW / 2 + cell / 2; x < WW / 2; x += cell) pts.push([x + (rnd() - .5) * cell * 1.1, y + (rnd() - .5) * cell * 1.1]);
+  return cellsFrom(pts);
+}
+
+/* ---------- layers ---------- */
+const walls = [];
+function makeShards(w, cells, cast) {
+  w.shards = cells.map(c => {
+    const mesh = new THREE.Mesh(c.geo, [w.full, w.edge]); mesh.position.set(c.cx, c.cy, 0); mesh.castShadow = cast; w.group.add(mesh);
+    return { mesh, c, home: new THREE.Vector3(c.cx, c.cy, 0), v: new THREE.Vector3(), w: new THREE.Vector3(), delay: 0, live: false, gone: false,
+      rot: new THREE.Euler((rnd() - .5) * 2, (rnd() - .5) * 2, (rnd() - .5) * 2), jit: new THREE.Vector3(rnd() - .5, rnd() - .5, rnd() - .5) };
+  });
+}
+function buildWalls() {
+  STAGES.forEach((s, i) => {
+    const z = -i * SP, group = new THREE.Group(); group.position.z = z; group.visible = i <= 1; scene.add(group);
+    const N = nameCanvas(i), C = copyCanvas(i, N.L);
+    /* the copy baked onto the name too, for the pieces once the sheet breaks */
+    const fc = document.createElement('canvas'); fc.width = N.cv.width; fc.height = N.cv.height; const fg = fc.getContext('2d');
+    fg.drawImage(N.cv, 0, 0); fg.drawImage(C.cv, N.ox, N.oy, innerWidth * N.k, innerHeight * N.k);
+    const face = new THREE.MeshBasicMaterial({ map: makeTex(N.cv) }), full = new THREE.MeshBasicMaterial({ map: makeTex(fc) });
+    const edge = new THREE.MeshBasicMaterial({ color: s.edge });
+    const ctex = makeTex(C.cv); ctex.premultiplyAlpha = true;
+    const copyMat = new THREE.MeshBasicMaterial({ map: ctex, transparent: true, premultipliedAlpha: true, depthWrite: false, opacity: 0 });
+    const copy = new THREE.Mesh(new THREE.PlaneGeometry(VW, VH), copyMat); copy.position.z = TH / 2 + 0.002; copy.renderOrder = 1; group.add(copy);
+    let sheet;
+    if (s.final) sheet = new THREE.Mesh(new THREE.PlaneGeometry(WW, WH), face);
+    else { sheet = new THREE.Mesh(new THREE.BoxGeometry(WW, WH, TH), [edge, edge, edge, edge, face, edge]); sheet.castShadow = i === 0; }
+    group.add(sheet);
+    /* the empty band where the touch hint sits */
+    const L = N.L, H = innerHeight;
+    let aimY;
+    if (L.copyAt === 'bottom') aimY = (L.nameBottom + C.top) / 2; else aimY = (C.bottom + L.nameTop) / 2;
+    if (!PHONE && s.layout === 'stack') aimY = Math.min(H - 110, L.nameBottom + 70);
+    const w = { z, group, sheet, copy, copyMat, face, full, edge, shards: [], broken: false, aimY };
+    if (s.how === 'crumple') { makeShards(w, gridCells(PHONE ? 220 : 360), false); for (const sh of w.shards) sh.mesh.visible = false; }
+    walls.push(w);
+  });
+}
+const showWall = (i, on) => { const w = walls[i]; if (w) w.group.visible = on; };
+/* swap the intact sheet for its pieces: they look identical at rest */
+function breakSheet(w) { if (w.broken) return; w.broken = true; w.sheet.visible = false; w.copy.visible = false; for (const s of w.shards) s.mesh.visible = !s.gone; }
+
+/* ---------- arrival: the copy rises in once the camera has landed ---------- */
+const tweens = [];
+function tween(dur, fn, done) { tweens.push({ t0: clock.elapsedTime, dur, fn, done }); }
+function arrive(i, wait, instant) {
+  const w = walls[i]; if (!w) return;
+  if (instant || RM) { w.copyMat.opacity = 1; w.copy.position.y = 0; w.sheet.scale.setScalar(1); return; }
+  w.copyMat.opacity = 0; w.copy.position.y = -0.03 * VH;
+  if (STAGES[i].final) w.sheet.scale.setScalar(1.015);
+  after(wait, () => {
+    tween(0.48, u => { const e = ARRIVE(u); w.copyMat.opacity = e; w.copy.position.y = -0.03 * VH * (1 - e); });
+    if (STAGES[i].final) tween(0.48, u => w.sheet.scale.setScalar(1.015 - 0.015 * ARRIVE(u)));
+  });
+}
+
+/* ---------- camera dolly ---------- */
+let camZ = D0 + (RM ? 0 : 1.2), dolly = null;
+function dollyTo(z, dur = 1.1) { if (RM) { camZ = z; dolly = null; return; } dolly = { from: camZ, to: z, t0: clock.elapsedTime, dur }; }
+
+/* ---------- moving from one layer to the next ---------- */
+let stage = 0, busy = true, skipping = false, freeze = 0, simT = 0, gen = 0;
+function hitStop() { freeze = 0.07; }
+function advance(delay = 0.9) {
+  busy = true; showWall(stage + 2, true); $('dock').classList.add('swap'); aimEl.classList.add('hide');
+  const old = stage;
+  after(delay * 0.4, () => {
+    stage++; placeLight(stage); walls[stage].sheet.castShadow = !STAGES[stage].final; for (const s of walls[stage].shards) s.mesh.castShadow = true;
+    dollyTo(D0 - stage * SP, 1.1);
+    after(0.75, () => { land(stage); openPage(); });
+    after(1.1, () => { busy = false; });
+    after(3.0, () => { showWall(old, false); for (const s of walls[old].shards) { s.gone = true; s.live = false; } for (const g of groups.splice(0)) scene.remove(g); });
+  });
+}
+/* Once the name has broken the first time, the page opens: it scrolls, the sections below wake up,
+   and the layers that are left stay breakable for anyone who wants to play. */
+function openPage() {
+  if (KP.open) return;
+  KP.open = true; KP.final = true; document.body.classList.add('open');
+  dispatchEvent(new Event('kp:open')); dispatchEvent(new Event('kp:final'));
+}
+/* scrolling or the keyboard breaks the layer the way it was meant to break (only before the page opens) */
+function fallAway() {
+  if (busy || STAGES[stage].final) return;
+  if (RM) { jumpTo(stage + 1, 0.3); return; }
+  const how = STAGES[stage].how, z = walls[stage].z;
+  if (how === 'shatter') shatter(new THREE.Vector3(0, 0, z));
+  else if (how === 'cut') split(new THREE.Vector3(-VW * 0.35, VH * 0.06, z), new THREE.Vector3(VW * 0.35, -VH * 0.06, z));
+  else if (how === 'crumple') { holdP.set(0, 0, 0); grabP.set(0, 0, 0); autoHold = true; busy = true; aimEl.classList.add('hide'); }
+}
+/* a straight fade to layer t: Skip, and every step in reduced motion */
+function jumpTo(t, dur, thenWork = false) {
+  gen++; busy = true; dragging = false; holding = false; autoHold = false; cutLine.visible = false; cutFlash = 0;
+  $('dock').classList.add('swap'); aimEl.classList.add('hide');
+  veil.style.transition = 'none'; veil.style.background = STAGES[t].bg; veil.style.opacity = 0; void veil.offsetWidth;
+  veil.style.transition = `opacity ${dur / 2}s cubic-bezier(.7,0,.2,1)`; veil.style.opacity = 1;
+  after(dur / 2, () => {
+    for (let i = 0; i < t; i++) { showWall(i, false); for (const s of walls[i].shards) { s.gone = true; s.live = false; } }
+    for (const g of groups.splice(0)) scene.remove(g);
+    stage = t; thrown = false; hold = 0; document.documentElement.style.setProperty('--p', 0);
+    showWall(t, true); showWall(t + 1, true); placeLight(t); walls[t].sheet.castShadow = !STAGES[t].final;
+    dolly = null; camZ = D0 - t * SP;
+    resetCut(); showStage(t, RM);
+    veil.style.opacity = 0;
+    const fin = !!STAGES[t].final;
+    openPage();
+    after(RM ? 0 : 0.12, () => $('dock').classList.remove('swap'));
+    after(dur / 2, () => {
+      busy = false; if (!fin) showAim();
+      if (fin && thenWork) { const w = $('work'), t0 = performance.now(); (function go() { if (w.offsetHeight > 0) w.scrollIntoView({ behavior: RM ? 'auto' : 'smooth' }); else if (performance.now() - t0 < 6000) setTimeout(go, 100); })(); }
+    });
+  });
+}
+$('skip').addEventListener('click', () => {
+  if (STAGES[stage].final) { $('work').scrollIntoView({ behavior: 'smooth' }); return; }
+  skipping = true; jumpTo(STAGES.length - 1, RM ? 0.3 : 0.4, true);
+});
+
+/* 1. shatter: one hit. The crack runs out across the page, a beat later it all lets go */
+function shatter(P) {
+  busy = true; const w = walls[stage], diag = Math.hypot(WW, WH);
+  makeShards(w, gradedCells(P), true); breakSheet(w);
+  for (const s of w.shards) { const t = Math.hypot(s.c.cx - P.x, s.c.cy - P.y) / diag; s.crack = { at: t * 0.4, amt: Math.max(0.12, 1 - t * 1.8) }; }
+  crackStart = simT; hitStop();
+  after(0.55, () => {
+    for (const s of w.shards) {
+      const d = Math.hypot(s.c.cx - P.x, s.c.cy - P.y), f = Math.max(0, 1 - d / (UNIT * 0.4));
+      s.live = true; s.delay = d / diag * 0.35;
+      s.v.set((s.c.cx - P.x) * (0.18 + f * 0.6), (s.c.cy - P.y) * (0.18 + f * 0.6) + 0.15 + rnd() * 0.3, 0.2 + rnd() * 0.8);
+      s.w.set((rnd() - .5) * 2.4, (rnd() - .5) * 2.4, (rnd() - .5) * 2.4);
+    }
+    advance(1.2);
+  });
+}
+let crackStart = -1;
+
+/* 2. cut: one stroke across the page. The halves part, hold, then fall away with weight */
+const groups = [];
+const cutLine = new THREE.Mesh((() => { const g = new THREE.PlaneGeometry(1, 1); g.translate(0.5, 0, 0); return g; })(), new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false }));
+cutLine.renderOrder = 6; cutLine.visible = false; scene.add(cutLine);
+function drawCut(A, B, w) { const dx = B.x - A.x, dy = B.y - A.y; cutLine.visible = true; cutLine.material.color.set(STAGES[stage].fg); cutLine.position.set(A.x, A.y, A.z + 0.3); cutLine.rotation.z = Math.atan2(dy, dx); cutLine.scale.set(Math.max(1e-4, Math.hypot(dx, dy)), w, 1); }
+const CUT_MIN = PHONE ? VW * 0.3 : VW * 0.42;
+function resetCut() { setCue(cueOf(STAGES[stage])); }
+function split(A, B) {
+  busy = true; const W0 = walls[stage];
+  W0.sheet.visible = false; W0.copy.visible = false;
+  const dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len, nx = -uy, ny = ux;
+  const M = new THREE.Vector3((A.x + B.x) / 2, (A.y + B.y) / 2, W0.z);
+  const ext = Math.hypot(WW, WH); drawCut(new THREE.Vector3(M.x - ux * ext, M.y - uy * ext, M.z), new THREE.Vector3(M.x + ux * ext, M.y + uy * ext, M.z), UNIT * 0.004);
+  cutFlash = 1; hitStop();
+  /* the half whose side faces down drops; the other slides out along the cut */
+  const lowSide = Math.abs(ny) > 0.08 ? (ny < 0 ? 1 : -1) : (nx < 0 ? 1 : -1);
+  for (const side of [1, -1]) {
+    const g = new THREE.Group(); g.position.copy(M); scene.add(g); groups.push(g);
+    const local = new THREE.Plane(new THREE.Vector3(nx * side, ny * side, 0), 0), clip = local.clone();
+    const face = W0.full.clone(), edge = W0.edge.clone(); face.clippingPlanes = [clip]; edge.clippingPlanes = [clip];
+    const sheet = new THREE.Mesh(new THREE.BoxGeometry(WW, WH, TH), [edge, edge, edge, edge, face, edge]);
+    sheet.position.set(-M.x, -M.y, 0); sheet.castShadow = true; g.add(sheet);
+    g.userData = { M: M.clone(), n: new THREE.Vector2(nx * side, ny * side), u: new THREE.Vector2(ux, uy), low: side === lowSide, t: 0, local, clip, ext, side };
+  }
+  advance(1.4);
+}
+function cutFrame(st) {
+  for (const g of groups) {
+    const u = g.userData; u.t += st; const t = u.t;
+    const part = 0.025 * VW * easeOutExpo(clamp01(t / 0.35));
+    let x = u.M.x + u.n.x * part, y = u.M.y + u.n.y * part, rz = 0;
+    if (t > 0.45) {
+      if (u.low) { const e = easeInQuad(clamp01((t - 0.45) / 0.7)); y -= e * VH * 1.5; rz = u.side * 0.06 * e; }
+      else { const e = easeInOutQuart(clamp01((t - 0.45) / 0.8)); x += u.u.x * u.ext * 1.1 * e; y += u.u.y * u.ext * 1.1 * e; }
+    }
+    g.position.set(x, y, u.M.z); g.rotation.z = rz;
+    g.updateMatrixWorld(); u.clip.copy(u.local).applyMatrix4(g.matrixWorld);
+  }
+}
+let cutFlash = 0;
+
+/* 3. crumple: hold and the whole page balls up toward your finger. Let go early and it springs back */
+let hold = 0, holding = false, autoHold = false, thrown = false, thrownAt = 0, ballY0 = 0, crumpleWall = -1; const holdP = new THREE.Vector3(), grabP = new THREE.Vector3();
+function crumpleFrame(dt, st) {
+  if (skipping) return;
+  if (crumpleWall < 0) { if (STAGES[stage].how !== 'crumple') return; crumpleWall = stage; }
+  const w = walls[crumpleWall]; if (!w.group.visible) return;
+  if (!thrown && w.shards.some(s => s.live)) return;
+  if (!thrown) {
+    hold += ((holding || autoHold) ? dt / (autoHold ? 0.8 : 1.3) : -dt / 0.45); hold = clamp01(hold);
+    document.documentElement.style.setProperty('--p', hold.toFixed(3));
+    if (hold > 0) breakSheet(w);
+    if (hold >= 1) { thrown = true; busy = true; holding = false; autoHold = false; thrownAt = simT; ballY0 = holdP.y; hitStop(); aimEl.classList.add('hide'); document.documentElement.style.setProperty('--p', 0); advance(1.0); }
+  } else {
+    /* hold the finished ball for a beat, then it drops off the bottom edge */
+    const t = simT - thrownAt - 0.12;
+    if (t > 0) holdP.y = ballY0 + (-VH * 0.5 - UNIT * 0.3 - ballY0) * easeInCubic(clamp01(t / 0.5));
+  }
+  if (!w.broken) return;
+  const diag = Math.hypot(VW, VH);
+  for (const s of w.shards) {
+    const d = Math.hypot(s.c.cx - grabP.x, s.c.cy - grabP.y) / diag, e0 = clamp01(hold * 2.2 - d * 0.8), e = Math.pow(e0 * e0 * (3 - 2 * e0), 1.4);
+    const k = thrown ? 1 : e, r = UNIT * 0.09 * (1 - k * 0.3);
+    s.mesh.position.set(s.home.x + (holdP.x + s.jit.x * r - s.home.x) * k, s.home.y + (holdP.y + s.jit.y * r - s.home.y) * k, s.home.z + k * (0.2 + s.jit.z * r));
+    s.mesh.rotation.set(s.rot.x * k * 2.4, s.rot.y * k * 2.4, s.rot.z * k * 1.6); s.mesh.scale.setScalar(1 - k * 0.5);
+  }
+}
+
+/* ---------- input ---------- */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), wallPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+function pointOn(nx, ny, P) { ndc.set(nx, ny); ray.setFromCamera(ndc, camera); wallPlane.constant = -walls[stage].z; return ray.ray.intersectPlane(wallPlane, P) !== null; }
+const dragA = new THREE.Vector3(), dragB = new THREE.Vector3(); let dragging = false, mx = 0, my = 0;
+function press(nx, ny, cx, cy) {
+  if (busy || STAGES[stage].final) return;
+  if (RM) { jumpTo(stage + 1, 0.3); return; }
+  const P = new THREE.Vector3(); if (!pointOn(nx, ny, P)) return;
+  const how = STAGES[stage].how;
+  if (how === 'shatter') shatter(P);
+  else if (how === 'cut') { dragA.copy(P); dragB.copy(P); dragging = true; resetCut(); }
+  else if (how === 'crumple') {
+    if (hold === 0) { holdP.copy(P); grabP.copy(P); } holding = true;
+    /* on touch the ring stays under the finger so the fill shows */
+    if (TOUCH && cx != null) { aimEl.classList.add('at', 'nolabel'); aimEl.classList.remove('hide'); aimEl.style.transform = `translate(${cx}px,${cy}px)`; }
+  }
+}
+function move(nx, ny) {
+  if (dragging && !busy) { const P = new THREE.Vector3(); if (pointOn(nx, ny, P)) { dragB.copy(P); drawCut(dragA, dragB, UNIT * 0.0035); if (dragA.distanceTo(dragB) > CUT_MIN) { dragging = false; split(dragA, dragB); } } }
+  if (holding && hold < 0.15) { const P = new THREE.Vector3(); if (pointOn(nx, ny, P)) { holdP.lerp(P, 0.3); grabP.copy(holdP); } }
+}
+function release() {
+  if (dragging) { dragging = false; cutLine.visible = false; if (dragA.distanceTo(dragB) > VW * 0.02) setCue('Further, all the way across'); }
+  holding = false;
+  if (TOUCH) { aimEl.classList.remove('at', 'nolabel'); aimEl.style.transform = ''; if (!busy && !STAGES[stage].final) showAim(); }
+}
+const toNdc = e => [(e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1];
+canvas.addEventListener('pointerdown', e => { [mx, my] = toNdc(e); aimEl.classList.remove('demo'); if (TOUCH) aimEl.classList.add('hide'); press(mx, my, e.clientX, e.clientY); try { canvas.setPointerCapture(e.pointerId); } catch (_) {} });
+addEventListener('pointermove', e => {
+  [mx, my] = toNdc(e);
+  if (!TOUCH) { aimEl.style.transform = `translate(${e.clientX}px,${e.clientY}px)`; aimEl.classList.toggle('flip', e.clientX > innerWidth - 280); }
+  else if (holding) aimEl.style.transform = `translate(${e.clientX}px,${e.clientY}px)`;
+  move(mx, my);
+});
+addEventListener('pointerup', release); addEventListener('pointercancel', release);
+let lastWheel = 0, wheelLock = false;
+addEventListener('wheel', e => {
+  const t = performance.now(), quiet = t - lastWheel > 350; lastWheel = t;
+  if (KP.open || (wheelLock && !quiet)) return; wheelLock = false;
+  if (Math.abs(e.deltaY) > 30 && !busy && !STAGES[stage].final) { wheelLock = true; fallAway(); }
+}, { passive: true });
+addEventListener('keydown', e => {
+  if (!['Space', 'ArrowDown', 'PageDown'].includes(e.code) || STAGES[stage].final || KP.open) return;
+  if (e.target.closest && e.target.closest('button,a,input,textarea')) return;
+  e.preventDefault(); fallAway();
+});
+if (!TOUCH) aimEl.style.transform = `translate(${innerWidth / 2}px,${innerHeight * 0.62}px)`;
+/* the cursor hint belongs to the landing: it leaves once the landing is mostly off screen, and comes back with it */
+new IntersectionObserver(([en]) => { const off = en.intersectionRatio < 0.5; aimEl.classList.toggle('away', off); document.body.classList.toggle('past', off); }, { threshold: [0, 0.5, 1] }).observe($('hero'));
+/* and it never rides over the numbers: any scroll at all hides it */
+const upCheck = () => aimEl.classList.toggle('up', scrollY > 0); addEventListener('scroll', upCheck, { passive: true });
+const rw = innerWidth, rh = innerHeight; let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { if (Math.abs(innerWidth - rw) > 40 && !KP.final) location.reload(); }, 300); });
+
+/* ---------- loop ---------- */
+const clock = new THREE.Clock(); let camX = 0, camY = 0;
+const timers = []; const after = (sec, fn) => { const g0 = gen; timers.push({ at: clock.elapsedTime + sec, fn: () => { if (g0 === gen) fn(); } }); };
+function frame() {
+  const dt = Math.min(clock.getDelta(), 1 / 30), now = clock.elapsedTime;
+  for (let i = timers.length - 1; i >= 0; i--) if (now >= timers[i].at) { const f = timers[i].fn; timers.splice(i, 1); f(); }
+  for (let i = tweens.length - 1; i >= 0; i--) { const tw = tweens[i], u = clamp01((now - tw.t0) / tw.dur); tw.fn(u); if (u >= 1) { tweens.splice(i, 1); if (tw.done) tw.done(); } }
+  /* hit-stop: the world holds still for a few frames on impact, then runs at full speed */
+  let st = dt; if (freeze > 0) { const f = Math.min(freeze, dt); freeze -= f; st = dt - f; }
+  simT += st;
+
+  for (let wi = Math.max(0, stage - 1); wi <= Math.min(stage, walls.length - 1); wi++) for (const s of walls[wi].shards) {
+    if (s.gone) continue; const m = s.mesh;
+    if (s.live) {
+      if (s.delay > 0) { s.delay -= st; continue; }
+      s.v.y -= 9.5 * st; m.position.addScaledVector(s.v, st); m.rotation.x += s.w.x * st; m.rotation.y += s.w.y * st; m.rotation.z += s.w.z * st;
+      if (m.position.y < -VH * 1.3 || m.position.z + walls[wi].z > camera.position.z - 0.5) { m.visible = false; s.gone = true; }
+    } else if (s.crack && crackStart >= 0) {
+      const u = clamp01((simT - crackStart - s.crack.at) / 0.12), a = s.crack.amt * u;
+      m.rotation.set(s.rot.x * 0.06 * a, s.rot.y * 0.06 * a, s.rot.z * 0.02 * a); m.position.z = s.home.z + a * (0.01 + Math.abs(s.jit.z) * 0.04);
+    }
+  }
+  cutFrame(st);
+  if (cutFlash > 0) { cutFlash -= dt / 0.35; if (cutFlash <= 0) cutLine.visible = false; else cutLine.scale.y = UNIT * 0.004 * Math.ceil(cutFlash * 4) / 4; }
+  crumpleFrame(dt, st);
+
+  if (dolly) { const u = clamp01((now - dolly.t0) / dolly.dur); camZ = dolly.from + (dolly.to - dolly.from) * easeInOutQuart(u); if (u >= 1) dolly = null; }
+  const px = RM ? 0 : mx * 0.2, py = RM ? 0 : my * 0.12;
+  camX += (px - camX) * Math.min(1, dt * 2.5); camY += (py - camY) * Math.min(1, dt * 2.5);
+  camera.position.set(camX, camY, camZ); camera.lookAt(camX * 0.4, camY * 0.4, camZ - D0);
+  renderer.render(scene, camera); requestAnimationFrame(frame);
+}
+
+(async () => {
+  await Promise.all([document.fonts.load('400 40px "Bowlby One"'), document.fonts.load('800 24px "Bricolage Grotesque"'), document.fonts.load('500 18px "Bricolage Grotesque"')]);
+  buildWalls(); placeLight(0);
+  canvas.classList.add('on');
+  dollyTo(D0, 1.1);
+  $('dock').classList.add('swap'); aimEl.classList.add('hide');
+  if (RM) land(0, true);
+  else { walls[0].copyMat.opacity = 0; after(0.75, () => land(0)); }
+  after(RM ? 0.3 : 1.1, () => { busy = false; });
+  window.__press = press; window.__move = move; window.__release = release; window.__fall = fallAway;
+  window.__state = () => ({ stage, busy, how: STAGES[stage].how || 'final', hold: +hold.toFixed(2) });
+  requestAnimationFrame(frame); window.__ready = true;
+})();
+</script>
+<main id="after">
+  <!-- numbers.js fills this: the motion-graphics numbers chapter -->
+  <section id="numbers" aria-label="Numbers"></section>
+  <!-- work.js fills this: all projects plus the project pages -->
+  <section id="work" aria-label="Work"></section>
+</main>
+<script type="module" src="numbers.js"></script>
+<script type="module" src="work.js"></script>
+</body>
+</html>

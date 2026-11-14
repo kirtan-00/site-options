@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kirtan Purohit</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230c0d0f'/%3E%3Cpath d='M7 6h7v8l6-8h8l-8 10 8 10h-8l-6-8v8H7z' fill='%23f1f2f0'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=block" rel="stylesheet">
+<style>
+:root{--ink:#0c0d0f;--paper:#f1f2f0;--blue:#c9d8f7;--pink:#f2a7b6;--cobalt:#1c3bb0;--g:20px}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--blue);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;overflow:hidden;height:100%;-webkit-font-smoothing:antialiased}
+body.open,html:has(body.open){overflow-x:hidden;overflow-y:auto;height:auto}
+#hero{position:relative;height:100vh;height:100svh;overflow:hidden}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:pointer;opacity:0;transition:opacity .9s cubic-bezier(.2,.8,.2,1)}
+#gl.on{opacity:1}
+body.open #gl{cursor:default;touch-action:pan-y}
+#veil{position:absolute;inset:0;background:var(--blue);opacity:0;pointer-events:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* the hint: one quiet line of type under the glass, a hairline ticks in front of it */
+#hint{position:absolute;left:50%;bottom:calc(30px + env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;align-items:center;gap:12px;font-weight:500;font-size:15px;line-height:1;color:var(--ink);pointer-events:none;opacity:0;transition:opacity .6s cubic-bezier(.2,.8,.2,1)}
+#hint.on{opacity:1}
+#hint.off,#hint.up,#hint.away{opacity:0;transition-duration:.18s}
+#hint i{display:block;width:26px;height:1.5px;background:currentColor;transform-origin:left;animation:tick 2.4s cubic-bezier(.7,0,.2,1) infinite}
+@keyframes tick{0%{transform:scaleX(0)}40%,70%{transform:scaleX(1)}100%{transform:scaleX(1);opacity:0}}
+
+/* after the break: the way down */
+#cue{position:absolute;left:var(--g);bottom:calc(22px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:10px;font-weight:800;font-size:16px;color:var(--ink);opacity:0;pointer-events:none}
+#cue i{width:1.5px;height:30px;background:currentColor;transform-origin:top;animation:drop 1.6s cubic-bezier(.7,0,.2,1) infinite}
+@keyframes drop{0%{transform:scaleY(0)}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+@media (prefers-reduced-motion: reduce){#hint i,#cue i{animation:none}}
+
+#contact{position:fixed;top:18px;right:18px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+#cbtn{background:#0c0d0f;color:#f1f2f0;border:0;border-radius:999px;padding:12px 20px;font:500 16px/1 "Bricolage Grotesque",system-ui,sans-serif;cursor:pointer}
+#cbtn:focus-visible{outline:2px solid #0c0d0f;outline-offset:3px}
+#cmsg{background:#0c0d0f;color:#f1f2f0;padding:12px 16px;border-radius:12px;font:500 15px/1.3 "Bricolage Grotesque",system-ui,sans-serif;max-width:250px}
+/* past the landing the sections change colour under it, so Contact me becomes a black pill with an off-white ring: it reads on every one */
+#cbtn,#cmsg{transition:background-color .3s,color .3s,box-shadow .3s}
+body.past #cbtn,body.past #cmsg{background:#0c0d0f;color:#f1f2f0;box-shadow:0 0 0 1.5px #f1f2f0}
+body.past #cbtn:focus-visible{outline-color:#0c0d0f}
+#after{position:relative;z-index:1}
+body.final,html:has(body.final){overflow-x:hidden;overflow-y:auto;height:auto}
+#cmsg[hidden]{display:none}
+@media (max-width:700px){:root{--g:18px}}
+</style>
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.175.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.175.0/examples/jsm/",
+  "d3-delaunay":"https://cdn.jsdelivr.net/npm/d3-delaunay@6.0.4/+esm",
+  "polygon-clipping":"https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/+esm",
+  "cannon-es":"https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/+esm"
+}}
+</script>
+</head>
+<body>
+<section id="hero" aria-label="Kirtan Purohit">
+  <h1 class="sr">Kirtan Purohit</h1>
+  <p class="sr" id="srrole">Creative producer and developer</p>
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <div id="veil"></div>
+  <p id="hint"><i></i><span id="hinttxt">Click to shatter</span></p>
+  <p id="cue"><i></i>Scroll for the work</p>
+</section>
+<div id="contact">
+  <button id="cbtn" type="button" aria-expanded="false" aria-controls="cmsg">Contact me</button>
+  <p id="cmsg" hidden>Email goes here once Kirtan confirms it.</p>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { TTFLoader } from 'three/addons/loaders/TTFLoader.js';
+import { Font } from 'three/addons/loaders/FontLoader.js';
+import { Reflector } from 'three/addons/objects/Reflector.js';
+import { Delaunay } from 'd3-delaunay';
+import polygonClipping from 'polygon-clipping';
+import * as CANNON from 'cannon-es';
+
+const $ = id => document.getElementById(id);
+const Q = new URLSearchParams(location.search);
+const CAPTURE = Q.has('capture');
+const TOUCH = matchMedia('(pointer: coarse)').matches;
+const PHONE = Math.min(innerWidth, innerHeight) < 700 || TOUCH;
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* what the sections below read: the palette, and when the landing is finished. Same shape as index.html, light blue and pink lead */
+const PAL = [{ bg: '#c9d8f7', a: '#0c0d0f', b: '#1c3bb0', hl: '#1c3bb0' }, { bg: '#f2a7b6', a: '#0c0d0f', b: '#1c3bb0', hl: '#1c3bb0' }, { bg: '#0f2545', a: '#c9d8f7', b: '#f2a7b6', hl: '#f2a7b6' }, { bg: '#0c0d0f', a: '#f1f2f0', b: '#f2a7b6', hl: '#f2a7b6' }];
+window.KP = { palette: PAL, ink: '#0c0d0f', paper: '#f1f2f0', content: '../content/', final: false, open: false };
+
+/* contact, as on the main page */
+$('cbtn').addEventListener('click', () => { const m = $('cmsg'), o = m.hidden; m.hidden = !o; $('cbtn').setAttribute('aria-expanded', String(o)); });
+
+/* seeded random so every run (and every screenshot) breaks the same way */
+let seed = 7; const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+const gauss = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(6.2832 * v); };
+const clamp01 = x => Math.min(1, Math.max(0, x));
+/* cubic-bezier(.2,.8,.2,1), solved for x, so motion runs on the sim clock */
+function bezier(x1, y1, x2, y2) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx, cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const sx = t => ((ax * t + bx) * t + cx) * t, sy = t => ((ay * t + by) * t + cy) * t, dx = t => (3 * ax * t + 2 * bx) * t + cx;
+  return x => { x = clamp01(x); let t = x; for (let i = 0; i < 8; i++) { const e = sx(t) - x, d = dx(t); if (Math.abs(e) < 1e-5 || Math.abs(d) < 1e-6) break; t -= e / d; } return sy(clamp01(t)); };
+}
+const arrive = bezier(.2, .8, .2, 1);
+
+/* palette, from BRIEF.md */
+const C = { ink: '#0c0d0f', paper: '#f1f2f0', blue: '#c9d8f7', pink: '#f2a7b6', sky: '#7d9bf0', cobalt: '#1c3bb0' };
+
+/* renderer */
+const canvas = $('gl');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+let DPR = Math.min(devicePixelRatio || 1, 2);
+renderer.setPixelRatio(DPR);
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.transmissionResolutionScale = PHONE ? 0.5 : 1;
+renderer.setClearColor(C.blue);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(PHONE ? 38 : 26, 1, 0.1, 200);
+
+/* a hand-made studio for the glass to reflect: a soft top box, two tall strips, a front fill and dark flags between them, so every bevel catches a line */
+function studio() {
+  const s = new THREE.Scene();
+  const box = (w, h, col, pos, rot) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide })); m.position.set(...pos); if (rot) m.rotation.set(...rot); s.add(m); return m; };
+  const room = new THREE.Mesh(new THREE.BoxGeometry(24, 12, 24), new THREE.MeshBasicMaterial({ color: new THREE.Color(0.04, 0.045, 0.055), side: THREE.BackSide }));
+  s.add(room);
+  box(24, 24, new THREE.Color(0.5, 0.46, 0.47), [0, -5.9, 0], [-Math.PI / 2, 0, 0]);          /* pink floor bounce */
+  box(10, 8, new THREE.Color(9, 9, 9), [0, 5.9, -1], [Math.PI / 2, 0, 0]);                                 /* top softbox */
+  box(1.2, 8, new THREE.Color(8, 8, 8.2), [-11.9, 1, -2], [0, Math.PI / 2, 0]);                             /* left strip */
+  box(1.2, 8, new THREE.Color(6, 6, 6.2), [11.9, 1, 2], [0, -Math.PI / 2, 0]);                          /* right strip */
+  box(14, 3.2, new THREE.Color(0.55, 0.56, 0.6), [0, 2.4, 11.9], [0, Math.PI, 0]);                           /* front fill */
+  box(24, 6, new THREE.Color(0.75, 0.77, 0.8), [0, 0, -11.9]);                                              /* back bounce, neutral so pink never turns mauve */
+  return s;
+}
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(studio(), 0.02).texture;
+scene.environmentIntensity = 1;
+
+/* light: one key that casts a soft shadow */
+const key = new THREE.DirectionalLight(0xffffff, 1.4);
+key.position.set(3.5, 9, 6); key.castShadow = true;
+key.shadow.mapSize.set(PHONE ? 1024 : 2048, PHONE ? 1024 : 2048);
+Object.assign(key.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 30 });
+key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 6;
+scene.add(key, key.target);
+scene.add(new THREE.HemisphereLight(0xffffff, new THREE.Color(C.pink), 0.35));
+
+/* glass */
+const glass = new THREE.MeshPhysicalMaterial({
+  color: 0xffffff, transmission: 1, thickness: 1.1, roughness: 0.05, ior: 1.5,
+  clearcoat: 0.6, clearcoatRoughness: 0.04, dispersion: 0.12, specularIntensity: 1,
+  attenuationColor: new THREE.Color(C.sky), attenuationDistance: 2.2, envMapIntensity: 1.15
+});
+
+/* set: a blue wall that warms to paper at the horizon, a pink floor that does the same, so the two colours never mix into lilac */
+const WALL_Z = -3.2;
+const wallMat = new THREE.ShaderMaterial({
+  toneMapped: false,
+  uniforms: {
+    uTop: { value: new THREE.Color(C.blue) }, uLow: { value: new THREE.Color('#dce5f7') }, uInk: { value: new THREE.Color(C.cobalt) }, uSky: { value: new THREE.Color(C.sky) },
+    uText: { value: null }, uRect: { value: new THREE.Vector4(0, 0, 1, 1) }, uArrive: { value: 0 }, uPre: { value: 0 },
+    uNavy: { value: new THREE.Color('#0f2545') }, uBand: { value: new THREE.Vector2(2, 1.6) }
+  },
+  vertexShader: `varying vec3 vW; void main(){ vec4 w = modelMatrix * vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+  fragmentShader: `
+    uniform vec3 uTop, uLow, uInk, uSky, uNavy; uniform vec2 uBand; uniform sampler2D uText; uniform vec4 uRect; uniform float uArrive, uPre; varying vec3 vW;
+    void main(){
+      float h = smoothstep(0.0, 2.6, vW.y);
+      vec3 col = mix(uLow, uTop, h);
+      /* a soft studio gradient behind the letters: deep cobalt in the middle, easing out through sky, so the glass has something bold to bend. It lifts away as the role line arrives */
+      float by = (vW.y - uBand.x) / uBand.y;
+      float band = (1.0 - smoothstep(0.2, 1.15, abs(by))) * 0.92;
+      vec3 bandCol = mix(mix(uInk, uNavy, 0.3), uSky, smoothstep(0.0, 1.0, abs(by)));
+      col = mix(col, bandCol, band * (1.0 - uArrive));
+      vec2 tuv = (vW.xy - uRect.xy) / uRect.zw;
+      tuv.y += (1.0 - uArrive) * 0.035;
+      float m = 0.0;
+      vec2 inR = step(vec2(0.), tuv) * step(tuv, vec2(1.)); m = texture2D(uText, clamp(tuv, 0.001, 0.999)).r * inR.x * inR.y;
+      col = mix(col, mix(uSky, uInk, uArrive), m * mix(uPre, 1.0, uArrive));
+      gl_FragColor = vec4(col, 1.0);
+      #include <colorspace_fragment>
+    }`
+});
+const wall = new THREE.Mesh(new THREE.PlaneGeometry(120, 60), wallMat);
+/* the trick: the role line is painted only into the transmission pass, so before the break you read it through the glass and nowhere else */
+wall.position.set(0, 30, WALL_Z);
+scene.add(wall);
+
+const floorShader = {
+  name: 'GlassFloor',
+  uniforms: {
+    color: { value: null }, tDiffuse: { value: null }, textureMatrix: { value: null },
+    uNear: { value: new THREE.Color(C.pink) }, uFar: { value: new THREE.Color('#f1f2f0') }, uBlueF: { value: new THREE.Color(C.blue) }, uEdge: { value: PHONE ? 2.2 : 3.4 }, uWallZ: { value: WALL_Z },
+    uStrength: { value: 0.12 }, uBlur: { value: PHONE ? 0.005 : 0.004 }
+  },
+  vertexShader: `uniform mat4 textureMatrix; varying vec4 vUv; varying vec3 vW;
+    void main(){ vUv = textureMatrix * vec4(position,1.); vec4 w = modelMatrix * vec4(position,1.); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }`,
+  fragmentShader: `
+    uniform vec3 color; uniform sampler2D tDiffuse; uniform vec3 uNear, uFar, uBlueF; uniform float uEdge; uniform float uWallZ, uStrength, uBlur; varying vec4 vUv; varying vec3 vW;
+    void main(){
+      vec2 uv = vUv.xy / vUv.w;
+      float d = clamp((vW.z - uWallZ) / 7.0, 0., 1.);
+      float r = uBlur * (0.6 + 1.4 * (1.0 - d));
+      vec3 refl = vec3(0.);
+      refl += texture2D(tDiffuse, uv).rgb * 0.2;
+      refl += texture2D(tDiffuse, uv + vec2( r, 0.)).rgb * 0.1;
+      refl += texture2D(tDiffuse, uv + vec2(-r, 0.)).rgb * 0.1;
+      refl += texture2D(tDiffuse, uv + vec2(0.,  r)).rgb * 0.1;
+      refl += texture2D(tDiffuse, uv + vec2(0., -r)).rgb * 0.1;
+      refl += texture2D(tDiffuse, uv + vec2( r,  r) * .7).rgb * 0.1;
+      refl += texture2D(tDiffuse, uv + vec2(-r,  r) * .7).rgb * 0.1;
+      refl += texture2D(tDiffuse, uv + vec2( r, -r) * .7).rgb * 0.1;
+      refl += texture2D(tDiffuse, uv + vec2(-r, -r) * .7).rgb * 0.1;
+      /* blue where the letters stand and the glass lands, easing through paper into pink toward the viewer, so the blend never passes through lilac */
+      vec3 base = mix(uBlueF, uFar, smoothstep(uEdge - 2.2, uEdge, vW.z));
+      base = mix(base, uNear, smoothstep(uEdge, uEdge + 3.0, vW.z));
+      float k = uStrength * smoothstep(0.02, 0.4, d) * (1.0 - smoothstep(-0.2, 1.3, vW.z));
+      gl_FragColor = vec4(mix(base, refl, k), 1.0);
+      #include <colorspace_fragment>
+    }`
+};
+const RS = PHONE ? 0.4 : 0.5;
+const floor = new Reflector(new THREE.PlaneGeometry(120, 40), { shader: floorShader, textureWidth: 512, textureHeight: 512, clipBias: 0.003, multisample: PHONE ? 0 : 4 });
+floor.material.toneMapped = false;
+floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, WALL_Z + 20);
+scene.add(floor);
+/* in the mirror the wall is swapped for the floor colour, so blue never washes into pink */
+{
+  const orig = floor.onBeforeRender, pinkBg = new THREE.Color(C.pink);
+  floor.onBeforeRender = function (r, s, c) { wall.visible = false; shadowPlane.visible = false; const bg = s.background; s.background = pinkBg; orig.call(this, r, s, c); s.background = bg; wall.visible = true; shadowPlane.visible = true; };
+}
+const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(60, 30), new THREE.ShadowMaterial({ color: new THREE.Color('#3a1f2a'), opacity: 0.16, depthWrite: false }));
+shadowPlane.rotation.x = -Math.PI / 2; shadowPlane.position.set(0, 0.002, WALL_Z + 15); shadowPlane.receiveShadow = true;
+scene.add(shadowPlane);
+
+/* ---------- the name ---------- */
+const DEPTH = 0.2, CAP = 1.0, GAP = 0.04;
+let font, letters = [], nameBox, lineMeshes = [];
+const ZC = 0;  /* letters straddle z = 0 */
+
+function shapePoly(shape, div) {
+  const { shape: o, holes } = shape.extractPoints(div);
+  const ring = pts => { const r = pts.map(p => [p.x, p.y]); if (r.length && (r[0][0] !== r[r.length - 1][0] || r[0][1] !== r[r.length - 1][1])) r.push([r[0][0], r[0][1]]); return r; };
+  return [ring(o), ...holes.map(ring)];
+}
+function buildName() {
+  const lines = ['KIRTAN', 'PUROHIT'];
+  const raw = lines.map(t => font.generateShapes(t, 1));
+  /* scale so cap height is CAP */
+  const bb = new THREE.Box2();
+  for (const s of raw[1]) for (const p of s.extractPoints(4).shape) bb.expandByPoint(p);
+  const k = CAP / (bb.max.y - bb.min.y);
+  letters = []; nameBox = new THREE.Box2();
+  const div = PHONE ? 5 : 8;
+  lines.forEach((t, li) => {
+    const lb = new THREE.Box2();
+    for (const s of raw[li]) for (const p of s.extractPoints(4).shape) lb.expandByPoint(p);
+    const ox = -(lb.min.x + lb.max.x) / 2, oy = -lb.min.y, base = li === 0 ? CAP + GAP : 0;
+    const shapes = [];
+    for (const s of raw[li]) {
+      const poly = shapePoly(s, div).map(r => r.map(([x, y]) => [(x + ox) * k, (y + oy) * k + base]));
+      const b = new THREE.Box2(); for (const [x, y] of poly[0]) b.expandByPoint(new THREE.Vector2(x, y));
+      letters.push({ poly, box: b }); nameBox.union(b);
+      shapes.push(polyShape(poly));
+    }
+    const g = new THREE.ExtrudeGeometry(shapes, { depth: DEPTH, bevelEnabled: true, bevelThickness: 0.07, bevelSize: 0.055, bevelOffset: -0.055, bevelSegments: PHONE ? 4 : 7, curveSegments: div });
+    g.translate(0, 0, -DEPTH / 2);
+    g.computeVertexNormals();
+    const m = new THREE.Mesh(g, glass); m.castShadow = true; scene.add(m); lineMeshes.push(m);
+  });
+}
+function polyShape(poly) {
+  const toV = r => r.slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y));
+  const s = new THREE.Shape(toV(poly[0]));
+  for (const h of poly.slice(1)) s.holes.push(new THREE.Path(toV(h)));
+  return s;
+}
+
+/* ---------- camera framing ---------- */
+const look = new THREE.Vector3(), camBase = new THREE.Vector3();
+let roleRect;
+function frame() {
+  const w = innerWidth, h = innerHeight, aspect = w / h;
+  renderer.setSize(w, h, false); camera.aspect = aspect;
+  const nameW = nameBox.max.x - nameBox.min.x, nameH = nameBox.max.y;
+  const fill = PHONE ? 0.93 : Math.min(0.6, 0.6 * aspect / 1.6);
+  const tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const dist = Math.max(nameW / (fill * 2 * tanH * aspect), nameH / (0.42 * 2 * tanH));
+  look.set(0, nameH * (PHONE ? 0.95 : 0.56), 0);
+  camBase.set(0, nameH * 0.5 + dist * (PHONE ? 0.1 : 0.15), dist);
+  camera.position.copy(camBase); camera.lookAt(look); camera.updateProjectionMatrix(); camera.updateMatrixWorld();
+  setRole();
+}
+
+/* the role line lives on the wall, behind the glass, so the letters bend it */
+function setRole() {
+  /* where the name centre lands on the wall */
+  const dir = look.clone().sub(camera.position).normalize();
+  const tt = (WALL_Z - camera.position.z) / dir.z, hit = camera.position.clone().addScaledVector(dir, tt);
+  const dWall = camera.position.z - WALL_Z, tanH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const visW = 2 * dWall * tanH * camera.aspect;
+  const lines = PHONE ? ['Creative', 'producer and', 'developer'] : ['Creative producer', 'and developer'];
+  const cw = 2048, ch = PHONE ? 1600 : 900;
+  const cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+  const x = cv.getContext('2d');
+  x.fillStyle = '#000'; x.fillRect(0, 0, cw, ch);
+  let fs = 400; x.font = `800 ${fs}px "Bricolage Grotesque"`;
+  const widest = Math.max(...lines.map(l => x.measureText(l).width));
+  fs = Math.floor(fs * (cw * 0.96) / widest);
+  const lh = fs * 0.96;
+  fs = Math.min(fs, Math.floor(ch / (lines.length * 0.96 + 0.2)));
+  x.font = `800 ${fs}px "Bricolage Grotesque"`; x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  const total = lines.length * fs * 0.96;
+  lines.forEach((l, i) => x.fillText(l, cw / 2, ch / 2 - total / 2 + fs * 0.96 * (i + 0.5)));
+  const tex = new THREE.CanvasTexture(cv); tex.anisotropy = 4; tex.colorSpace = THREE.NoColorSpace;
+  if (wallMat.uniforms.uText.value) wallMat.uniforms.uText.value.dispose();
+  wallMat.uniforms.uText.value = tex;
+  const rw = visW * (PHONE ? 0.9 : 0.8), rh = rw * ch / cw;
+  const up = new THREE.Vector3(0, nameBox.max.y * (PHONE ? 1.55 : 1.0), 0), d2 = up.sub(camera.position).normalize(), hy = camera.position.y + d2.y * (WALL_Z - camera.position.z) / d2.z;
+  wallMat.uniforms.uRect.value.set(-rw / 2, hy - rh / 2, rw, rh);
+  wallMat.uniforms.uBand.value.set(hit.y, nameBox.max.y * 0.5 * (camera.position.z - WALL_Z) / camera.position.z * 1.5);
+}
+
+/* ---------- physics ---------- */
+const world = new CANNON.World({ gravity: new CANNON.Vec3(0, -30, 0), allowSleep: true });
+world.broadphase = new CANNON.SAPBroadphase(world);
+world.solver.iterations = 14;
+world.defaultContactMaterial.friction = 0.5;
+world.defaultContactMaterial.restitution = 0.08;
+world.defaultContactMaterial.contactEquationStiffness = 4e6;
+world.defaultContactMaterial.contactEquationRelaxation = 4;
+const ground = new CANNON.Body({ mass: 0, shape: new CANNON.Plane() });
+ground.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+world.addBody(ground);
+
+/* ---------- fracture: Voronoi cells, graded toward the hit, clipped to the real letter outlines, extruded as glass ---------- */
+let shards = [];
+function hull(pts) {
+  const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); if (p.length < 3) return p;
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+function obb(pts) {
+  const h = hull(pts); let best = null;
+  for (let i = 0; i < h.length; i++) {
+    const a = h[i], b = h[(i + 1) % h.length], th = Math.atan2(b[1] - a[1], b[0] - a[0]), c = Math.cos(th), s = Math.sin(th);
+    let x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
+    for (const [x, y] of h) { const u = x * c + y * s, v = -x * s + y * c; x0 = Math.min(x0, u); x1 = Math.max(x1, u); y0 = Math.min(y0, v); y1 = Math.max(y1, v); }
+    const A = (x1 - x0) * (y1 - y0);
+    if (!best || A < best.A) best = { A, th, w: x1 - x0, h: y1 - y0, cu: (x0 + x1) / 2, cv: (y0 + y1) / 2 };
+  }
+  const c = Math.cos(best.th), s = Math.sin(best.th);
+  best.cx = best.cu * c - best.cv * s; best.cy = best.cu * s + best.cv * c;
+  return best;
+}
+function ringArea(r) { let a = 0; for (let i = 0; i < r.length - 1; i++) a += r[i][0] * r[i + 1][1] - r[i + 1][0] * r[i][1]; return a / 2; }
+
+function fracture(hx, hy) {
+  const t0 = performance.now();
+  const N = PHONE ? 30 : 50;
+  const pad = 0.05, x0 = nameBox.min.x - pad, x1 = nameBox.max.x + pad, y0 = nameBox.min.y - pad, y1 = nameBox.max.y + pad;
+  const pts = [];
+  for (let i = 0; i < N; i++) {
+    if (i < N * 0.5) pts.push([x0 + rnd() * (x1 - x0), y0 + rnd() * (y1 - y0)]);
+    else { const sg = 0.35 + rnd() * 1.1; pts.push([Math.min(x1, Math.max(x0, hx + gauss() * sg)), Math.min(y1, Math.max(y0, hy + gauss() * sg * 0.7))]); }
+  }
+  const vor = Delaunay.from(pts).voronoi([x0, y0, x1, y1]);
+  const out = [];
+  for (let i = 0; i < N; i++) {
+    const cell = vor.cellPolygon(i); if (!cell) continue;
+    let cx0 = 1e9, cx1 = -1e9, cy0 = 1e9, cy1 = -1e9; for (const [x, y] of cell) { cx0 = Math.min(cx0, x); cx1 = Math.max(cx1, x); cy0 = Math.min(cy0, y); cy1 = Math.max(cy1, y); }
+    for (const L of letters) {
+      if (L.box.max.x < cx0 || L.box.min.x > cx1 || L.box.max.y < cy0 || L.box.min.y > cy1) continue;
+      let inter; try { inter = polygonClipping.intersection([cell], L.poly); } catch (e) { continue; }
+      for (const poly of inter) if (Math.abs(ringArea(poly[0])) > 0.0012) out.push(poly);
+    }
+  }
+  const geoms = out.map(poly => {
+    const o = obb(poly[0].slice(0, -1)), c = Math.cos(-o.th), s = Math.sin(-o.th);
+    const loc = poly.map(r => r.map(([x, y]) => { const dx = x - o.cx, dy = y - o.cy; return [dx * c - dy * s, dx * s + dy * c]; }));
+    const g = new THREE.ExtrudeGeometry(polyShape(loc), { depth: DEPTH, bevelEnabled: true, bevelThickness: 0.014, bevelSize: 0.012, bevelOffset: -0.012, bevelSegments: 1, curveSegments: 1 });
+    g.translate(0, 0, -DEPTH / 2);
+    return { g, o, area: Math.abs(ringArea(poly[0])) };
+  });
+  return { geoms, ms: performance.now() - t0 };
+}
+
+/* ---------- state ---------- */
+let simT = 0, broken = false, hitAt = -1, hitP = new THREE.Vector2(), settled = false, arriveAt = -1, buildMs = 0;
+const HITSTOP = 0.07;
+
+function shatter(hx, hy) {
+  if (broken || !font) return;
+  broken = true; hitAt = simT; hitP.set(hx, hy);
+  $('hint').classList.add('off');
+  const { geoms, ms } = fracture(hx, hy); buildMs = ms;
+  for (const m of lineMeshes) m.visible = false;
+  const diag = Math.hypot(nameBox.max.x - nameBox.min.x, nameBox.max.y);
+  for (const { g, o, area } of geoms) {
+    const mesh = new THREE.Mesh(g, glass); mesh.castShadow = true;
+    mesh.position.set(o.cx, o.cy, ZC); mesh.rotation.z = o.th;
+    scene.add(mesh);
+    const sh = 0.82;
+    const body = new CANNON.Body({ mass: Math.max(0.02, area * DEPTH), shape: new CANNON.Box(new CANNON.Vec3(o.w / 2 * sh, o.h / 2 * sh, DEPTH / 2 + 0.01)), linearDamping: 0.04, angularDamping: 0.12, sleepSpeedLimit: 0.12, sleepTimeLimit: 0.35 });
+    body.position.set(o.cx, o.cy, ZC); body.quaternion.setFromEuler(0, 0, o.th);
+    body.type = CANNON.Body.KINEMATIC; body.updateMassProperties();
+    world.addBody(body);
+    const d = Math.hypot(o.cx - hx, o.cy - hy), f = Math.exp(-d / 1.1);
+    const delay = HITSTOP + d / diag * 0.09;
+    shards.push({ mesh, body, mass: Math.max(0.02, area * DEPTH), delay, d, f, live: false });
+  }
+}
+function release(s) {
+  const b = s.body, hx = hitP.x, hy = hitP.y;
+  b.type = CANNON.Body.DYNAMIC; b.mass = s.mass; b.updateMassProperties(); b.wakeUp();
+  const dx = b.position.x - hx, dy = b.position.y - hy, l = Math.hypot(dx, dy) || 1, f = s.f;
+  b.velocity.set(dx / l * (0.1 + 0.6 * f) * (PHONE ? 0.45 : 1), dy / l * (0.1 + 0.6 * f) + 0.4 * f, 0.5 + 1.5 * f + rnd() * 0.4);
+  const w = 1.2 + 4 * f;
+  b.angularVelocity.set((rnd() - .5) * w + 1.4, (rnd() - .5) * w, (rnd() - .5) * w);
+  s.live = true;
+}
+/* the page opens as the role line arrives: once */
+function fire() {
+  if (KP.open) return;
+  KP.open = true; KP.final = true;
+  document.body.classList.add('open', 'final');
+  dispatchEvent(new Event('kp:open')); dispatchEvent(new Event('kp:final'));
+}
+
+/* reduced motion: no flight. A short fade, and the pieces are already lying where they would have landed */
+function calmBreak(hx, hy) {
+  if (broken || !font) return;
+  const v = $('veil'); v.style.transition = 'opacity .3s cubic-bezier(.65,0,.35,1)'; v.style.opacity = 1;
+  $('hint').classList.add('off');
+  setTimeout(() => {
+    shatter(hx, hy);
+    for (const s of shards) release(s);
+    for (let i = 0; i < 480; i++) world.step(1 / 120);
+    syncShards(); settled = true; simT = hitAt + 1; arriveAt = simT; fire();
+    render();
+    v.style.opacity = 0;
+  }, 320);
+}
+
+function syncShards() { for (const s of shards) { s.mesh.position.copy(s.body.position); s.mesh.quaternion.copy(s.body.quaternion); } }
+
+/* ---------- input ---------- */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), zPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -DEPTH / 2);
+function hitFromScreen(px, py) {
+  ndc.set(px / innerWidth * 2 - 1, -(py / innerHeight) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  const hits = ray.intersectObjects(lineMeshes, false);
+  let p = hits.length ? hits[0].point : ray.ray.intersectPlane(zPlane, new THREE.Vector3());
+  if (!p) p = new THREE.Vector3(0, CAP, 0);
+  return [Math.min(nameBox.max.x, Math.max(nameBox.min.x, p.x)), Math.min(nameBox.max.y, Math.max(nameBox.min.y, p.y))];
+}
+function hitScreen(px, py) { const [x, y] = hitFromScreen(px, py); RM ? calmBreak(x, y) : shatter(x, y); }
+canvas.addEventListener('pointerdown', e => { if (!broken) hitScreen(e.clientX, e.clientY); });
+/* before the break the page cannot scroll: wheel, Space, ArrowDown or PageDown break the glass instead */
+addEventListener('keydown', e => {
+  if (broken || KP.open || !['Space', 'ArrowDown', 'PageDown'].includes(e.code)) return;
+  if (e.target.closest && e.target.closest('button,a,input,textarea')) return;
+  e.preventDefault(); hitScreen(innerWidth / 2, innerHeight * 0.45);
+});
+addEventListener('wheel', e => { if (!broken && !KP.open && Math.abs(e.deltaY) > 30) hitScreen(innerWidth / 2, innerHeight * 0.45); }, { passive: true });
+/* the hint belongs to the landing: any scroll hides it, and so does the hero leaving the screen. Off screen the canvas stops drawing, so it never fights the numbers */
+let heroOn = true;
+const hintEl = $('hint');
+addEventListener('scroll', () => hintEl.classList.toggle('up', scrollY > 0), { passive: true });
+new IntersectionObserver(([en]) => { const off = en.intersectionRatio < 0.5; hintEl.classList.toggle('away', off); document.body.classList.toggle('past', off); heroOn = en.isIntersecting; }, { threshold: [0, 0.5, 1] }).observe($('hero'));
+
+/* the cursor moves the camera a few degrees and walks the key light */
+const ptr = new THREE.Vector2(), ptrS = new THREE.Vector2();
+addEventListener('pointermove', e => { ptr.set(e.clientX / innerWidth * 2 - 1, e.clientY / innerHeight * 2 - 1); });
+
+/* ---------- loop ---------- */
+const cue = $('cue');
+const tmp = new THREE.Vector3();
+function tick(dt) {
+  simT += dt;
+  if (!RM) {
+    ptrS.lerp(ptr, 1 - Math.exp(-dt * 3));
+    const yaw = ptrS.x * 0.07, pitch = ptrS.y * 0.03;
+    tmp.copy(camBase).sub(look);
+    tmp.applyAxisAngle(new THREE.Vector3(0, 1, 0), -yaw);
+    tmp.y += pitch * tmp.length() * -1;
+    camera.position.copy(look).add(tmp); camera.lookAt(look);
+    /* a slow sweep: the studio turns a little, so highlights glide over the bevels */
+    scene.environmentRotation.y = Math.sin(simT * 0.32) * 0.35 + ptrS.x * 0.15;
+    key.position.set(3.5 + ptrS.x * 2.5, 9, 6 - ptrS.y * 1.5);
+  }
+  if (broken && !settled && !RM) {
+    const t = simT - hitAt;
+    if (t >= HITSTOP) {
+      for (const s of shards) if (!s.live && t >= s.delay) release(s);
+      world.step(1 / 120, dt, 4);
+      syncShards();
+      if (arriveAt < 0 && t > 0.55) { arriveAt = simT; fire(); }
+      if (t > 1.2 && shards.every(s => s.body.sleepState === CANNON.Body.SLEEPING || s.body.velocity.lengthSquared() < 0.004)) settled = true;
+      if (t > 6) settled = true;
+    }
+  }
+  if (arriveAt >= 0) {
+    const a = arrive((simT - arriveAt) / 0.48), b = arrive((simT - arriveAt - 0.12) / 0.48);
+    wallMat.uniforms.uArrive.value = a;
+    cue.style.opacity = b; cue.style.transform = `translateY(${(1 - b) * 14}px)`;
+  }
+}
+function render() { renderer.render(scene, camera); }
+
+/* frame-time watch: if the machine cannot hold it, step the pixel ratio down */
+let acc = 0, n = 0, last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (!heroOn) { requestAnimationFrame(loop); return; }
+  tick(dt); render();
+  acc += dt; n++;
+  if (acc > 1.5) { const avg = acc / n; if (avg > 0.021 && DPR > 1) { DPR = Math.max(1, DPR - 0.25); renderer.setPixelRatio(DPR); } acc = 0; n = 0; }
+  requestAnimationFrame(loop);
+}
+
+/* ---------- boot ---------- */
+async function boot() {
+  await Promise.all([document.fonts.load('800 100px "Bricolage Grotesque"'), document.fonts.load('500 16px "Bricolage Grotesque"')]);
+  const ttf = await new TTFLoader().loadAsync('bowlby-one.ttf');
+  font = new Font(ttf);
+  buildName(); frame();
+  addEventListener('resize', () => { if (!CAPTURE) frame(); });
+  $('hinttxt').textContent = TOUCH ? 'Tap to shatter' : 'Click to shatter';
+  render(); canvas.classList.add('on');
+  setTimeout(() => $('hint').classList.add('on'), 500);
+  if (!CAPTURE) requestAnimationFrame(t => { last = t; loop(t); });
+  window.__glass = {
+    ready: true,
+    advance(ms) { const steps = Math.round(ms / (1000 / 60)); for (let i = 0; i < steps; i++) tick(1 / 60); render(); return { simT, shards: shards.length, settled }; },
+    click(px, py) { hitScreen(px, py); render(); return { shards: shards.length, buildMs }; },
+    stats() { return { shards: shards.length, buildMs, calls: renderer.info.render.calls, tris: renderer.info.render.triangles, dpr: DPR, settled }; },
+    perf(frames = 60) { const t0 = performance.now(); for (let i = 0; i < frames; i++) { tick(1 / 60); render(); } renderer.getContext().finish(); return (performance.now() - t0) / frames; }
+  };
+}
+boot().catch(e => { console.error(e); });
+</script>
+<main id="after">
+  <!-- numbers.js fills this: the motion-graphics numbers chapter -->
+  <section id="numbers" aria-label="Numbers"></section>
+  <!-- work.js fills this: all projects plus the project pages -->
+  <section id="work" aria-label="Work"></section>
+</main>
+<script type="module" src="numbers.js"></script>
+<script type="module" src="work.js"></script>
+</body>
+</html>
