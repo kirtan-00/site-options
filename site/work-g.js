@@ -71,40 +71,43 @@ const CSS = `
 .wkg-wrap{position:relative;overflow:clip}
 .wkg-gl{position:absolute;left:0;top:0;display:block;width:100%;pointer-events:none;z-index:0;visibility:hidden;will-change:transform}
 .wkg-gl.wkg-on{visibility:visible}
-.wkg-list{position:relative;z-index:1;padding:0 var(--gut);transition:opacity .35s ${ARRIVE}}
+.wkg-list{position:relative;z-index:1;box-sizing:border-box;width:100%;max-width:2560px;margin:0 auto;padding:0 var(--gut);
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--lg);row-gap:var(--rg);align-items:start;transition:opacity .35s ${ARRIVE}}
 .wkg-list.wkg-fade{opacity:0}
-.wkg-col{grid-column:span 6;display:grid;grid-template-columns:subgrid;align-content:start;row-gap:clamp(64px,11vh,140px)}
-.wkg-col+.wkg-col{padding-top:clamp(140px,26vh,300px)}
-.wkg-card{display:block;grid-column:1/-1;min-width:0}
-.wkg-card.wkg-v{grid-column:1/span 5}
-.wkg-col+.wkg-col .wkg-card.wkg-v{grid-column:2/span 5}
-.wkg-m{position:relative;display:block;width:100%;aspect-ratio:16/10;border-radius:18px;overflow:hidden;background:var(--wkg-slot,${SKY});container-type:inline-size}
-.wkg-card.wkg-v .wkg-m{aspect-ratio:4/5}
-.wkg-m>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;transition:transform .9s ${ARRIVE},opacity .5s}
+/* Lusion's listing: two equal columns, one box ratio for every card, one caption block under every box,
+   so every row shares its image top, image bottom, title baseline and caption top */
+.wkg{--lg:clamp(16px,2.2vw,44px);--rg:clamp(56px,6.4vw,128px);--rad:clamp(12px,1vw,18px)}
+.wkg-card{display:block;width:100%;min-width:0}
+.wkg-m{position:relative;display:block;width:100%;aspect-ratio:16/10;border-radius:var(--rad);overflow:hidden;background:var(--wkg-slot,${SKY});container-type:inline-size}
+.wkg-m>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block;transition:transform .9s ${ARRIVE},opacity .5s}
 .wkg.wkg-glon .wkg-m{background:transparent}
 .wkg.wkg-glon .wkg-m>img,.wkg.wkg-glon .wkg-m>.wkg-pl{opacity:0}
-.wkg-cap{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:20px;align-items:baseline;margin-top:20px}
-.wkg-cap h3{margin:0;font:400 clamp(30px,2.9vw,50px)/1 ${FD};letter-spacing:-.02em;text-wrap:balance}
+.wkg-cap{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:20px;align-items:baseline;margin-top:clamp(14px,1.3vw,22px)}
+.wkg-cap h3{margin:0;min-width:0;font:400 clamp(26px,2.3vw,44px)/1.08 ${FD};letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wkg-k{display:flex;gap:14px;font:500 15px/1.2 ${FT};color:rgba(12,13,15,.7);white-space:nowrap}
 .wkg-n{color:${COBALT};font-variant-numeric:tabular-nums}
-.wkg-cap p{grid-column:1/-1;margin:12px 0 0;font-size:clamp(15px,1.1vw,17px);line-height:1.45;max-width:46ch;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.wkg-cap p{grid-column:1/-1;margin:10px 0 0;width:100%;max-width:44ch;font-size:clamp(15px,1.05vw,17px);line-height:1.45;height:2.9em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
 /* the plate: text-only work. Its own ground from the palette, a big index, the one line as a pull line, one real number */
-.wkg-pl{position:absolute;inset:0;background:var(--pc);color:var(--pf);container-type:inline-size;transition:opacity .5s}
-.wkg-pk{position:absolute;left:6.25cqw;top:6.25cqw;font:500 max(12px,2.5cqw)/1.2 ${FT};color:var(--pk)}
-.wkg-pn{position:absolute;right:5.4cqw;top:4.2cqw;font:400 17cqw/.8 ${FD};letter-spacing:-.04em;color:var(--pa);font-variant-numeric:tabular-nums}
-.wkg-pq{position:absolute;left:6.25cqw;bottom:6.25cqw;width:56cqw;font:400 max(14px,3.8cqw)/1.13 ${FD};letter-spacing:-.008em;text-wrap:pretty}
-.wkg-pl.wkg-nf .wkg-pq{width:78cqw}
-.wkg-pf{position:absolute;right:6.25cqw;bottom:6.25cqw;width:28cqw;text-align:right}
-.wkg-pf b{display:block;font:400 10cqw/.82 ${FD};letter-spacing:-.03em;color:var(--pa);font-variant-numeric:tabular-nums}
-.wkg-pf small{display:block;margin-top:1.6cqw;font:500 max(11px,1.9cqw)/1.25 ${FT};color:var(--pk)}
+/* everything in cqw of the box, so it is the same picture at every width and can never spill out.
+   The logo (or the name set as a wordmark) is the hero; one real number sits bottom right. plateCanvas() draws the same. */
+.wkg-pl{position:absolute;inset:0;overflow:hidden;background:var(--pc);color:var(--pf);container-type:inline-size;transition:opacity .5s}
+.wkg-plg{position:absolute;left:20cqw;right:20cqw;top:12cqw;height:32cqw;display:flex;align-items:center;justify-content:center}
+.wkg-pl.wkg-nf .wkg-plg{top:15.25cqw}
+.wkg-plg img{display:block;max-width:100%;max-height:100%;width:auto;height:auto}
+.wkg-plg.wkg-pw{left:8cqw;right:8cqw}
+.wkg-plg.wkg-pw span{font:400 8cqw/.95 ${FD};letter-spacing:-.025em;color:var(--pa);text-align:center;text-wrap:balance}
+.wkg-pf{position:absolute;right:5.5cqw;bottom:5.5cqw;max-width:40cqw;text-align:right}
+.wkg-pf b{display:block;font:400 7cqw/.85 ${FD};letter-spacing:-.03em;color:var(--pa);font-variant-numeric:tabular-nums}
+.wkg-pf small{display:block;margin-top:1.2cqw;font:500 max(10px,1.7cqw)/1.25 ${FT};color:var(--pk)}
 
-.wkg-cur{position:fixed;left:0;top:0;z-index:8;pointer-events:none;padding:10px 16px;border-radius:99px;background:${COBALT};color:${PAPER};font:500 15px/1 ${FT};transform:translate3d(-200px,-200px,0) scale(0);will-change:transform;white-space:nowrap}
+.wkg-cur{position:fixed;left:0;top:0;z-index:8;pointer-events:none;padding:7px 12px;border-radius:99px;background:${INK};color:${PAPER};font:500 13px/1 ${FT};transform:translate3d(-200px,-200px,0) scale(0);transform-origin:0 0;will-change:transform;white-space:nowrap}
+html.has-cursor .wkg-cur{display:none}
 
 /* phone and no-WebGL: plain images, revealed with a clip as they arrive */
-.wkg-rv .wkg-m{clip-path:inset(14% 0 0 0 round 18px);transition:clip-path 1s ${ARRIVE}}
+.wkg-rv .wkg-m{clip-path:inset(14% 0 0 0 round var(--rad));transition:clip-path 1s ${ARRIVE}}
 .wkg-rv .wkg-m>img{transform:scale(1.12)}
-.wkg-rv.wkg-in .wkg-m{clip-path:inset(0 0 0 0 round 18px)}
+.wkg-rv.wkg-in .wkg-m{clip-path:inset(0 0 0 0 round var(--rad))}
 .wkg-rv.wkg-in .wkg-m>img{transform:none}
 @media (hover:hover) and (pointer:fine){.wkg:not(.wkg-glon) .wkg-card:hover .wkg-m>img{transform:scale(1.04)}}
 
@@ -147,6 +150,8 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
   padding:clamp(96px,14vh,140px) var(--gut) clamp(40px,7vh,72px);background:var(--pc);color:var(--pf)}
 .wkg-hero.wkg-txt::after{display:none}
 .wkg-tm{display:flex;justify-content:space-between;gap:24px;font:500 16px/1.3 ${FT};color:var(--pk);font-variant-numeric:tabular-nums}
+.wkg-tlogo{display:block;width:auto;height:auto;max-height:clamp(96px,11vw,190px);max-width:64%;margin:0 0 clamp(28px,5vh,56px)}
+.wkg-tlogo.wkg-tlw{max-height:none;max-width:min(36%,460px)}
 .wkg-txt h1{margin:0;font:400 clamp(64px,11.6vw,210px)/.88 ${FD};letter-spacing:-.035em;color:var(--pa);text-wrap:balance}
 .wkg-tg{margin-top:clamp(30px,6vh,64px);align-items:end;row-gap:32px}
 .wkg-tq{grid-column:1/span 7;margin:0;font:400 clamp(24px,2.5vw,42px)/1.14 ${FD};letter-spacing:-.012em;text-wrap:pretty}
@@ -220,10 +225,9 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
   .wkg-head{flex-direction:column;align-items:flex-start;gap:14px;padding-top:34px;padding-bottom:36px}
   .wkg-title{font-size:clamp(60px,19vw,92px)}
   .wkg-bh,.wkg-bl{grid-column:1/-1}
-  .wkg-col{grid-column:1/-1;row-gap:56px}
-  .wkg-col+.wkg-col{padding-top:56px}
-  .wkg-card.wkg-v,.wkg-col+.wkg-col .wkg-card.wkg-v{grid-column:1/span 3}
-  .wkg-cap{column-gap:12px;margin-top:14px}.wkg-cap h3{font-size:30px}
+  .wkg-list{grid-template-columns:minmax(0,1fr);row-gap:56px}
+  .wkg-cap{column-gap:12px;margin-top:14px}.wkg-cap h3{font-size:28px}
+  .wkg-tlogo{max-height:110px;max-width:80%}.wkg-tlogo.wkg-tlw{max-width:70%}
   .wkg-k{font-size:14px;gap:10px}
   .wkg-back{left:16px;top:16px}
   .wkg-hero{min-height:0}
@@ -279,7 +283,7 @@ const SCHEMES = {
   sky: { pc: SKY, pf: INK, pa: NAVY, pk: INK },
   ink: { pc: INK, pf: PAPER, pa: PINK, pk: SKY },
 };
-const PLATE_OF = { clapper: 'navy', fitkit: 'sky', 'fourside-studios': 'ink', palladium: 'cobalt', dvc: 'navy' };
+const PLATE_OF = { clapper: 'sky', fitkit: 'navy', 'fourside-studios': 'ink', palladium: 'cobalt', dvc: 'navy' };
 const ORDER_CYCLE = ['navy', 'cobalt', 'sky', 'ink'];
 function schemeOf(p) {
   const k = PLATE_OF[p.id] || ORDER_CYCLE[(ALL.filter(isText).indexOf(p) + 4) % 4];
@@ -292,6 +296,7 @@ function keyFact(p) {
   const fs = (p.facts || []).filter(f => NUM_RE0.test(clean(f.value).trim()));
   return fs.find(f => !/^year$/i.test(f.label)) || fs[0] || null;
 }
+const plateFact = (p) => { const f = keyFact(p); return f && !/^year$/i.test(f.label) ? f : null; };   // a year is not the number a card leads with
 const indexOf = (p) => DATA[p.wing].indexOf(p) + 1;
 /* keep the manifest order, but never two text-only cards next to each other */
 function spread(list) {
@@ -364,10 +369,36 @@ let ui = {}, gl = null, openId = null, curPage = null, busy = false;
 const holds = [];                        // running flight animations, so a test can hold them still
 
 /* ---------- the listing ---------- */
+/* a logo trimmed to its ink (some files carry wide transparent margins), cached per project */
+const LOGOS = new Map();
+function logoOf(p) {
+  if (!p.logo) return null;
+  if (LOGOS.has(p.id)) return LOGOS.get(p.id);
+  const pr = new Promise((res) => {
+    const im = new Image();
+    im.onload = () => {
+      try {
+        const w = im.naturalWidth, h = im.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h;
+        const g = c.getContext('2d'); g.drawImage(im, 0, 0);
+        const a = g.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
+        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (a[(y * w + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        if (x1 < 0) return res(null);
+        const t = document.createElement('canvas'); t.width = x1 - x0 + 1; t.height = y1 - y0 + 1;
+        t.getContext('2d').drawImage(c, -x0, -y0);
+        t.toBlob((b) => res({ canvas: t, url: b ? URL.createObjectURL(b) : t.toDataURL() }));
+      } catch (e) { res({ canvas: im, url: im.src }); }
+    };
+    im.onerror = () => res(null);
+    im.src = src(p.logo);
+  });
+  LOGOS.set(p.id, pr); return pr;
+}
 function plateEl(p) {
   const d = paint(el('div', 'wkg-pl'), p);
-  d.append(el('span', 'wkg-pn', pad(indexOf(p))), el('span', 'wkg-pq', clean(p.one_line)));   // the kind is in the caption under it
-  const f = keyFact(p);
+  const lp = logoOf(p);
+  if (lp) { const g = el('span', 'wkg-plg'), im = el('img'); im.alt = ''; im.draggable = false; g.appendChild(im); d.appendChild(g); lp.then(l => { if (l) im.src = l.url; else { g.className = 'wkg-plg wkg-pw'; g.textContent = ''; g.appendChild(el('span', '', clean(p.name))); } }); }
+  else { const g = el('span', 'wkg-plg wkg-pw'); g.appendChild(el('span', '', clean(p.name))); d.appendChild(g); }
+  const f = plateFact(p);
   if (f) { const x = el('span', 'wkg-pf'); x.append(el('b', '', clean(f.value)), el('small', '', clean(f.label))); d.appendChild(x); }
   else d.classList.add('wkg-nf');
   return d;
@@ -375,14 +406,14 @@ function plateEl(p) {
 function cardEl(p, i, n) {
   const c = el('button', 'wkg-card'); c.type = 'button'; c.dataset.id = p.id;
   c.setAttribute('aria-label', `${clean(p.name)}. Open the project`);
-  if (!isText(p) && isVert(p)) c.classList.add('wkg-v');
+  // no Open label: Kirtan removed it
   const m = el('span', 'wkg-m');
   if (isText(p)) m.appendChild(plateEl(p));
   else { const im = el('img'); im.alt = ''; im.decoding = 'async'; im.draggable = false; im.loading = i < 2 ? 'eager' : 'lazy'; setImg(im, p.hero, '(max-width:760px) 92vw, 46vw'); m.appendChild(im); }
   const cap = el('span', 'wkg-cap');
   const k = el('span', 'wkg-k'); k.append(el('span', '', clean(kindOf(p))), el('span', 'wkg-n', pad(i + 1)));
   cap.append(el('h3', '', clean(p.name)), k);
-  if (!isText(p)) cap.appendChild(el('p', '', clean(p.one_line)));   // a plate already carries its one line
+  cap.appendChild(el('p', '', clean(p.one_line)));   // every card, so every caption block is the same height
   c.append(m, cap);
   c.addEventListener('click', () => go(p.id, m));
   return c;
@@ -398,8 +429,8 @@ function setTab(t, first) {
     ui.count.textContent = pad(list.length);
     ui.sub.textContent = WING[t].sub;
     ui.brands.hidden = t !== 'media';
-    ui.cols.forEach(c => (c.textContent = ''));
-    const cards = list.map((p, i) => { const c = cardEl(p, i, list.length); ui.cols[innerWidth <= 760 ? 0 : i % 2].appendChild(c); return c; });
+    ui.list.textContent = '';
+    const cards = list.map((p, i) => { const c = cardEl(p, i, list.length); ui.list.appendChild(c); return c; });
     ui.cards = cards;
     if (gl) gl.setCards(list, cards); else revealCards(cards);
     ui.list.classList.remove('wkg-fade');
@@ -427,14 +458,10 @@ function buildListing() {
   if (BRANDS.length) BRANDS.forEach(b => bl.appendChild(el('li', '', b))); else bl.appendChild(el('li', 'wkg-tbc', 'Brand names to come'));
   ui.brands.append(el('h3', 'wkg-bh', 'Brands impacted'), bl);
   ui.wrap = el('div', 'wkg-wrap');
-  ui.list = el('div', 'wkg-list wkg-g');
-  ui.cols = [el('div', 'wkg-col'), el('div', 'wkg-col')];
-  ui.list.append(...ui.cols);
+  ui.list = el('div', 'wkg-list');
   ui.wrap.appendChild(ui.list);
   w.append(top, head, ui.brands, ui.wrap);
   ROOT.appendChild(w);
-  let lastW = innerWidth;
-  addEventListener('resize', () => { if ((lastW <= 760) !== (innerWidth <= 760)) setTab(tab, true); lastW = innerWidth; });
 }
 
 /* ---------- the WebGL gallery ---------- */
@@ -446,7 +473,7 @@ void main(){
   vec4 wp = modelMatrix * vec4(position, 1.0);
   float ny = clamp(wp.y / (uViewH * 0.5), -1.4, 1.4);
   wp.y += sin(uv.x * 3.14159265) * uVel;                     // the plane bows with the scroll speed
-  wp.z -= ny * ny * (12.0 + abs(uVel) * 2.4);                 // a drum that deepens with speed: at rest the planes sit nearly flat
+  wp.z -= ny * ny * abs(uVel) * 2.6;                         // a drum that deepens with speed: at rest the planes sit flat, exactly on their boxes
   vec2 d = (uv - uMouse) * uSize / max(uSize.x, uSize.y);
   wp.z += uHover * 22.0 * exp(-dot(d, d) * 6.0);              // the pointer lifts a soft dome, no rings
   gl_Position = projectionMatrix * viewMatrix * wp;
@@ -487,12 +514,13 @@ async function initGL() {
   const cam = new THREE.PerspectiveCamera(30, 1, 1, 10000);
   const geo = new THREE.PlaneGeometry(1, 1, 24, 24);
   const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); blank.needsUpdate = true;
-  const cur = el('div', 'wkg-cur', 'Open'); cur.setAttribute('aria-hidden', 'true'); ROOT.appendChild(cur);
+  const cur = el('div', 'wkg-cur', ''); cur.style.display = 'none'; cur.setAttribute('aria-hidden', 'true');
   const meshes = new Map();          // id -> { mesh, u, hov, hovT, load, loadT, tex }
   let items = [];                    // [{ p, card, slot, cap, m }]
   const M = 280;                     // the canvas overhangs the viewport by this much above and below
   let W = 1, H = 1, HC = 1, raf = 0, lastY = scrollY, vel = 0, pin = null, visible = false, frames = 2;
-  let mx = -1, my = -1, cx = -200, cy = -200, cs = 0, csT = 0, over = null;
+  let mx = -1, my = -1, cx = -200, cy = -200, cs = 0, csT = 0, over = null, rad = 18;
+  const readRad = () => { const s0 = ui.list.querySelector('.wkg-m'); if (s0) rad = parseFloat(getComputedStyle(s0).borderTopLeftRadius) || rad; for (const m of meshes.values()) m.u.uRad.value = rad; };
 
   const col3 = (hex) => new THREE.Color(hex);    // the slot colour, raw like the texels
   function texFor(p, rec) {
@@ -503,7 +531,12 @@ async function initGL() {
       t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.anisotropy = 4; t.needsUpdate = true;
       rec.tex = t; rec.u.uTex.value = t; rec.u.uImg.value.set(w, h); rec.loadT = 1; kick();
     };
-    if (isText(p)) { const draw = () => done(plateCanvas(p), 1280, 800); (document.fonts ? Promise.all([document.fonts.load(`400 120px ${FD}`), document.fonts.load(`500 30px ${FT}`)]).then(draw, draw) : draw()); return; }
+    if (isText(p)) {
+      const waits = [logoOf(p) || Promise.resolve(null)];
+      if (document.fonts) waits.push(document.fonts.load(`400 120px ${FD}`), document.fonts.load(`500 30px ${FT}`));
+      Promise.all(waits).then(([l]) => done(plateCanvas(p, l), 1280, 800), () => done(plateCanvas(p, null), 1280, 800));
+      return;
+    }
     const im = new Image(); im.decoding = 'async';
     im.onload = () => (im.decode ? im.decode().catch(() => {}) : Promise.resolve()).then(() => done(im, im.naturalWidth, im.naturalHeight));
     im.onerror = () => { if (!im._fb) { im._fb = 1; im.src = src(p.hero); } };
@@ -513,18 +546,19 @@ async function initGL() {
   function setCards(list, cards) {
     tio.disconnect();
     for (const r of meshes.values()) r.mesh.visible = false;
+    readRad();
     items = list.map((p, i) => {
       let m = meshes.get(p.id);
       if (!m) {
         const u = { uTex: { value: blank }, uSize: { value: new THREE.Vector2(1, 1) }, uImg: { value: new THREE.Vector2(16, 10) }, uHover: { value: 0 }, uMouse: { value: new THREE.Vector2(.5, .5) },
-          uLoad: { value: 0 }, uBase: { value: col3(WING[p.wing].slot) }, uAlpha: { value: 1 }, uRad: { value: 18 }, uVel: { value: 0 }, uViewH: { value: 900 } };
+          uLoad: { value: 0 }, uBase: { value: col3(WING[p.wing].slot) }, uAlpha: { value: 1 }, uRad: { value: rad }, uVel: { value: 0 }, uViewH: { value: 900 } };
         u.uAlpha.value = 0;
         const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: FRAG, transparent: true, premultipliedAlpha: true, depthTest: false, depthWrite: false });
         const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; scene.add(mesh);
         m = { mesh, u, hov: 0, hovT: 0, load: 0, loadT: 0, tex: null, alphaT: 1 };
         meshes.set(p.id, m);
       }
-      m.alphaT = 1;
+      m.alphaT = 1; m.u.uRad.value = rad;
       const card = cards[i];
       tio.observe(card);
       return { p, card, slot: card.querySelector('.wkg-m'), cap: card.querySelector('.wkg-cap'), m };
@@ -534,7 +568,7 @@ async function initGL() {
     frames = 3; kick();
   }
   function resize() {
-    W = ui.wrap.clientWidth || document.documentElement.clientWidth; H = innerHeight; HC = H + 2 * M;
+    W = ui.wrap.clientWidth || document.documentElement.clientWidth; H = innerHeight; HC = H + 2 * M; readRad();
     renderer.setSize(W, HC, false); canvas.style.height = HC + 'px';
     cam.aspect = W / HC; cam.position.set(0, 0, (HC / 2) / Math.tan(Math.PI * 15 / 180)); cam.updateProjectionMatrix();
     frames = 2; kick();
@@ -576,13 +610,15 @@ async function initGL() {
     if (mx >= 0) { cx += (mx - cx) * 0.2; cy += (my - cy) * 0.2; }
     cs += (csT - cs) * 0.16;
     if (Math.abs(csT - cs) > 0.003 || Math.abs(mx - cx) > 0.3 || Math.abs(my - cy) > 0.3) moving = true; else cs = csT;
-    cur.style.transform = `translate3d(${(cx + 18).toFixed(1)}px,${(cy + 18).toFixed(1)}px,0) scale(${cs.toFixed(3)})`;
+    cur.style.transform = `translate3d(${(cx + 14).toFixed(1)}px,${(cy + 14).toFixed(1)}px,0) scale(${cs.toFixed(3)})`;
     renderer.render(scene, cam);
     if (frames > 0) frames--;
     if (moving && visible && !openId) raf = requestAnimationFrame(frame);
   }
   addEventListener('scroll', kick, { passive: true });
   addEventListener('resize', resize);
+  // the wrap can change width without a window resize (the scrollbar arrives when the page unlocks)
+  if (window.ResizeObserver) { let lw = 0; new ResizeObserver(() => { const w = ui.wrap.clientWidth; if (w !== lw) { lw = w; resize(); } }).observe(ui.wrap); }
   addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') return; mx = e.clientX; my = e.clientY; if (visible) kick(); }, { passive: true });
   document.documentElement.addEventListener('pointerleave', () => { mx = my = -1; kick(); });
   new IntersectionObserver(([e]) => { visible = e.isIntersecting; canvas.classList.toggle('wkg-on', visible); if (visible) { lastY = scrollY; frames = 2; kick(); } }).observe(ui.wrap);
@@ -597,31 +633,33 @@ async function initGL() {
     resume() { lastY = scrollY; frames = 2; kick(); },
   };
 }
-function plateCanvas(p) {
+function plateCanvas(p, logo) {
   // the same composition as the DOM plate (.wkg-pl), in cqw of a 1280 wide card
   const Wd = 1280, Hd = 800, u = Wd / 100, c = document.createElement('canvas'); c.width = Wd; c.height = Hd;
-  const g = c.getContext('2d'), sc = schemeOf(p), f = keyFact(p);
+  const g = c.getContext("2d"), sc = schemeOf(p), f = plateFact(p);
   g.fillStyle = sc.pc; g.fillRect(0, 0, Wd, Hd);
-  g.textBaseline = 'top'; g.textAlign = 'left';
-  g.fillStyle = sc.pa; g.font = `400 ${17 * u}px ${FD}`; g.textAlign = 'right'; g.textBaseline = 'alphabetic';
-  g.fillText(pad(indexOf(p)), Wd - 5.4 * u, 4.2 * u + 13.2 * u);
-  let bottom = Hd - 6.25 * u;
-  if (f) {
-    g.fillStyle = sc.pk; g.font = `500 ${1.9 * u}px ${FT}`; g.textBaseline = 'alphabetic';
-    const lab = clean(f.label), lw = 28 * u, ll = []; let ln = '';
-    for (const w of lab.split(/\s+/)) { const t = ln ? ln + ' ' + w : w; if (g.measureText(t).width > lw && ln) { ll.push(ln); ln = w; } else ln = t; }
-    ll.push(ln);
-    let y = bottom - (ll.length - 1) * 1.25 * 1.9 * u - 0.35 * 1.9 * u;
-    for (const l of ll) { g.fillText(l, Wd - 6.25 * u, y); y += 1.25 * 1.9 * u; }
-    g.fillStyle = sc.pa; g.font = `400 ${10 * u}px ${FD}`;
-    g.fillText(clean(f.value), Wd - 6.25 * u, bottom - ll.length * 1.25 * 1.9 * u - 1.6 * u - 0.12 * 10 * u);
+  const wrap = (text, maxW) => { const ls = []; let ln = ''; for (const w of text.split(/\s+/)) { const t = ln ? ln + ' ' + w : w; if (g.measureText(t).width > maxW && ln) { ls.push(ln); ln = w; } else ln = t; } ls.push(ln); return ls; };
+  const bx = { y: (f ? 12 : 15.25) * u, h: 32 * u };
+  if (logo && logo.canvas) {
+    const lw = logo.canvas.width, lh = logo.canvas.height, k = Math.min(60 * u / lw, bx.h / lh), dw = lw * k, dh = lh * k;
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(logo.canvas, (Wd - dw) / 2, bx.y + (bx.h - dh) / 2, dw, dh);
+  } else {
+    g.fillStyle = sc.pa; g.font = `400 ${8 * u}px ${FD}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const ls = wrap(clean(p.name), 84 * u), lh = 8 * u * .95;
+    let y = bx.y + bx.h / 2 - (ls.length - 1) * lh / 2;
+    for (const l of ls) { g.fillText(l, Wd / 2, y); y += lh; }
   }
-  g.textAlign = 'left'; g.fillStyle = sc.pf; g.font = `400 ${3.8 * u}px ${FD}`;
-  const maxW = (f ? 56 : 78) * u, lh = 3.8 * u * 1.13, words = clean(p.one_line).split(/\s+/), lines = []; let line = '';
-  for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
-  lines.push(line);
-  let y = bottom - (lines.length - 1) * lh - 0.28 * 3.8 * u;
-  for (const l of lines) { g.fillText(l, 6.25 * u, y); y += lh; }
+  if (f) {
+    g.textAlign = 'right'; g.textBaseline = 'alphabetic';
+    const bottom = Hd - 5.5 * u, fs = 1.7 * u, lh = fs * 1.25;
+    g.fillStyle = sc.pk; g.font = `500 ${fs}px ${FT}`;
+    const ll = wrap(clean(f.label), 40 * u);
+    let y = bottom - (ll.length - 1) * lh - 0.32 * fs;
+    for (const l of ll) { g.fillText(l, Wd - 5.5 * u, y); y += lh; }
+    g.fillStyle = sc.pa; g.font = `400 ${7 * u}px ${FD}`;
+    g.fillText(clean(f.value), Wd - 5.5 * u, bottom - ll.length * lh - 1.2 * u - 0.12 * 7 * u);
+  }
   return c;
 }
 
@@ -640,6 +678,8 @@ function heroOf(p) {
     hero.classList.add('wkg-txt'); paint(hero, p);
     const tm = el('div', 'wkg-tm'); tm.append(el('span', '', clean(kindOf(p))), el('span', '', `${pad(indexOf(p))} / ${pad(DATA[p.wing].length)}`));
     const bd = el('div');
+    const lp = logoOf(p);
+    if (lp) { const lg = el('img', 'wkg-tlogo'); lg.alt = ''; lg.hidden = true; bd.appendChild(lg); lp.then(l => { if (l) { if (l.canvas.width / l.canvas.height > 1.6) lg.classList.add('wkg-tlw'); lg.src = l.url; lg.hidden = false; } }); }
     const h1 = el('h1'); lines(h1, clean(p.name), 0);
     const tg = el('div', 'wkg-tg wkg-g'), q = el('p', 'wkg-tq'), f = keyFact(p);
     q.textContent = clean(p.one_line);

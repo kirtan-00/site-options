@@ -464,11 +464,12 @@
       "It generates their bills and keeps their accounts. It's their internal tool, so it stays sealed: you can read about it, you can't open it."
     ],
     "link": null,
-    "logo": null,
+    "logo": "software/fourside-studios/logo.png",
     "hero": null,
     "gallery": [],
     "video": null,
     "screens_withheld": true,
-    "gaps": "Text only by the owner's rule. No logo exists, no link, no images. copy.js marks it classified, not live."
+    "gaps": "Text only by the owner's rule. No logo exists, no link, no images. copy.js marks it classified, not live.",
+    "logo_on": "dark"
   }
 ]

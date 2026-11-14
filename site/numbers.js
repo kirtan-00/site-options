@@ -358,7 +358,9 @@ function layoutTunnel() {
     const k = Math.min(ww * 0.6 / tun.numW, SP * 0.58 / tun.numH);
     for (let i = 0; i < rows; i++) {
       p.copy(ctr).addScaledVector(nrm, 0.004); p.z = 2 - SP * (i + 0.5);
-      sv.set(k, k, 1); m.compose(p, q, sv); tun.walls.setMatrixAt(n++, m);
+      // a row that reaches the paper end wall would be cut by its edge: only whole rows stand in front of it
+      const whole = p.z - tun.numH * k / 2 > -L + 0.05;
+      sv.set(whole ? k : 1e-5, whole ? k : 1e-5, 1); m.compose(p, q, sv); tun.walls.setMatrixAt(n++, m);
     }
   });
   tun.walls.instanceMatrix.needsUpdate = true;

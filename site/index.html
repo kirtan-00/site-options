@@ -42,21 +42,55 @@ body.kp-in.kp-going #scrollcue{opacity:0;transition-duration:.24s;transition-tim
 
 #after{position:relative;z-index:1}
 
-#contact{position:fixed;top:18px;right:18px;z-index:10;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-/* Contact me: a quiet paper chip with a hairline ink rule and a cobalt dot. Paper and ink read on every ground under it
-   (light blue, pink, navy, photos), so it never needs a heavy black capsule. The underline draws on hover. */
-#cbtn{display:flex;align-items:center;gap:10px;background:var(--paper);color:var(--ink);border:0;border-radius:999px;
-  box-shadow:inset 0 0 0 1px var(--ink);padding:11px 18px 11px 15px;font:800 15px/1 "Bricolage Grotesque",system-ui,sans-serif;letter-spacing:.015em;cursor:pointer}
-#cbtn .d{display:block;width:7px;height:7px;border-radius:50%;background:#1c3bb0;transition:transform .36s var(--arrive)}
-#cbtn .t{position:relative;display:block;padding-bottom:2px}
-#cbtn .t::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:currentColor;transform:scaleX(0);transform-origin:left;transition:transform .42s var(--arrive)}
-#cbtn[aria-expanded="true"] .t::after{transform:scaleX(1)}
-@media (hover:hover){#cbtn:hover .t::after{transform:scaleX(1)}#cbtn:hover .d{transform:scale(1.3)}#kpcue:hover{transform:translateY(-2px)}}
-#cbtn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
-#cmsg{background:var(--paper);color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);padding:12px 16px;border-radius:14px;font:500 15px/1.35 "Bricolage Grotesque",system-ui,sans-serif;max-width:250px}
-#cmsg[hidden]{display:none}
-@media (prefers-reduced-motion: reduce){#cbtn .d,#cbtn .t::after{transition:none}}
-@media (max-width:700px){:root{--g:18px}#scrollcue{bottom:calc(24px + env(safe-area-inset-bottom))}#kpcue{font-size:18px;padding:13px 22px 13px 16px}}
+#contact{position:fixed;top:18px;right:18px;z-index:10;display:flex;flex-direction:column;align-items:stretch;width:max-content}
+/* Contact me: a sharp ink block, two lines. The name of the act, then the time where Kirtan is. Ink holds on every ground under it
+   (light blue, pink, photos, the project list); a paper keyline only shows where the ground is dark, so it never sinks into navy.
+   On hover a cobalt fill wipes up from the bottom edge; open, it stays cobalt and the message drops out beneath it as one piece. */
+#cbtn{position:relative;display:grid;justify-items:start;gap:5px;min-width:196px;background:var(--ink);color:var(--paper);border:0;border-radius:0;
+  box-shadow:0 0 0 1px rgba(241,242,240,.22);padding:13px 18px 12px 16px;cursor:pointer;text-align:left;overflow:hidden;
+  transition:transform .16s var(--arrive)}
+#cbtn::before{content:"";position:absolute;inset:0;background:#1c3bb0;transform:scaleY(0);transform-origin:50% 100%;transition:transform .5s var(--move)}
+#cbtn>span{position:relative}
+#cbtn .t{font:800 16px/1 "Bricolage Grotesque",system-ui,sans-serif;letter-spacing:.005em}
+#cbtn .z{font:500 12.5px/1 "Bricolage Grotesque",system-ui,sans-serif;color:var(--blue);font-variant-numeric:tabular-nums;white-space:nowrap}
+#cbtn .z:empty{display:none}
+#cbtn:active{transform:scale(.96)}
+#cbtn[aria-expanded="true"]::before{transform:scaleY(1)}
+@media (hover:hover){#cbtn:hover::before{transform:scaleY(1)}#kpcue:hover{transform:translateY(-2px)}}
+#cbtn:focus-visible{outline:2px solid var(--paper);outline-offset:0;box-shadow:0 0 0 4px var(--ink)}
+/* the message: the same ink block, hung from the button, revealed top down */
+#cmsg{position:absolute;top:100%;left:0;right:0;background:var(--ink);color:var(--paper);box-shadow:0 0 0 1px rgba(241,242,240,.22);
+  padding:13px 18px 15px 16px;border-top:1px solid rgba(241,242,240,.16);font:500 14.5px/1.4 "Bricolage Grotesque",system-ui,sans-serif;
+  visibility:hidden;clip-path:inset(0 0 100% 0);transition:clip-path .36s var(--leave),visibility 0s linear .36s}
+#cmsg.on{visibility:visible;clip-path:inset(0 0 0 0);transition:clip-path .5s var(--arrive),visibility 0s}
+@media (prefers-reduced-motion: reduce){#cbtn,#cbtn::before,#cmsg,#cmsg.on{transition:none}}
+
+/* the cursor: desktop with a fine pointer only (html.has-cursor). An ink dot that sits exactly on the pointer, and a ring that
+   follows on a critically damped spring. Both carry a thin paper keyline, so they read on light blue, pink, navy and photos alike.
+   Over [data-cursor] the ring fills and grows to hold a short word; on press it gives a little. */
+html.has-cursor,html.has-cursor *{cursor:none!important}
+html.has-cursor :is(input,textarea,select,[contenteditable="true"]){cursor:text!important}
+#kc{position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;pointer-events:none;--kf:var(--ink);--kb:var(--paper)}
+#kc[hidden]{display:none}
+#kc.dark{--kf:var(--paper);--kb:var(--ink)}
+#kc .kd,#kc .kr{position:absolute;left:0;top:0;will-change:transform}
+#kc .kd i{position:absolute;left:-3px;top:-3px;width:6px;height:6px;border-radius:50%;background:var(--kf);box-shadow:0 0 0 1px var(--kb);
+  transition:transform .2s var(--arrive),opacity .2s var(--arrive),background-color .2s,box-shadow .2s}
+#kc .kr i{position:absolute;left:-20px;top:-20px;width:40px;height:40px;border-radius:50%;
+  box-shadow:inset 0 0 0 1.5px var(--kf),inset 0 0 0 2.5px var(--kb),0 0 0 1px var(--kb);
+  transition:transform .42s var(--arrive),opacity .24s var(--arrive),background-color .3s var(--arrive),box-shadow .2s}
+#kc .kr b{position:absolute;left:0;top:0;transform:translate(-50%,-50%) translateY(6px);opacity:0;white-space:nowrap;color:var(--kb);
+  font:800 15px/1 "Bricolage Grotesque",system-ui,sans-serif;transition:opacity .2s var(--arrive),transform .32s var(--arrive)}
+#kc.link .kr i{transform:scale(1.3)}
+#kc.lab .kr i{transform:scale(2.2);background:var(--kf);box-shadow:0 0 0 .5px var(--kb)}
+#kc.lab .kr b{opacity:1;transform:translate(-50%,-50%);transition-delay:.06s}
+#kc.lab .kd i{transform:scale(0);opacity:0}
+#kc.down .kr i{transform:scale(.8)}
+#kc.down.link .kr i{transform:scale(1.1)}
+#kc.down.lab .kr i{transform:scale(2)}
+#kc.off .kd i,#kc.off .kr i,#kc.off .kr b{opacity:0}
+#kc.off .kr i{transform:scale(.4)}
+@media (max-width:700px){:root{--g:18px}#contact{top:18px;right:18px}#cbtn{min-width:0;padding:11px 15px 10px 13px;gap:4px}#cbtn .t{font-size:15px}#cbtn .z{font-size:12px}#scrollcue{bottom:calc(24px + env(safe-area-inset-bottom))}#kpcue{font-size:18px;padding:13px 22px 13px 16px}}
 @media (prefers-reduced-motion: reduce){#kpcue .w::after{animation:none;transform:translateY(4px)}#kpcue{transition:none}}
 </style>
 <script type="importmap">
@@ -72,8 +106,8 @@ body.kp-in.kp-going #scrollcue{opacity:0;transition-duration:.24s;transition-tim
   </div>
 </section>
 <div id="contact">
-  <button id="cbtn" type="button" aria-expanded="false" aria-controls="cmsg"><span class="d" aria-hidden="true"></span><span class="t">Contact me</span></button>
-  <p id="cmsg" hidden>Email goes here once Kirtan confirms it.</p>
+  <button id="cbtn" type="button" aria-expanded="false" aria-controls="cmsg" aria-label="Contact me"><span class="t">Contact me</span><span class="z" id="ctime" aria-hidden="true"></span></button>
+  <p id="cmsg" aria-hidden="true">Email goes here once Kirtan confirms it.</p>
 </div>
 
 <script type="module">
@@ -99,7 +133,15 @@ dispatchEvent(new Event('kp:final'));
 
 const $ = id => document.getElementById(id);
 const cbtn = $('cbtn'), cmsg = $('cmsg');
-cbtn.addEventListener('click', () => { const open = cmsg.hidden; cmsg.hidden = !open; cbtn.setAttribute('aria-expanded', String(open)); });
+/* Contact me: open and close the message; Escape or a click elsewhere closes it */
+const setMsg = open => { cmsg.classList.toggle('on', open); cmsg.setAttribute('aria-hidden', String(!open)); cbtn.setAttribute('aria-expanded', String(open)); };
+cbtn.addEventListener('click', () => setMsg(cbtn.getAttribute('aria-expanded') !== 'true'));
+addEventListener('keydown', e => { if (e.key === 'Escape' && cbtn.getAttribute('aria-expanded') === 'true') { setMsg(false); cbtn.focus(); } });
+addEventListener('pointerdown', e => { if (cbtn.getAttribute('aria-expanded') === 'true' && !$('contact').contains(e.target)) setMsg(false); });
+/* the time in Ahmedabad, the minute it changes */
+const ist = new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true });
+const tick = () => { $('ctime').textContent = ist.format(new Date()).replace(/\s?([ap])\.?m\.?$/i, (m, x) => ' ' + x.toLowerCase() + 'm') + ' in Ahmedabad'; setTimeout(tick, 60000 - Date.now() % 60000 + 50); };
+tick();
 
 const DISPLAY = '"Schibsted Grotesk"';
 const DPR = Math.min(devicePixelRatio || 1, 2);
@@ -421,6 +463,77 @@ window.SLATS.ready = true;
   <!-- work.js fills this: all projects plus the project pages -->
   <section id="work" aria-label="Work"></section>
 </main>
+<div id="kc" aria-hidden="true" hidden><div class="kr"><i></i><b></b></div><div class="kd"><i></i></div></div>
+<script>
+/* the cursor. One rAF loop that sleeps when nothing moves; it only ever writes transforms. */
+(() => {
+  const fine = matchMedia('(hover: hover) and (pointer: fine)'), calm = matchMedia('(prefers-reduced-motion: reduce)');
+  if (!fine.matches || calm.matches) return;   /* touch and reduced motion keep the system cursor */
+  const root = document.documentElement, kc = document.getElementById('kc');
+  const dot = kc.querySelector('.kd'), ring = kc.querySelector('.kr'), word = ring.querySelector('b');
+  root.classList.add('has-cursor'); kc.hidden = false; kc.classList.add('off');
+  const K = 520, C = 2 * Math.sqrt(K);   /* critically damped: it catches up without overshoot */
+  let px = -100, py = -100, rx = -100, ry = -100, vx = 0, vy = 0, last = 0, raf = 0, seen = false, sampleAt = 0, lastEl = null;
+  const lum = c => { const m = c.match(/[\d.]+/g); if (!m || (m[3] !== undefined && +m[3] < .5)) return -1; return (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255; };
+  function read(el) {
+    /* what sits under the pointer: a label, a plain link, a text field, and how dark the ground is */
+    const field = el && el.closest('input,textarea,select,[contenteditable="true"]');
+    const lab = el && el.closest('[data-cursor]');
+    const link = el && el.closest('a[href],button,[role="button"],label,summary');
+    let dark = false;
+    for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+      if (n === kc) continue;
+      const L = lum(getComputedStyle(n).backgroundColor);
+      if (L >= 0) { dark = L < 0.4; break; }
+    }
+    kc.classList.toggle('dark', dark);
+    kc.classList.toggle('field', !!field);
+    const text = lab && lab.getAttribute('data-cursor').trim();
+    if (text) word.textContent = text;
+    kc.classList.toggle('lab', !!text && !field);
+    kc.classList.toggle('link', !text && !!link && !field);
+    kc.classList.toggle('off', !!field || !seen);
+  }
+  function sample(t) {
+    if (t - sampleAt < 90) return;
+    sampleAt = t;
+    const el = document.elementFromPoint(px, py);
+    if (el !== lastEl) read(el);
+    lastEl = el;
+  }
+  function frame(t) {
+    raf = 0;
+    const dt = Math.min(1 / 30, last ? (t - last) / 1000 : 1 / 60); last = t;
+    for (let i = 0, h = dt / 2; i < 2; i++) { vx += (-K * (rx - px) - C * vx) * h; vy += (-K * (ry - py) - C * vy) * h; rx += vx * h; ry += vy * h; }
+    dot.style.transform = `translate3d(${px}px,${py}px,0)`;
+    ring.style.transform = `translate3d(${rx.toFixed(2)}px,${ry.toFixed(2)}px,0)`;
+    sample(t);
+    if (lastEl === null && seen) raf = requestAnimationFrame(frame);
+    else if (Math.abs(rx - px) + Math.abs(ry - py) + Math.abs(vx) + Math.abs(vy) > 0.05) raf = requestAnimationFrame(frame);
+    else { rx = px; ry = py; vx = vy = 0; last = 0; ring.style.transform = `translate3d(${px}px,${py}px,0)`; }
+  }
+  const wake = () => { if (!raf) raf = requestAnimationFrame(frame); };
+  addEventListener('pointermove', e => {
+    if (e.pointerType && e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+    px = e.clientX; py = e.clientY;
+    if (!seen) { seen = true; rx = px; ry = py; sampleAt = 0; lastEl = null; read(document.elementFromPoint(px, py)); }
+    wake();
+  }, { passive: true });
+  /* the ground can change under a still pointer: scroll and page changes re-read it */
+  const reread = () => { if (seen) { lastEl = null; wake(); } };   /* the frame's sampler does the read, at most every 90ms */
+  addEventListener('scroll', reread, { passive: true, capture: true });
+  addEventListener('hashchange', () => setTimeout(reread, 60));
+  addEventListener('pointerdown', () => kc.classList.add('down'));
+  addEventListener('pointerup', () => kc.classList.remove('down'));
+  document.addEventListener('mouseleave', () => { seen = false; kc.classList.add('off'); kc.classList.remove('down'); });
+  document.addEventListener('mouseenter', () => { /* the next move places it */ });
+  addEventListener('blur', () => { seen = false; kc.classList.add('off'); });
+  /* a switch to touch or to reduced motion hands the system cursor back */
+  const drop = () => { if (!fine.matches || calm.matches) { root.classList.remove('has-cursor'); kc.hidden = true; } else { root.classList.add('has-cursor'); kc.hidden = false; } };
+  fine.addEventListener && fine.addEventListener('change', drop); calm.addEventListener && calm.addEventListener('change', drop);
+  window.KC = { get state() { return { px, py, rx, ry, cls: kc.className }; } };
+})();
+</script>
 <script type="module" src="numbers.js"></script>
 <script type="module" src="work.js"></script>
 </body>
