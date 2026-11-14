@@ -1,8 +1,12 @@
 /* numbers chapter: three big numbers, pinned while the section is under the viewport.
    1 odometer (light blue), 2 tunnel (light pink), 3 stack (navy). All three.js, one canvas.
-   Inside a chapter the motion is scrubbed by scroll. Between chapters the next colour sheet crosses on its own 760ms clock,
-   triggered at a scroll line, so the sheet edge never parks across a number. The covered chapter is pushed up 22%.
-   After the last chapter #work covers the whole stage the same way. */
+   Everything is scrubbed by scroll, both ways. The chapters hand over through their own shapes, not a sliding sheet:
+   1 to 2: the view zooms into the counter of the centre drum's digit. The counter is a hole cut through the drum (a depth mask),
+           and the pink tunnel is behind it, so the hole grows until the tunnel mouth fills the frame.
+   2 to 3: the camera keeps pushing into the paper end wall while a square, one cube cell of the stack, opens from the
+           counter of the middle digit and grows into the frame's shape (the tunnel's ink frames), flooding it navy.
+           Its edge is a sky line, the same line as the stack's empty cells.
+   Reduced motion: a crossfade. After the last chapter #work covers the whole stage, pushed up 22%. */
 import * as THREE from 'three';
 
 /* Real values go here, as strings ('150K+', '3,677' and so on work). Until Kirtan gives them, they stay '000'. Never invent one. */
@@ -21,20 +25,16 @@ const RMK = RM ? 0 : 1;
 
 /* Scroll plan, in screens. 0 is the moment the section pins (it enters from -1). */
 const TL = { roll: [-0.8, 0.7], at: [1.0, 3.15], fly: [1.1, 2.95], build: [3.3, 4.6], pin: 5.1 };
-const MOVE_MS = 760;
+/* the two hand-offs, in screens of scroll: odometer holds from 0.68, tunnel holds from 2.95 */
+const HO = [[0.9, 1.25], [3.07, 3.42]];
+let H1 = 0, H2 = 0; // hand-off progress, set per frame
 
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, t) => a + (b - a) * t;
 const rng = (p, a, b) => clamp((p - a) / (b - a));
 const eIO = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 const eBack = t => { const c = 0.7, d = c + 1; return 1 + d * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
-/* the page-wide motion curves, as functions for the canvas: move = cubic-bezier(.7,0,.2,1) */
-function bezier(x1, y1, x2, y2) {
-  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx, cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
-  const X = t => ((ax * t + bx) * t + cx) * t, Y = t => ((ay * t + by) * t + cy) * t, dX = t => (3 * ax * t + 2 * bx) * t + cx;
-  return x => { if (x <= 0) return 0; if (x >= 1) return 1; let t = x; for (let i = 0; i < 8; i++) { const d = dX(t); if (Math.abs(d) < 1e-6) break; t -= (X(t) - x) / d; t = clamp(t); } return Y(t); };
-}
-const eMove = bezier(0.7, 0, 0.2, 1);
+const eOut = t => 1 - Math.pow(1 - t, 3);
 
 /* ---------- DOM ---------- */
 const SEC = document.getElementById('numbers');
@@ -47,7 +47,8 @@ css.textContent = `
 .nm-stage.nm-gone{visibility:hidden}
 .nm-canvas{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
 .nm-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;visibility:hidden}
-.nm-lab{position:absolute;left:0;top:0;margin:0;font:500 clamp(19px,1.9vw,30px)/1.15 "Bricolage Grotesque",system-ui,sans-serif;white-space:nowrap}
+.nm-lab{position:absolute;left:0;top:0;margin:0;transform-origin:0 0;font:500 clamp(19px,1.9vw,30px)/1.15 "Bricolage Grotesque",system-ui,sans-serif;white-space:nowrap}
+.nm-sq{position:absolute;left:0;top:0;border:3px solid #7d9bf0;box-sizing:border-box;pointer-events:none;visibility:hidden}
 .nm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 `;
 document.head.appendChild(css);
@@ -55,9 +56,11 @@ SEC.innerHTML = `<div class="nm-stage"><canvas class="nm-canvas" aria-hidden="tr
 <div class="nm-layer" data-i="0"><p class="nm-lab" style="color:#0c0d0f" aria-hidden="true"></p></div>
 <div class="nm-layer" data-i="1"></div>
 <div class="nm-layer" data-i="2"><p class="nm-lab" style="color:#f1f2f0" aria-hidden="true"></p></div>
+<div class="nm-sq" aria-hidden="true"></div>
 <ul class="nm-sr"></ul></div>`;
 const stage = SEC.querySelector('.nm-stage'), canvas = SEC.querySelector('.nm-canvas');
 const layers = [...SEC.querySelectorAll('.nm-layer')];
+const sqEl = SEC.querySelector('.nm-sq');
 const labs = [layers[0].querySelector('.nm-lab'), null, layers[2].querySelector('.nm-lab')];
 labs[0].textContent = NUMBERS[0].label; labs[2].textContent = NUMBERS[2].label;
 SEC.querySelector('.nm-sr').innerHTML = NUMBERS.map(n => `<li>${n.value} ${n.label}</li>`).join('');
@@ -74,13 +77,8 @@ sizeSection();
    So the stage goes fixed while the section is under it. Past the end it stays fixed, drops behind #work and is pushed up 22%,
    so #work covers it like each chapter covers the last. #work needs an opaque background for that to read. */
 let pinMode = '';
-const wipe = [null, { v: 0, from: 0, to: 0, t0: 0 }, { v: 0, from: 0, to: 0, t0: 0 }];
-function setWipe(i, to) {
-  const w = wipe[i]; if (w.to === to) return;
-  w.from = w.v; w.to = to; w.t0 = performance.now(); if (RM) w.v = w.from = to;
-}
 function pin() {
-  const top = SEC.getBoundingClientRect().top, max = SEC.offsetHeight - H, s = -top / H;
+  const top = SEC.getBoundingClientRect().top, max = SEC.offsetHeight - H;
   const mode = top > 0 ? 'pre' : (-top < max ? 'fix' : 'post');
   if (mode !== pinMode) {
     pinMode = mode;
@@ -92,7 +90,6 @@ function pin() {
     stage.style.transform = RM ? '' : `translateY(${(-0.22 * p * H).toFixed(1)}px)`;
     stage.classList.toggle('nm-gone', p >= 1);
   }
-  setWipe(1, s >= TL.at[0] ? 1 : 0); setWipe(2, s >= TL.at[1] ? 1 : 0);
 }
 addEventListener('scroll', () => { window.__nmSettled = false; pin(); kick(); }, { passive: true });
 pin();
@@ -132,55 +129,184 @@ const _v = new THREE.Vector3();
 function toScreen(obj, cam, x, y, z) { obj.updateMatrixWorld(true); _v.set(x, y, z); obj.localToWorld(_v); _v.project(cam); return { x: (_v.x + 1) / 2 * W, y: (1 - _v.y) / 2 * H }; }
 
 /* ---------- 1. odometer ---------- */
+/* A real counter. Ten digits printed round each cobalt drum, bent onto its curve. Navy rims between the drums, end plates and an axle.
+   The count runs as a real odometer does: the units drum turns, and a drum only moves while every drum to its right passes 9 to 0.
+   It spins up with the sheet, slows, ticks the last counts with a short detent, and every drum rolls over onto the number together.
+   All of it is a pure function of scroll, so it scrubs both ways and rests exactly. */
+const ODO = { spin: [-0.85, 0.16], tick: [0.16, 0.68], ticks: 3, pitch: 1.36 };
 const odo = { scene: new THREE.Scene(), cam: makeCam(), group: new THREE.Group(), drums: [] };
+function bendGlyph(src, R, maxLen) { // tessellate, then wrap y round the drum: flat type becomes print on a cylinder
+  const pos = src.attributes.position.array, nor = src.attributes.normal.array;
+  const P = [], N = [], groups = [], L2 = maxLen * maxLen;
+  const vtx = i => [pos[i * 3], pos[i * 3 + 1], pos[i * 3 + 2], nor[i * 3], nor[i * 3 + 1], nor[i * 3 + 2]];
+  const d2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+  const mid = (a, b) => { const m = a.map((v, i) => (v + b[i]) / 2), l = Math.hypot(m[3], m[4], m[5]) || 1; m[3] /= l; m[4] /= l; m[5] /= l; return m; };
+  const tri = (a, b, c, n) => {
+    const ab = d2(a, b), bc = d2(b, c), ca = d2(c, a), mx = Math.max(ab, bc, ca);
+    if (mx <= L2 || n > 14) { for (const v of [a, b, c]) { P.push(v[0], v[1], v[2]); N.push(v[3], v[4], v[5]); } return; }
+    if (mx === ab) { const m = mid(a, b); tri(a, m, c, n + 1); tri(m, b, c, n + 1); }
+    else if (mx === bc) { const m = mid(b, c); tri(a, b, m, n + 1); tri(a, m, c, n + 1); }
+    else { const m = mid(c, a); tri(a, b, m, n + 1); tri(m, b, c, n + 1); }
+  };
+  const gs = src.groups.length ? src.groups : [{ start: 0, count: pos.length / 3, materialIndex: 0 }];
+  let minZ = Infinity; for (let i = 2; i < pos.length; i += 3) minZ = Math.min(minZ, pos[i]);
+  for (const g of gs) {
+    const start = P.length / 3;
+    for (let i = g.start; i < g.start + g.count; i += 3) tri(vtx(i), vtx(i + 1), vtx(i + 2), 0);
+    groups.push({ start, count: P.length / 3 - start, materialIndex: g.materialIndex });
+  }
+  for (let i = 0; i < P.length; i += 3) {
+    const a = P[i + 1] / R, r = R + P[i + 2] - minZ - 0.006, ca = Math.cos(a), sa = Math.sin(a), ny = N[i + 1], nz = N[i + 2];
+    P[i + 1] = r * sa; P[i + 2] = r * ca;
+    N[i + 1] = ny * ca + nz * sa; N[i + 2] = -ny * sa + nz * ca;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+  groups.forEach(o => g.addGroup(o.start, o.count, o.materialIndex));
+  return g;
+}
 function buildOdo() {
   const { scene, group } = odo;
-  scene.background = new THREE.Color(C.blue); lights(scene); scene.add(group);
-  const face = new THREE.MeshStandardMaterial({ color: C.paper, roughness: 0.42 });
-  const side = new THREE.MeshStandardMaterial({ color: C.navy, roughness: 0.5 });
-  const body = new THREE.MeshStandardMaterial({ color: C.cobalt, roughness: 0.5 });
-  const TH = 0.24, opt = { height: TH, bevelEnabled: true, bevelThickness: 0.02, bevelSize: 0.014, bevelSegments: 2 };
+  scene.background = new THREE.Color(C.blue); scene.add(group);
+  // its own lights: a soft key from high left, so each drum turns from lit paper and cobalt at the top into shade underneath
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x223066, 1.15));
+  const key = new THREE.DirectionalLight(0xffffff, 2.3); key.position.set(-4, 6.5, 9); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(6, -3, 5); scene.add(fill);
+  const face = new THREE.MeshStandardMaterial({ color: C.paper, roughness: 0.4, emissive: C.paper, emissiveIntensity: 0.2 });
+  const edge = new THREE.MeshStandardMaterial({ color: C.paper, roughness: 0.6, emissive: C.paper, emissiveIntensity: 0.08 });
+  const body = new THREE.MeshStandardMaterial({ color: C.cobalt, roughness: 0.44 });
+  const rim = new THREE.MeshStandardMaterial({ color: C.navy, roughness: 0.32, metalness: 0.25 });
+  const opt = { height: 0.022, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.006, bevelSegments: 1, curveSegments: 14 };
   const G = ch => { const g = glyph(ch, opt); if (!g.userData.c) { g.translate(0, -MID, 0); g.userData.c = 1; } return g; };
   let dw = 0; for (let d = 0; d < 10; d++) dw = Math.max(dw, G(String(d)).userData.w);
-  const chars = [...NUMBERS[0].value], cellW = dw * 1.18, gap = 0.1;
-  const widths = chars.map(ch => /\d/.test(ch) ? cellW : G(ch).userData.w + 0.1);
+  const chars = [...NUMBERS[0].value], cellW = dw * 1.2, ringW = 0.07, gap = ringW - 0.006; // rims sit flush on the drum ends, no daylight between
+  const R = odo.R = 10 * CAPH * ODO.pitch / (Math.PI * 2), STEP = odo.STEP = Math.PI * 2 / 10, RR = odo.RR = R + 0.075;
+  const digitGeo = Array.from({ length: 10 }, (_, k) => bendGlyph(G(String(k)), R, 0.07));
+  const widths = chars.map(ch => /\d/.test(ch) ? cellW : G(ch).userData.w + 0.12);
   const total = widths.reduce((a, b) => a + b, 0) + gap * (chars.length - 1);
-  // ten digits round each drum, with air between them
-  const R = odo.R = 10 * CAPH * 1.5 / (Math.PI * 2), STEP = odo.STEP = Math.PI * 2 / 10;
-  const cyl = new THREE.CylinderGeometry(R - TH / 2 - 0.004, R - TH / 2 - 0.004, cellW, 96, 1, false); cyl.rotateZ(Math.PI / 2);
+  const cyl = new THREE.CylinderGeometry(R - 0.004, R - 0.004, cellW, 128, 1, true); cyl.rotateZ(Math.PI / 2);
+  const ringG = new THREE.CylinderGeometry(RR, RR, ringW, 128, 1, false); ringG.rotateZ(Math.PI / 2);
+  const ring = x => { const m = new THREE.Mesh(ringG, rim); m.position.x = x; group.add(m); };
+  // a drum's two sides are closed by the rims, so its own cylinder can stay open
   let x = -total / 2; const nd = chars.filter(c => /\d/.test(c)).length; let j = 0;
+  ring(x - ringW / 2);
   chars.forEach((ch, i) => {
-    const cx = x + widths[i] / 2; x += widths[i] + gap;
+    const cx = x + widths[i] / 2; x += widths[i];
     if (/\d/.test(ch)) {
       const drum = new THREE.Group(); drum.position.x = cx; drum.add(new THREE.Mesh(cyl, body));
-      for (let k = 0; k < 10; k++) {
-        const m = new THREE.Mesh(G(String(k)), [face, side]), phi = -k * STEP;
-        m.position.set(0, R * Math.sin(phi), R * Math.cos(phi)); m.rotation.x = -phi; drum.add(m);
-      }
-      drum.userData = { target: +ch, j, revs: 1 + (nd - 1 - j) * 0.6 };
-      j++; group.add(drum); odo.drums.push(drum);
-    } else { const m = new THREE.Mesh(G(ch), [face, side]); m.position.set(cx, 0, R); group.add(m); }
+      for (let k = 0; k < 10; k++) { const m = new THREE.Mesh(digitGeo[k], [face, edge]); m.rotation.x = k * STEP; drum.add(m); }
+      drum.userData = { target: +ch, place: nd - 1 - j }; j++;
+      group.add(drum); odo.drums.push(drum);
+    } else { const m = new THREE.Mesh(bendGlyph(G(ch), R, 0.07), [face, edge]); m.position.x = cx; group.add(m); }
+    ring(i < chars.length - 1 ? x + gap / 2 : x + ringW / 2);
+    x += gap;
   });
-  odo.width = total; odo.nd = nd;
+  // the axle, showing past the outer rims
+  const axle = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.2, R * 0.2, total + ringW * 2 + 0.2, 48), rim); axle.rotation.z = Math.PI / 2; group.add(axle);
+  odo.width = total + ringW * 2 + 0.2; odo.nd = nd;
+  const digits = NUMBERS[0].value.replace(/\D/g, '');
+  odo.mod = 10 ** nd; odo.end = (parseInt(digits || '0', 10) || 0) + odo.mod; // a full roll over onto the number
+  buildPortal(R);
+}
+/* the hand-off hole: the counter of the digit on the drum nearest the centre, as a flat shape bent onto the drum just under
+   the digit's face. It writes depth only, so whatever the drum would draw behind it is cut away and the tunnel shows through.
+   A digit with no counter (1 2 3 5 7) gives its own outline instead, set just proud of the face. */
+function holeOf(ch) {
+  const shapes = FONT.generateShapes(ch, 1); let best = null, area = 0, outer = null, oa = 0, mnx = Infinity, mxx = -Infinity;
+  shapes.forEach(sh => {
+    const o = sh.getPoints(24); o.forEach(p => { mnx = Math.min(mnx, p.x); mxx = Math.max(mxx, p.x); });
+    const a = Math.abs(THREE.ShapeUtils.area(o)); if (a > oa) { oa = a; outer = o; }
+    sh.holes.forEach(hp => { const pts = hp.getPoints(24), ar = Math.abs(THREE.ShapeUtils.area(pts)); if (ar > area) { area = ar; best = pts; } });
+  });
+  return { pts: best || outer, front: !best, dx: -(mnx + mxx) / 2 };
+}
+function buildPortal(R) {
+  const order = odo.drums.map((d, i) => i).sort((a, b) => Math.abs(a - (odo.drums.length - 1) / 2) - Math.abs(b - (odo.drums.length - 1) / 2));
+  let pick = order[0], h = holeOf(String(odo.drums[pick].userData.target));
+  for (const i of order) { const t = holeOf(String(odo.drums[i].userData.target)); if (!t.front) { pick = i; h = t; break; } }
+  const drum = odo.drums[pick], pts = h.pts.map(p => new THREE.Vector2(p.x + h.dx, p.y - MID));
+  const flat = new THREE.ShapeGeometry(new THREE.Shape(pts)).toNonIndexed();
+  const g = bendGlyph(flat, R, 0.03), rr = R + (h.front ? 0.045 : 0.005), k = rr / (R - 0.006), P = g.attributes.position.array;
+  for (let i = 0; i < P.length; i += 3) { P[i + 1] *= k; P[i + 2] *= k; }
+  // keep the flat coordinates, so the hole can open from its own centre (an iris the shape of the counter)
+  const FX = new Float32Array(P.length / 3), FY = new Float32Array(P.length / 3);
+  for (let i = 0, j = 0; i < P.length; i += 3, j++) { FX[j] = P[i]; FY[j] = Math.atan2(P[i + 1], P[i + 2]) * R; }
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide }));
+  m.rotation.x = drum.userData.target * odo.STEP; m.layers.set(1); drum.add(m);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  pts.forEach(p => { x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y); });
+  odo.mask = m; odo.mR = rr; odo.hb = { x0, x1, y0, y1, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2 }; odo.FX = FX; odo.FY = FY; odo.irisK = 1;
+  // stands in for the light blue background while the hole is open, since the scene clear would wipe the tunnel
+  odo.back = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshBasicMaterial({ color: C.blue }));
+  odo.back.position.z = -60; odo.back.visible = false; odo.scene.add(odo.back);
+}
+/* zoom the lens (not the camera, so nothing clips) into the counter until it holds the whole frame */
+function odoZoom(cam) {
+  cam.clearViewOffset(); odo.Z = 1;
+  if (!(H1 > 0) || RM) return;
+  const m = odo.mask, hb = odo.hb, R = odo.R;
+  const pt = (x, y) => { const a = y / R; return toScreen(m, cam, x, odo.mR * Math.sin(a), odo.mR * Math.cos(a)); };
+  const c = pt(hb.cx, hb.cy), l = pt(hb.x0, hb.cy), r = pt(hb.x1, hb.cy), t = pt(hb.cx, hb.y1), b = pt(hb.cx, hb.y0);
+  const ax = Math.abs(r.x - l.x) / 2, ay = Math.abs(b.y - t.y) / 2;
+  const Zend = 1.12 * Math.hypot(W / 2 / ax, H / 2 / ay), Z = Math.pow(Zend, eIO(H1));
+  const k = eIO(rng(H1, 0, 0.7)), sx = lerp(c.x, W / 2, k), sy = lerp(c.y, H / 2, k);
+  cam.setViewOffset(W, H, c.x - sx / Z, c.y - sy / Z, W / Z, H / Z);
+  odo.Z = Z;
+  // the counter opens from its centre over the first part, so the tunnel never pops in
+  const ik = Math.max(0.001, eOut(rng(H1, 0, 0.22)));
+  if (ik !== odo.irisK) {
+    odo.irisK = ik; const P = m.geometry.attributes.position.array, { FX, FY } = odo;
+    for (let j = 0, i = 0; j < FX.length; j++, i += 3) {
+      const a = (hb.cy + (FY[j] - hb.cy) * ik) / R;
+      P[i] = hb.cx + (FX[j] - hb.cx) * ik; P[i + 1] = odo.mR * Math.sin(a); P[i + 2] = odo.mR * Math.cos(a);
+    }
+    m.geometry.attributes.position.needsUpdate = true;
+  }
 }
 function layoutOdo() {
   // the whole drum stays inside the frame: digits roll over its top and bottom, never off the frame edge
-  odo.s = Math.min(VW * (ASP < 1 ? 0.8 : 0.5) / odo.width, VH * 0.8 / (2 * odo.R + 0.3), VH * 0.3 / CAPH);
+  odo.s = Math.min(VW * (ASP < 1 ? 0.86 : 0.6) / odo.width, VH * (ASP < 1 ? 0.6 : 0.84) / (2 * odo.RR));
+}
+/* the count, as each drum's position in digits. Place 0 is the units drum. */
+const tick = t => { const c = 1.25, d = c + 1; return t <= 0 ? 0 : t >= 1 ? 1 : 1 + d * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const eQIO = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+function odoCount(s, place) {
+  const n = ODO.ticks, end = odo.end, p10 = 10 ** place;
+  const nines = b => b % p10 === p10 - 1; // every drum to the right shows 9: this one is being carried
+  if (RM || s >= ODO.tick[1]) return end / p10;
+  if (s < ODO.tick[0]) { // spin up with the sheet, then slow to a stop a few counts short
+    const v = lerp(end - 44, end - n, eQIO(rng(s, ODO.spin[0], ODO.spin[1]))), b = Math.floor(v), f = v - b;
+    return Math.floor(b / p10) + (place === 0 ? f : nines(b) ? eIO(rng(f, 0.5, 1)) : 0);
+  }
+  // the last counts tick over one at a time; the final roll over is a little longer, carries every drum, right to left
+  const w = Array.from({ length: n }, (_, i) => (i === n - 1 ? 1.5 : 1)), sum = w.reduce((a, b) => a + b, 0);
+  let t = rng(s, ODO.tick[0], ODO.tick[1]) * sum, i = 0; while (i < n - 1 && t > w[i]) { t -= w[i]; i++; }
+  const l = t / w[i], b = end - n + i, last = i === n - 1;
+  const f = tick(rng(l, last ? place * 0.07 : 0, last ? 0.62 + place * 0.07 : 0.6));
+  return Math.floor(b / p10) + (place === 0 || nines(b) ? f : 0);
 }
 function updateOdo(s) {
-  const { group, drums, R, STEP, nd } = odo, sc = odo.s;
-  drums.forEach(d => {
-    const u = d.userData, end = TL.roll[1] - (nd - 1 - u.j) * 0.14;
-    const e = RM ? 1 : eBack(rng(s, TL.roll[0], end));
-    d.rotation.x = -u.target * STEP + (1 - e) * u.revs * Math.PI * 2 * RMK;
-  });
+  const { group, drums, R, STEP } = odo, sc = odo.s;
+  drums.forEach(d => { d.rotation.x = -odoCount(s, d.userData.place) * STEP; });
   group.scale.setScalar(sc);
-  group.rotation.set(lerp(0.22, -0.04, eIO(rng(s, -1, 0.9))) * RMK, lerp(-0.12, 0.06, eIO(rng(s, -1, 1.2))) * RMK, 0);
-  group.position.set(0, 0, -R * sc);
-  // label: beside the number when there is room, under the drums when there is not
-  const lab = labs[0], lw = lab.offsetWidth, lh = lab.offsetHeight, right = toScreen(group, odo.cam, odo.width / 2, -CAPH / 2, R);
-  if (ASP >= 1 && W - right.x > lw + 72) lab.style.transform = `translate(${(right.x + 36).toFixed(1)}px,${(right.y - lh * 0.95).toFixed(1)}px)`;
-  else { const b = toScreen(group, odo.cam, 0, -R, 0); lab.style.transform = `translate(${((W - lw) / 2).toFixed(1)}px,${Math.min(b.y + 22, H - lh - 36).toFixed(1)}px)`; }
+  group.rotation.set(lerp(0.2, -0.03, eIO(rng(s, -1, 0.66))) * RMK, lerp(-0.14, 0.05, eIO(rng(s, -1, 0.72))) * RMK, 0); // dead still well before the tunnel
+  const pxw = VH / H; // world units per css pixel on the plane the drum faces sit in
+  // the label sits right of the number on its baseline when there is room, so number and label centre as one block
+  const lab = labs[0], lw = lab.offsetWidth, lh = lab.offsetHeight, digH = CAPH * sc / pxw, gapL = Math.max(24, digH * 0.2);
+  const side = ASP >= 1 && odo.width * sc / pxw + gapL + lw + 120 < W;
+  const shiftX = side ? -(gapL + lw) / 2 * pxw : 0;
+  // before the pin the stage rides up with the page: the drums start high on the sheet and settle to the centre as it lands
+  const mechH = 2 * odo.RR * sc / pxw, room = (H - mechH) / 2 - H * 0.04;
+  const lift = room > 0 ? room * (1 - eIO(rng(s, -1, 0))) * RMK : 0;
+  group.position.set(shiftX, lift * pxw, -R * sc);
+  odoZoom(odo.cam);
+  const Z = odo.Z; lab.style.opacity = RM ? 1 - H1 : 1 - rng(H1, 0, 0.3);
+  const a = -CAPH / 2 / R, base = toScreen(group, odo.cam, odo.width / 2 - 0.1, R * Math.sin(a), R * Math.cos(a));
+  if (side) lab.style.transform = `translate(${(base.x + gapL * Z).toFixed(1)}px,${(base.y - lh * 0.86 * Z).toFixed(1)}px) scale(${Z.toFixed(3)})`;
+  else {
+    const l = toScreen(group, odo.cam, -odo.width / 2 + 0.1, 0, R), b = toScreen(group, odo.cam, 0, -odo.RR, 0);
+    lab.style.transform = `translate(${Math.max(16, l.x).toFixed(1)}px,${Math.min(b.y + 20, H - lh - 36).toFixed(1)}px)`;
+  }
 }
 
 /* ---------- 2. tunnel ---------- */
@@ -252,12 +378,15 @@ function layoutTunnel() {
   if (tun.capMat.map) tun.capMat.map.dispose();
   tun.capMat.map = capTexture(Aw, Ah); tun.capMat.needsUpdate = true;
   const d = Ah / (2 * tun.F * TAN); // where the far wall fills F of the frame
-  tun.stop = L - d;
+  tun.stop = L - d; tun.d = d;
   tun.scene.fog.near = d + 3; tun.scene.fog.far = d + 46; // the far wall is never tinted at rest
 }
 function updateTunnel(s) {
   const f = eIO(rng(s, TL.fly[0], TL.fly[1]));
-  tun.group.position.z = lerp(0, tun.stop, f);
+  // into the second hand-off the camera keeps going, towards the paper end wall
+  tun.group.position.z = lerp(0, tun.stop, f) + (RM ? 0 : Math.pow(H2, 1.6) * tun.d * 0.55);
+  // the square opens from the counter of the middle digit on the end wall
+  if (H2 > 0 && H2 < 1) tun.sc = toScreen(tun.group, tun.cam, 0, tun.big.position.y + MID * tun.big.scale.y, -tun.L + 0.13);
   tun.group.rotation.z = lerp(-0.5, 0, eIO(rng(s, TL.fly[0], TL.fly[1] - 0.15))) * RMK;
 }
 
@@ -334,6 +463,8 @@ function layoutStack() {
 }
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _s = new THREE.Vector3();
 function updateStack(s) {
+  const zz = H2 > 0 && H2 < 1 && !RM ? lerp(1.22, 1, eIO(H2)) : 1; // the stack settles back as the square opens
+  if (stk.cam.zoom !== zz) { stk.cam.zoom = zz; stk.cam.updateProjectionMatrix(); }
   const { cells, cols, rows } = stk.grid, u = stk.u, N = cells.length, drop = VH * 1.25;
   const [a, b] = TL.build, span = b - a;
   cells.forEach((o, k) => {
@@ -352,40 +483,75 @@ function updateStack(s) {
   g.scale.setScalar(Z);
   g.rotation.set(0.3 * RMK, lerp(0.5, -0.18, eIO(rng(s, TL.at[1], TL.pin))) * RMK, 0);
   g.position.set(stk.zoom > 1 ? -(front - (cols - 1) / 2) * u * Z * (1 - pull) : 0, VH * 0.05, 0);
+  if (H2 > 0 && H2 < 1 && !RM) { // the square: opens from the end wall's middle counter until it holds the frame
+    // a cell-sized square that grows into the frame's own shape, the shape of the tunnel's ink frames, centring as it goes,
+    // so it reaches all four edges together and never reads as a band
+    const c = tun.sc, s0 = Math.min(W, H) * 0.06, e = H2 < 0.12 ? 0 : eIO((H2 - 0.12) / 0.88), g0 = H2 < 0.12 ? eOut(H2 / 0.12) : 1;
+    const w = lerp(s0 * g0, W + 10, e), h = lerp(s0 * g0, H + 10, e), cx = lerp(c.x, W / 2, e), cy = lerp(c.y, H / 2, e);
+    stk.sq = { x: cx - w / 2, y: cy - h / 2, w, h };
+  }
   const lab = labs[2], lw = lab.offsetWidth;
+  lab.style.opacity = RM ? H2 : rng(H2, 0.82, 1);
   const sc = toScreen(g, stk.cam, 0, -(rows / 2) * u - u * 0.6, u * stk.depth * 0.5);
   lab.style.transform = `translate(${((W - lw) / 2).toFixed(1)}px,${Math.min(sc.y + 14, H - lab.offsetHeight - 36).toFixed(1)}px)`;
 }
 
 /* ---------- frame ---------- */
 const chapters = [{ ch: odo, update: updateOdo }, { ch: tun, update: updateTunnel }, { ch: stk, update: updateStack }];
-function stepWipes(now) { // returns true while a sheet is still moving
-  let moving = false;
-  for (const w of [wipe[1], wipe[2]]) {
-    if (w.v === w.to) continue;
-    const t = clamp((now - w.t0) / MOVE_MS);
-    w.v = t >= 1 ? w.to : lerp(w.from, w.to, eMove(t)); moving = moving || t < 1;
+let fadeRT = null; const fadeScene = new THREE.Scene(), fadeCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 2);
+let fadeQuad = null;
+function showLayers(a, b) { layers.forEach((l, i) => { l.style.visibility = i === a || i === b ? 'visible' : 'hidden'; }); }
+function plain(i, s) {
+  chapters[i].update(s);
+  renderer.setScissorTest(false); renderer.autoClear = true;
+  renderer.render(chapters[i].ch.scene, chapters[i].ch.cam);
+}
+function fade(i, j, s, h) { // reduced motion: the outgoing chapter fades off the incoming one
+  if (!fadeRT) {
+    const v = renderer.getDrawingBufferSize(new THREE.Vector2());
+    fadeRT = new THREE.WebGLRenderTarget(v.x, v.y, { type: THREE.HalfFloatType, samples: 4 });
+    fadeQuad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ map: fadeRT.texture, transparent: true, depthTest: false, depthWrite: false }));
+    fadeQuad.position.z = -1; fadeScene.add(fadeQuad);
   }
-  return moving;
+  chapters[i].update(s); chapters[j].update(s);
+  renderer.setScissorTest(false); renderer.autoClear = true;
+  renderer.setRenderTarget(fadeRT); renderer.render(chapters[i].ch.scene, chapters[i].ch.cam);
+  renderer.setRenderTarget(null); renderer.render(chapters[j].ch.scene, chapters[j].ch.cam);
+  fadeQuad.material.opacity = 1 - eIO(h);
+  renderer.autoClear = false; renderer.render(fadeScene, fadeCam); renderer.autoClear = true;
+}
+function hand1(s) { // the tunnel first, then the drum with its counter cut out of the depth buffer
+  updateTunnel(s); updateOdo(s);
+  renderer.setScissorTest(false); renderer.autoClear = true;
+  renderer.render(tun.scene, tun.cam);
+  const sc = odo.scene, cam = odo.cam, bg = sc.background;
+  renderer.autoClear = false; renderer.clearDepth(); sc.background = null;
+  cam.layers.set(1); renderer.render(sc, cam);
+  cam.layers.set(0); odo.back.visible = true; renderer.render(sc, cam);
+  odo.back.visible = false; sc.background = bg; renderer.autoClear = true;
+}
+function hand2(s) { // the tunnel, then the stack inside the opening square
+  updateTunnel(s); updateStack(s);
+  renderer.setScissorTest(false); renderer.autoClear = true;
+  renderer.render(tun.scene, tun.cam);
+  const q = stk.sq, x0 = Math.max(0, Math.floor(q.x)), y0 = Math.max(0, Math.floor(q.y));
+  const x1 = Math.min(W, Math.ceil(q.x + q.w)), y1 = Math.min(H, Math.ceil(q.y + q.h));
+  if (x1 > x0 && y1 > y0) {
+    renderer.setScissorTest(true); renderer.setScissor(x0, H - y1, x1 - x0, y1 - y0);
+    renderer.render(stk.scene, stk.cam); renderer.setScissorTest(false);
+  }
+  const b = 1.5;
+  sqEl.style.width = (q.w + 2 * b).toFixed(1) + 'px'; sqEl.style.height = (q.h + 2 * b).toFixed(1) + 'px';
+  sqEl.style.transform = `translate(${(q.x - b).toFixed(1)}px,${(q.y - b).toFixed(1)}px)`;
+  sqEl.style.visibility = 'visible';
 }
 function draw(s) {
-  const r1 = wipe[1].v, r2 = wipe[2].v;
-  const e1 = Math.round(H * (1 - r1)), e2 = Math.round(H * (1 - r2));
-  const bands = [[0, Math.min(e1, e2)], [e1, e2], [e2, H]];
-  // each new sheet carries its chapter up with it (no sliding underneath); the covered one is pushed up 22%
-  const shift = [-r1 * 0.22 * H, H * (1 - r1) - r2 * 0.22 * H, H * (1 - r2)];
-  renderer.setScissorTest(true);
-  chapters.forEach((c, i) => {
-    const [top, bot] = bands[i], lay = layers[i];
-    if (bot - top < 1) { lay.style.visibility = 'hidden'; return; }
-    c.update(s);
-    const cam = c.ch.cam; cam.setViewOffset(W, H, 0, -shift[i], W, H);
-    renderer.setScissor(0, H - bot, W, bot - top);
-    renderer.render(c.ch.scene, cam);
-    lay.style.visibility = 'visible';
-    lay.style.clipPath = `inset(${top}px 0 ${H - bot}px 0)`;
-    const lab = labs[i]; if (lab) lab.style.translate = `0 ${shift[i].toFixed(1)}px`;
-  });
+  H1 = rng(s, HO[0][0], HO[0][1]); H2 = rng(s, HO[1][0], HO[1][1]);
+  const in1 = H1 > 0 && H1 < 1, in2 = H2 > 0 && H2 < 1;
+  if (!in2 || RM) sqEl.style.visibility = 'hidden';
+  if (in1) { showLayers(0); RM ? fade(0, 1, s, H1) : hand1(s); }
+  else if (in2) { showLayers(2); RM ? fade(1, 2, s, H2) : hand2(s); }
+  else { const i = H1 <= 0 ? 0 : H2 <= 0 ? 1 : 2; showLayers(i); plain(i, s); }
 }
 
 let cur = null, prev = null, dirty = true, raf = 0, lastT = 0, ready = false;
@@ -396,10 +562,9 @@ function frame(now) {
   const t = target();
   if (cur === null || RM) cur = t;
   else { cur += (t - cur) * (1 - Math.pow(1 - 0.14, dt)); if (Math.abs(t - cur) < 0.0004) cur = t; }
-  const moving = ready && stepWipes(now);
-  if (ready && (cur !== prev || dirty || moving)) { draw(cur); prev = cur; dirty = moving; }
-  window.__nmSettled = ready && cur === t && !moving;
-  if (visible || moving) raf = requestAnimationFrame(frame);
+  if (ready && (cur !== prev || dirty)) { draw(cur); prev = cur; dirty = false; }
+  window.__nmSettled = ready && cur === t;
+  if (visible) raf = requestAnimationFrame(frame);
 }
 function kick() { if (!raf && ready) { lastT = 0; raf = requestAnimationFrame(frame); } }
 
@@ -407,6 +572,7 @@ function resize() {
   sizeSection(); pin();
   if (!ready) return;
   renderer.setSize(W, H, false);
+  if (fadeRT) { const v = renderer.getDrawingBufferSize(new THREE.Vector2()); fadeRT.setSize(v.x, v.y); }
   VH = 2 * D * TAN; VW = VH * ASP;
   chapters.forEach(c => { c.ch.cam.aspect = ASP; c.ch.cam.updateProjectionMatrix(); });
   layoutOdo(); layoutTunnel(); layoutStack();
@@ -431,8 +597,6 @@ async function boot() {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   buildOdo(); buildTunnel(); buildStack();
   ready = true; resize();
-  // a wipe already decided before boot (page reloaded mid-section) lands straight away
-  wipe.forEach(w => { if (w) w.v = w.from = w.to; });
   // upload every chapter once, so the first wipe never stalls
   chapters.forEach(c => { c.ch.scene.traverse(o => { o.frustumCulled = false; }); renderer.compile(c.ch.scene, c.ch.cam); });
   dirty = true; kick();

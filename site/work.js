@@ -2,5 +2,5 @@
    (from the pop build) and the horizontal-scroll project pages (from the flight build).
    ?work=a or ?work=b loads the two reference-led versions for comparison. */
 const q = new URLSearchParams(location.search).get('work');
-const v = q === 'a' || q === 'b' ? q : 'c';
+const v = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].includes(q) ? q : 'g';
 import(`./work-${v}.js`);

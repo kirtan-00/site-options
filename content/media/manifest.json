@@ -1,57 +1,5 @@
 [
   {
-    "id": "gujarat-titans",
-    "name": "Gujarat Titans",
-    "wing": "media",
-    "one_line": "Creative producer for Gujarat Titans, two IPL seasons. I planned it, budgeted it, shot it and cut it. When a film was one actor short, I was the actor.",
-    "facts": [
-      {
-        "label": "Role",
-        "value": "Creative producer"
-      },
-      {
-        "label": "Seasons",
-        "value": "2"
-      },
-      {
-        "label": "Junior Titans",
-        "value": "5 cities in 1 month"
-      },
-      {
-        "label": "Tour films",
-        "value": "5 documentaries, 5 city films, 5 vox pops"
-      },
-      {
-        "label": "Covered",
-        "value": "Budget, timeline, concept, client communication"
-      }
-    ],
-    "writeup": [
-      "Two IPL seasons as creative producer on Gujarat Titans. The concept, the budget, the timeline and every call with the client went through me. When a script needed one more character than we had cast, I stepped in and played him.",
-      "Junior Titans by GT went to five cities in one month. Each city got a documentary, a city film and a vox pop. I produced the tour and wrote some of the concepts. I shot the vox pops myself, because the schedule had no room for anyone who wasn't already there."
-    ],
-    "link": null,
-    "logo": "media/gujarat-titans/logo.png",
-    "logo_ink": null,
-    "hero": null,
-    "gallery": [],
-    "video": null,
-    "orientation": null,
-    "gaps": "Logo and text only by rule. No footage, stills or posts were collected. Nothing can be added until the owner clears specific material.",
-    "needs_owner_clearance": [
-      "/Users/purohit/Downloads/gt 2026/GT player practice/",
-      "/Users/purohit/Downloads/gt 2026/GT shoots bts/",
-      "/Users/purohit/Downloads/gt 2026/gt event /",
-      "/Users/purohit/Downloads/player arrival reel/",
-      "/Users/purohit/Downloads/ohm screenshots  junior titans/",
-      "/Users/purohit/Desktop/claude/claude projects/OneOffs/junior-titans-tbl/",
-      "/Users/purohit/Movies/ProxyMedia/GT Anand/",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/GT vlog.prproj",
-      "/Users/purohit/Downloads/Design_Files/GT projection reel.prproj",
-      "/Users/purohit/Downloads/Design_Files/GT Sub Title.prproj"
-    ]
-  },
-  {
     "id": "zepto",
     "name": "Zepto",
     "wing": "media",

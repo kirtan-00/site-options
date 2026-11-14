@@ -1,0 +1,113 @@
+[
+  {
+    "id": "postinnator",
+    "name": "Daily Dispatch",
+    "wing": "software",
+    "one_line": "LinkedIn for people who know they should post and never do. Drop photos in a folder, get one email every morning, press one button.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "LinkedIn autopilot"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Designed, built and runs it."
+      }
+    ],
+    "writeup": [
+      "Most people know they should post on LinkedIn. Almost nobody does, because it means opening LinkedIn.",
+      "Daily Dispatch turns it into one decision a day. You drop photos into a Google Drive folder. Overnight it writes a caption in your voice and lays out a post. At 9 a.m. it lands in your inbox, and you press Approve, Skip or Reject. Nothing goes out without that click."
+    ],
+    "link": "https://postinnator.duckdns.org",
+    "logo": null,
+    "hero": "software/postinnator/live-01.jpg",
+    "gallery": [
+      "software/postinnator/live-02.jpg",
+      "software/postinnator/live-03.jpg",
+      "software/postinnator/live-04.jpg",
+      "software/postinnator/live-05.jpg",
+      "software/postinnator/live-06.jpg"
+    ],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "Public front page only; sign-in and sign-up pages were not opened. The page's sample stats panel is the site's own mock, not real usage. Inclusion is the owner's call. Logo left out: the only one on file is a purple wordmark with the old name, Postinnator."
+  },
+  {
+    "id": "page-22",
+    "name": "Page 22",
+    "wing": "software",
+    "one_line": "A crane game for Reneev's Page 22, a 22-storey tower. Stack all 22 real floors and top it out. The building never falls.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Game"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Designed and built it for the launch."
+      },
+      {
+        "label": "Floors",
+        "value": "22, cut from the real render"
+      },
+      {
+        "label": "Made for",
+        "value": "Phones, works on a laptop"
+      }
+    ],
+    "writeup": [
+      "Page 22 is a residential tower by Reneev, 22 floors. The game lets you build it: a crane swings each floor in, you tap to drop it, and you try to get all 22 up.",
+      "Every floor is cut from the real architectural render, so the tower you finish is the actual building. One rule from the start: you never watch the client's building collapse. A bad drop drains a stability meter instead, and the tower just sways."
+    ],
+    "link": "https://kirtan-00.github.io/reneev-tower/",
+    "logo": "software/page-22/logo.png",
+    "hero": "software/page-22/03.jpg",
+    "gallery": [
+      "software/page-22/01.jpg",
+      "software/page-22/02.jpg",
+      "software/page-22/live-01.jpg"
+    ],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "Thin. Three phone-shaped frames and one desktop start screen; no frame of the finished tower with the crown. Client work for Reneev, so inclusion is the owner's call."
+  },
+  {
+    "id": "sparks",
+    "name": "LitPro",
+    "wing": "software",
+    "one_line": "Plan the lights before the truck arrives. Add a photo of the location, place real fixtures, get the numbers.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "DOP lighting pre-production tool"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Designed and built it."
+      }
+    ],
+    "writeup": [
+      "On a recce, everyone guesses the truck list. LitPro lets you plan it on a photo of the location instead.",
+      "Add the photo and it works out the depth of the room on your own machine. Place real fixtures from a list, and it gives you what a gaffer actually needs: the light level at the subject, each light's ratio to the key in stops, whether a fixture can reach that from where it stands, and the total amps. The picture is nice. The numbers are the product."
+    ],
+    "link": "https://kirtan-00.github.io/sparks/",
+    "logo": "software/sparks/logo.png",
+    "hero": "software/sparks/live-01.jpg",
+    "gallery": [],
+    "video": null,
+    "screens_withheld": false,
+    "gaps": "Very thin. One frame of the empty start state; nothing shows a lit location or the numbers. The live page still calls itself Sparks, not LitPro. Inclusion is the owner's call."
+  }
+]
