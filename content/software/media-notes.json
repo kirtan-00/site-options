@@ -1,29 +1,18 @@
 {
  "spectra": [
   {
-   "src": "software/spectra/pages/about.jpg",
-   "caption": "About. The museum's story, opening on the Spectra mark in 3D."
-  },
-  {
    "src": "software/spectra/pages/visit.jpg",
    "caption": "Plan your visit. The bar under the headline is today's opening hours, and the dot shows where you are in the day right now."
   },
   {
-   "src": "software/spectra/metro.mp4",
-   "poster": "software/spectra/metro-poster.jpg",
-   "caption": "Getting here, drawn as one scroll-driven trip. This is the metro leg: the train runs in along the viaduct, brakes into Thaltej Gam and the doors open."
+   "src": "software/spectra/trip.mp4",
+   "poster": "software/spectra/trip-poster.jpg",
+   "caption": "Getting here, as one scroll-driven trip: the plane lands, the metro brakes into Thaltej Gam, a taxi does the last 2 km, and the building lights up."
   },
   {
-   "src": "software/spectra/pages/groups.jpg",
-   "caption": "Groups. The enquiry is a sentence you fill in, so booking a school trip or an offsite reads like asking a person."
-  },
-  {
-   "src": "software/spectra/pages/media.jpg",
-   "caption": "Press. The 15 outlets that have covered the museum, and what they wrote."
-  },
-  {
-   "src": "software/spectra/pages/franchise.jpg",
-   "caption": "Franchise. For anyone who wants to bring Spectra to their city."
+   "src": "software/spectra/prism.mp4",
+   "poster": "software/spectra/prism-poster.jpg",
+   "caption": "About. The building is the prism: a white beam hits it and splits into art, science, technology, your senses and you. Move the cursor and the light bends."
   }
  ],
  "shivasva": [

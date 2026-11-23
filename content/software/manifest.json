@@ -15,7 +15,7 @@
       },
       {
         "label": "Role",
-        "value": "Designed and built the site, landing to booking."
+        "value": "Designed it, made the 3D models and renders, and developed it."
       },
       {
         "label": "Rooms",
@@ -30,7 +30,7 @@
       "Spectra is a 60,000 sq ft immersive museum in Ahmedabad with eight rooms. The old site was a slow brochure with photos of rooms you'd rather be standing in.",
       "So the new landing page has no photos. Every room is drawn live in the browser and you walk from one to the next: scroll moves you forward, each room has a door, and the last one opens on the tickets. Photos and videos of the real rooms sit one click deeper, under Know more."
     ],
-    "link": "https://spectra-museum-site.vercel.app",
+    "link": "https://www.spectramuseum.com/",
     "logo": "software/spectra/logo.png",
     "hero": "software/spectra/live-01.jpg",
     "gallery": [
