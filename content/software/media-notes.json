@@ -1,24 +1,29 @@
 {
  "spectra": [
   {
-   "src": "software/spectra/live-02.jpg",
-   "caption": "Cortex, the first room after the entrance. It is not a photo or a video: the room is drawn live in the browser, and scrolling walks you down the corridor to its door."
+   "src": "software/spectra/pages/about.jpg",
+   "caption": "About. The museum's story, opening on the Spectra mark in 3D."
   },
   {
-   "src": "software/spectra/live-03.jpg",
-   "caption": "Chronicle. Every room has its own world, its own colours and its own door, so the site is a walk through the museum, one room at a time."
+   "src": "software/spectra/pages/visit.jpg",
+   "caption": "Plan your visit. The bar under the headline is today's opening hours, and the dot shows where you are in the day right now."
   },
   {
-   "src": "software/spectra/live-06.jpg",
-   "caption": "Laurel. The bar at the bottom stays put in every room, so sound, the menu and Book now are always one tap away."
+   "src": "software/spectra/metro.mp4",
+   "poster": "software/spectra/metro-poster.jpg",
+   "caption": "Getting here, drawn as one scroll-driven trip. This is the metro leg: the train runs in along the viaduct, brakes into Thaltej Gam and the doors open."
   },
   {
-   "src": "software/spectra/live-09.jpg",
-   "caption": "Lume, one of the eight rooms. The room's name, Step inside and the bottom bar sit in the same place everywhere, so only the world around you changes."
+   "src": "software/spectra/pages/groups.jpg",
+   "caption": "Groups. The enquiry is a sentence you fill in, so booking a school trip or an offsite reads like asking a person."
   },
   {
-   "src": "software/spectra/live-11.jpg",
-   "caption": "The last room opens on the tickets. Book now, the hours and the directions are right there once you have walked through all eight."
+   "src": "software/spectra/pages/media.jpg",
+   "caption": "Press. The 15 outlets that have covered the museum, and what they wrote."
+  },
+  {
+   "src": "software/spectra/pages/franchise.jpg",
+   "caption": "Franchise. For anyone who wants to bring Spectra to their city."
   }
  ],
  "shivasva": [
