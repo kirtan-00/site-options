@@ -4,7 +4,7 @@
 const ROOT = document.getElementById('work');
 const BASE = (window.KP && window.KP.content) || '../content/';
 const RM = matchMedia('(prefers-reduced-motion: reduce)');
-const HIDE = new Set(['gujarat-titans']);
+const HIDE = new Set([]);
 const TEXT_ONLY = new Set(['clapper', 'fitkit', 'fourside-studios', 'palladium', 'dvc']);
 const WINGS = [
   { key: 'media', id: 'wka-set', title: 'Films on set.', short: 'On set' },

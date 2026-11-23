@@ -1,0 +1,15 @@
+{
+  "zepto": [
+    { "src": "media/zepto/chocolate-day-04.jpg" },
+    { "src": "media/zepto/diwali-03.jpg" },
+    { "src": "media/zepto/diwali-05.jpg" },
+    { "src": "media/zepto/friendship-01.jpg" },
+    { "src": "media/zepto/friendship-03.jpg" },
+    { "src": "media/zepto/rakhi-04.jpg" }
+  ],
+  "crav-social": [
+    { "src": "media/crav-social/holi-02.jpg" },
+    { "src": "media/crav-social/holi-03.jpg" },
+    { "src": "media/crav-social/holi-05.jpg" }
+  ]
+}

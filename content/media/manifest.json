@@ -56,17 +56,7 @@
       "media/zepto/rakhi-05.jpg"
     ],
     "video": "media/zepto/chocolate-day-loop.mp4",
-    "orientation": "vertical",
-    "gaps": "Four finished reels found, all short. No link to the live posts, and no confirmation of which reels the owner wants shown or which ones he appears in.",
-    "needs_owner_clearance": [
-      "/Users/purohit/Downloads/Sequence 01_1.mp4",
-      "/Users/purohit/Downloads/Zepto Rakhi  2/",
-      "/Users/purohit/Downloads/video_20260827_131905_1.mp4",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/zepto escalator.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Zepto pimple.prproj",
-      "/Users/purohit/Downloads/Design_Files/quick zepto edit.prproj",
-      "/Users/purohit/Downloads/Design_Files/zepto pose zara.prproj"
-    ]
+    "orientation": "vertical"
   },
   {
     "id": "palladium",
@@ -96,9 +86,7 @@
     "hero": null,
     "gallery": [],
     "video": null,
-    "orientation": null,
-    "gaps": "No Palladium video or still exists on this Mac. The Christmas CGI film and the festive films are missing. The logo on file is the Ahmedabad lockup, not Mumbai.",
-    "needs_owner_clearance": []
+    "orientation": null
   },
   {
     "id": "crav-social",
@@ -139,17 +127,7 @@
       "media/crav-social/holi-05.jpg"
     ],
     "video": "media/crav-social/holi-loop.mp4",
-    "orientation": "vertical",
-    "gaps": "Only one finished reel found. Other people are visible in it, so the owner should confirm it can be shown. The reels that carried the 50M+ views are not on this Mac.",
-    "needs_owner_clearance": [
-      "/Users/purohit/Downloads/cravsocial outro .mp4",
-      "/Users/purohit/Desktop/CravSocial endslide.mp4",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Crave social notice.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Cravsocial 2025 xmas.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Crav xmas.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Squid games cravsocial.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/crave social.prproj"
-    ]
+    "orientation": "vertical"
   },
   {
     "id": "dvc",
@@ -176,21 +154,6 @@
     "hero": null,
     "gallery": [],
     "video": null,
-    "orientation": null,
-    "gaps": "No finished DVC export exists on this Mac for any of the four clients, only Premiere project files. No client logos on file either.",
-    "needs_owner_clearance": [
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Shivalik wave launch.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Shivalik choose your order.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Shivalik diwali.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Shivalik cup.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Shivalik Credai reel.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Shivalik BTS.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/Shivalik BTS_1.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/shivalik reels.prproj",
-      "/Users/purohit/Downloads/Design_Files/Shivalik logos.prproj",
-      "/Users/purohit/Documents/Adobe/Premiere Pro/24.0/BTS electoin ABH.prproj",
-      "/Users/purohit/Desktop/kvr-diwali-posts/",
-      "/Users/purohit/Downloads/vo kvr.mp4"
-    ]
+    "orientation": null
   }
 ]

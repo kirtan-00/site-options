@@ -31,7 +31,7 @@ const ROOT = document.getElementById('work');
 const BASE = (window.KP && window.KP.content) || '../content/';
 const RM = matchMedia('(prefers-reduced-motion: reduce)');
 const HOVER = matchMedia('(hover: hover) and (pointer: fine)');
-const HIDE = new Set(['gujarat-titans']);
+const HIDE = new Set([]);
 const TEXT_ONLY = new Set(['clapper', 'fitkit', 'fourside-studios', 'palladium', 'dvc']);
 
 const INK = '#0c0d0f', PAPER = '#f1f2f0', BLUE = '#c9d8f7', PINK = '#f2a7b6', SKY = '#7d9bf0', COBALT = '#1c3bb0', NAVY = '#0f2545';

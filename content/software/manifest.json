@@ -48,7 +48,7 @@
     ],
     "video": null,
     "screens_withheld": false,
-    "gaps": "Strong. All eight rooms captured fresh. No capture of the Know more media or the Plan your visit page. The live site opens on a Diwali offer popup, which was closed before capture."
+    "category": "webdev"
   },
   {
     "id": "sorted",
@@ -98,7 +98,81 @@
     ],
     "video": "software/sorted/sorting.mp4",
     "screens_withheld": false,
-    "gaps": "Strong. The site's lilac sections were left out on purpose (no-purple rule). The write-up drops the first of three approved paragraphs to fit two."
+    "category": "macapp"
+  },
+  {
+    "id": "sparks",
+    "name": "Sparks",
+    "wing": "software",
+    "one_line": "A free browser app for DOPs and gaffers to plan the lighting on a photo of the location, with the numbers to back it up.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Lighting planner for DOPs"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Designed and built it."
+      },
+      {
+        "label": "Price",
+        "value": "Free"
+      },
+      {
+        "label": "Uploaded",
+        "value": "Nothing"
+      }
+    ],
+    "writeup": [
+      "You upload a photo of the location and Sparks estimates the depth on your device. Then you place real light fixtures in the scene.",
+      "It gives you the numbers: the light level at the subject, each light's ratio to the key in stops, whether a fixture can reach that from where it stands, and the total amps for the truck list. It runs fully on your device, with no upload and no account, and it is free."
+    ],
+    "link": "https://kirtan-00.github.io/sparks/",
+    "logo": "software/sparks/logo.png",
+    "hero": "software/sparks/live-01.jpg",
+    "gallery": [],
+    "video": null,
+    "screens_withheld": false,
+    "category": "webapp"
+  },
+  {
+    "id": "retain-plus",
+    "name": "Retain+",
+    "wing": "software",
+    "one_line": "An internal tool I built for CrayWingz that tells every account manager, each Monday, where their client stands on the retainer.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Retainer tracker"
+      },
+      {
+        "label": "Status",
+        "value": "Live, internal"
+      },
+      {
+        "label": "Role",
+        "value": "Designed and built it, end to end."
+      },
+      {
+        "label": "Runs",
+        "value": "Every week"
+      }
+    ],
+    "writeup": [
+      "Every week, Retain+ counts the reels and posts published on each client's Instagram and checks them against that client's monthly retainer target.",
+      "On Monday morning it emails each account manager where their client stands, plus one summary for the manager. A private dashboard shows every client sorted worst first."
+    ],
+    "link": null,
+    "logo": null,
+    "hero": null,
+    "gallery": [],
+    "video": null,
+    "screens_withheld": true,
+    "category": "webapp"
   },
   {
     "id": "cravache",
@@ -136,17 +210,17 @@
     ],
     "video": null,
     "screens_withheld": false,
-    "gaps": "Thin. Two title-screen frames and one gameplay frame. No capture of the retirement card or a busy mid-game day; the game was not played during capture. The dusk title frame (live-03) has a purple sky."
+    "category": "webapp"
   },
   {
     "id": "deepdive",
     "name": "Deepdive Marketing",
     "wing": "software",
-    "one_line": "A marketing page with 150K+ followers that mostly runs itself. It finds the story, makes the post and publishes it, every day.",
+    "one_line": "One marketing brand, three channels that run themselves: an Instagram page with 150K+ followers, a daily blog, and a LinkedIn page. It finds the story, makes the post and publishes it.",
     "facts": [
       {
         "label": "Kind",
-        "value": "IG autopilot"
+        "value": "Marketing autopilot"
       },
       {
         "label": "Status",
@@ -154,7 +228,7 @@
       },
       {
         "label": "Role",
-        "value": "Built the engine that finds, makes and posts it."
+        "value": "Built the engine that finds, makes and posts on all three channels."
       },
       {
         "label": "Followers",
@@ -170,46 +244,51 @@
     "hero": "software/deepdive/live-02.jpg",
     "gallery": [
       "software/deepdive/live-01.jpg",
-      "software/deepdive/01.jpg"
-    ],
-    "video": null,
-    "screens_withheld": false,
-    "gaps": "Only the public Instagram profile and grid, no view of the engine or its dashboard. Every frame carries third-party ad stills and Instagram's own interface."
-  },
-  {
-    "id": "deepdive-blog",
-    "name": "Deepdive Blog",
-    "wing": "software",
-    "one_line": "One long read a day on why an ad worked. Written, published and posted to LinkedIn without me touching it.",
-    "facts": [
-      {
-        "label": "Kind",
-        "value": "Daily writing"
-      },
-      {
-        "label": "Status",
-        "value": "Live"
-      },
-      {
-        "label": "Role",
-        "value": "Built the site and the pipeline that writes and posts it."
-      }
-    ],
-    "writeup": [
-      "Deepdive's blog takes apart one campaign a day: what it said, why it landed, and who it was for.",
-      "It runs itself. Every morning a pipeline picks the story, writes the post, publishes it, and that evening posts a teaser to the Deepdive Marketing LinkedIn page with a link back."
-    ],
-    "link": "https://thedeepdivemarketing.com/",
-    "logo": "software/deepdive-blog/logo.png",
-    "hero": "software/deepdive-blog/live-01.jpg",
-    "gallery": [
+      "software/deepdive/01.jpg",
       "software/deepdive-blog/live-02.jpg",
       "software/deepdive-blog/live-03.jpg",
       "software/deepdive-blog/live-04.jpg"
     ],
     "video": null,
     "screens_withheld": false,
-    "gaps": "Good. Front page only; no capture of a single article page or of the LinkedIn teaser. The collaboration form was not captured or touched."
+    "parts": [
+      {
+        "name": "Instagram",
+        "link": "https://instagram.com/thedeepdivemarketing",
+        "one_line": "A marketing page with 150K+ followers that mostly runs itself. It finds the story, makes the post and publishes it, every day.",
+        "gallery": [
+          "software/deepdive/live-01.jpg",
+          "software/deepdive/01.jpg"
+        ]
+      },
+      {
+        "name": "Blog",
+        "link": "https://thedeepdivemarketing.com/",
+        "one_line": "One long read a day on why an ad worked. Written and published without me touching it.",
+        "gallery": [
+          "software/deepdive-blog/live-02.jpg",
+          "software/deepdive-blog/live-03.jpg",
+          "software/deepdive-blog/live-04.jpg"
+        ]
+      },
+      {
+        "name": "LinkedIn",
+        "link": null,
+        "one_line": "Each day's blog post goes out to LinkedIn on its own.",
+        "gallery": []
+      }
+    ],
+    "links": [
+      {
+        "label": "Instagram",
+        "url": "https://instagram.com/thedeepdivemarketing"
+      },
+      {
+        "label": "Blog",
+        "url": "https://thedeepdivemarketing.com/"
+      }
+    ],
+    "category": "automation"
   },
   {
     "id": "sportified",
@@ -244,7 +323,7 @@
     "gallery": [],
     "video": null,
     "screens_withheld": false,
-    "gaps": "Very thin. One capture of the public Instagram grid and the logo. No existing screenshots and no view of the engine. The grid shows match footage of real players."
+    "category": "automation"
   },
   {
     "id": "vibe-raas-led",
@@ -285,7 +364,7 @@
       "Ohm and I brought back The Vibe Tribe, his event company, for Navratri 2026: Vibe Raas, a garba night at Tathastu Party Plot, Ognaj. A revived company has no systems, so I built them.",
       "Three LED walls: a 50 ft stage screen and two side screens. We wanted them to move with the music, not loop a video, so I wrote the software. It listens to the mixer and drives eight hand-built visuals drawn from Gujarati textile and folk motifs: Tunnel, Stripes, Mandala, Ghoomar, Patola, Jali, Damru and Shiv."
     ],
-    "link": null,
+    "link": "https://kirtan-00.github.io/vibe-raas-visuals/show.html?screen=stage",
     "logo": "software/vibe-raas-led/logo.png",
     "hero": "software/vibe-raas-led/led-05.jpg",
     "gallery": [
@@ -304,7 +383,47 @@
     ],
     "video": null,
     "screens_withheld": false,
-    "gaps": "No live link (the event is over). Every image is a render out of the software; there is no photo or video of the walls on the night."
+    "category": "webapp"
+  },
+  {
+    "id": "shivasva",
+    "name": "Shivasva Lifespace",
+    "wing": "software",
+    "one_line": "A real-estate developer's website. I built everything behind it: the backend, the database, the CMS and the enquiry emails, and I deployed it.",
+    "facts": [
+      {
+        "label": "Kind",
+        "value": "Real-estate website"
+      },
+      {
+        "label": "Status",
+        "value": "Live"
+      },
+      {
+        "label": "Role",
+        "value": "Backend, database, CMS, email forwarding, deployment and content updates."
+      },
+      {
+        "label": "Live since",
+        "value": "November 2026"
+      }
+    ],
+    "writeup": [
+      "Shivasva Lifespace is a real-estate developer, and this is their website. The design came from the client. My part was everything that makes it run: the backend, the database, the admin CMS, the email forwarding, and the deployment.",
+      "The CMS means the client edits their own projects without calling me. Enquiries from the contact form are forwarded to the client's email and logged in a Google Sheet. Since launch I have also made a long run of content updates. It has been live since November 2026."
+    ],
+    "link": "https://shivasva.co",
+    "logo": null,
+    "hero": "software/shivasva/live-01.jpg",
+    "gallery": [
+      "software/shivasva/live-02.jpg",
+      "software/shivasva/live-03.jpg",
+      "software/shivasva/live-04.jpg",
+      "software/shivasva/live-05.jpg"
+    ],
+    "video": null,
+    "screens_withheld": false,
+    "category": "webdev"
   },
   {
     "id": "vibe-raas-tickets",
@@ -354,13 +473,14 @@
     ],
     "video": null,
     "screens_withheld": false,
-    "gaps": "No live link (the event is over). No screenshot of the Telegram bot chat itself. Scanner screens show buyer names, prices and QR codes that the source notes say are seed data.",
     "held_gallery": [
       "software/vibe-raas-tickets/pass-03.jpg",
       "software/vibe-raas-tickets/pass-04.jpg",
       "software/vibe-raas-tickets/pass-05.jpg",
       "software/vibe-raas-tickets/pass-06.jpg"
-    ]
+    ],
+    "category": "webapp",
+    "hidden": true
   },
   {
     "id": "clapper",
@@ -395,7 +515,7 @@
     ],
     "writeup": [
       "Clapper is the log, on the phone already in your pocket. Hit ROLL when the camera rolls, tap what happens (close-up, a flub, the keeper), hit CUT. It numbers every clip exactly the way the camera does, so at wrap the editor gets a timeline where C0248 in the log is C0248 on the card.",
-      "It runs offline, needs no account to log, and lives at clapper.in. Ten people use it for real. Two have exported. I am working on the other eight."
+      "It runs offline, and needs no account to log. Ten people use it for real. Two have exported. I am working on the other eight."
     ],
     "link": "https://clapper.in",
     "logo": "software/clapper/logo.png",
@@ -403,7 +523,7 @@
     "gallery": [],
     "video": null,
     "screens_withheld": true,
-    "gaps": "Text only by the owner's rule. Logo only; no screenshots or video were copied and the site was not loaded."
+    "category": "webapp"
   },
   {
     "id": "fitkit",
@@ -438,7 +558,7 @@
     "gallery": [],
     "video": null,
     "screens_withheld": true,
-    "gaps": "Text only by the owner's rule. No logo exists, no link, no images."
+    "category": "webapp"
   },
   {
     "id": "fourside-studios",
@@ -469,7 +589,7 @@
     "gallery": [],
     "video": null,
     "screens_withheld": true,
-    "gaps": "Text only by the owner's rule. No logo exists, no link, no images. copy.js marks it classified, not live.",
-    "logo_on": "dark"
+    "logo_on": "dark",
+    "category": "webapp"
   }
 ]

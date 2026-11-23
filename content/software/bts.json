@@ -1,0 +1,2149 @@
+{
+ "spectra": {
+  "stats": [
+   {
+    "value": "56 to 73",
+    "label": "Mobile Lighthouse score, old landing vs new 3D landing",
+    "as_of": "2026-10-06",
+    "confirmed": true
+   },
+   {
+    "value": "16.5 s to 3.4 s",
+    "label": "Largest paint on mobile, old site vs new",
+    "as_of": "2026-10-06",
+    "confirmed": true
+   },
+   {
+    "value": "21 MB to 0.8 MB",
+    "label": "Landing page weight, old vs new",
+    "as_of": "2026-10-06",
+    "confirmed": true
+   },
+   {
+    "value": "100",
+    "label": "Lighthouse accessibility on the 3D landing",
+    "as_of": "2026-10-06",
+    "confirmed": true
+   },
+   {
+    "value": "5",
+    "label": "Landing concepts built and shown in the first two days",
+    "as_of": "2026-09-24",
+    "confirmed": true
+   },
+   {
+    "value": "76",
+    "label": "Commits in the production repo",
+    "as_of": "2026-11-22",
+    "confirmed": true
+   },
+   {
+    "value": "60 fps",
+    "label": "Through all eight rooms on a desktop, zero frames over 33 ms",
+    "as_of": "2026-09-29",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Client",
+    "value": "Spectra Museum, Ahmedabad, through CrayWingz"
+   },
+   {
+    "label": "Stack",
+    "value": "Three.js for the 3D walk, Astro for the inner pages, a small CMS on Cloudflare (D1) for news, careers, room media and form emails"
+   },
+   {
+    "label": "Pages",
+    "value": "The 10 pages the old site had, each redesigned, plus News"
+   },
+   {
+    "label": "Brief to approved landing",
+    "value": "One day: brief on 23 Sep 2026, landing approved on 24 Sep"
+   },
+   {
+    "label": "Sound",
+    "value": "Generative, made in the browser, muted until you turn it on"
+   },
+   {
+    "label": "Booking",
+    "value": "Every Book now goes straight to the museum's own booking site, no hand-off page"
+   },
+   {
+    "label": "Reviews",
+    "value": "Reviewed four times before handover: design, speed, security and the handover itself"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-09-23",
+    "title": "Brief in. Audited the old site: mobile score 56, 21 MB landing"
+   },
+   {
+    "date": "2026-09-23",
+    "title": "Five landing concepts built the same day; the plain exhibit scroll was rejected"
+   },
+   {
+    "date": "2026-09-24",
+    "title": "The walk-through-the-rooms landing approved"
+   },
+   {
+    "date": "2026-09-25",
+    "title": "Production go-ahead"
+   },
+   {
+    "date": "2026-09-30",
+    "title": "Production repo started, first preview on Vercel"
+   },
+   {
+    "date": "2026-10-06",
+    "title": "Production review: mobile score 73, landing 0.8 MB"
+   },
+   {
+    "date": "2026-10-22",
+    "title": "CMS form-email settings and form rate limits shipped"
+   },
+   {
+    "date": "2026-11-22",
+    "title": "Code handed over to the museum's developer"
+   }
+  ],
+  "lesson": "I built five clever concepts in a day before I understood the brief. The client wanted their own site, 20% better and much faster. The concept that won was the one that kept their eight rooms at the centre.",
+  "iterations": [
+   {
+    "src": "software/spectra/bts/01-old-site.jpg",
+    "caption": "The site before: a Framer build with a 20 MB hero video. This is what the audit measured.",
+    "date": "2026-09-23"
+   },
+   {
+    "src": "software/spectra/bts/02-exhibit-scroll.jpg",
+    "caption": "Concept 1, a plain scroll through the eight rooms. Rejected the same day for having no idea behind it.",
+    "date": "2026-09-23"
+   },
+   {
+    "src": "software/spectra/bts/03-prism.jpg",
+    "caption": "Concept 2, Prism: your cursor is the glass, hold it and the light splits into the eight rooms.",
+    "date": "2026-09-23"
+   },
+   {
+    "src": "software/spectra/bts/04-your-line.jpg",
+    "caption": "Concept 3, Your Line: draw one line and each room does something to it.",
+    "date": "2026-09-23"
+   },
+   {
+    "src": "software/spectra/bts/05-mix-the-light.jpg",
+    "caption": "Concept 4, Mix the Light: mix red, green and blue to open rooms. Moved to a game page, not the landing.",
+    "date": "2026-09-23"
+   },
+   {
+    "src": "software/spectra/bts/06-fall-rooms-v1.jpg",
+    "caption": "First pass of the approved idea: one long fall through a 3D version of each room. Most rooms were rebuilt over the next week, and rooms were cut to half their length.",
+    "date": "2026-09-23"
+   },
+   {
+    "src": "software/spectra/bts/07-type-round-1.jpg",
+    "caption": "Title-card type, round 1. Six directions, all rejected.",
+    "date": "2026-09-26"
+   }
+  ],
+  "stack": [
+   {
+    "group": "Frontend",
+    "items": [
+     {
+      "name": "Three.js",
+      "icon": "threedotjs"
+     },
+     {
+      "name": "Astro",
+      "icon": "astro"
+     }
+    ]
+   },
+   {
+    "group": "Backend",
+    "items": [
+     {
+      "name": "Cloudflare D1",
+      "icon": "cloudflare"
+     }
+    ]
+   },
+   {
+    "group": "Hosting",
+    "items": [
+     {
+      "name": "Vercel",
+      "icon": "vercel"
+     }
+    ]
+   }
+  ],
+  "compare": [
+   {
+    "screen": "Landing",
+    "v1": {
+     "src": "software/spectra/compare/v1-1.jpg",
+     "date": "23 Sep"
+    },
+    "final": {
+     "src": "software/spectra/live-01.jpg",
+     "date": "Live, Nov"
+    }
+   },
+   {
+    "screen": "Cortex room",
+    "v1": {
+     "src": "software/spectra/compare/v1-2.jpg",
+     "date": "23 Sep"
+    },
+    "final": {
+     "src": "software/spectra/live-02.jpg",
+     "date": "Live, Nov"
+    }
+   },
+   {
+    "screen": "Lume room",
+    "v1": {
+     "src": "software/spectra/compare/v1-3.jpg",
+     "date": "23 Sep"
+    },
+    "final": {
+     "src": "software/spectra/live-09.jpg",
+     "date": "Live, Nov"
+    }
+   }
+  ]
+ },
+ "shivasva": {
+  "stats": [
+   {
+    "value": "6",
+    "label": "Projects managed from the client's own admin",
+    "as_of": "2026-10-13",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Client",
+    "value": "Shivasva Lifespace, a real-estate developer in Sanand, Gujarat"
+   },
+   {
+    "label": "Design",
+    "value": "The client's. My work was everything behind it"
+   },
+   {
+    "label": "Backend",
+    "value": "Admin CMS, database and enquiry API on Cloudflare"
+   },
+   {
+    "label": "Hosting",
+    "value": "Deployed to the client's own hosting at shivasva.co; the admin stays off the client's domain"
+   },
+   {
+    "label": "Enquiries",
+    "value": "Spam-checked, forwarded to the client's email and logged in a Google Sheet the client owns"
+   },
+   {
+    "label": "Live",
+    "value": "18 Nov 2026",
+    "url": "https://shivasva.co",
+    "link_label": "Live project"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-10-13",
+    "title": "Admin CMS for the client's projects"
+   },
+   {
+    "date": "2026-10-30",
+    "title": "Own admin and enquiry email running on Cloudflare"
+   },
+   {
+    "date": "2026-11-18",
+    "title": "Deployed live on shivasva.co with SSL"
+   },
+   {
+    "date": "2026-11-20",
+    "title": "Launch audit and handover notes; content updates since"
+   }
+  ],
+  "iterations": []
+ },
+ "sorted": {
+  "stats": [
+   {
+    "value": "5 days",
+    "label": "of shooting in Diu, where sorted started",
+    "as_of": "2026-11-23",
+    "confirmed": true
+   },
+   {
+    "value": "3 TB",
+    "label": "of footage and photos off the Diu shoot",
+    "as_of": "2026-11-23",
+    "confirmed": true
+   },
+   {
+    "value": "30+",
+    "label": "testimonials shot in Diu, plus 1 documentary and 1 hr+ of podcast",
+    "as_of": "2026-11-23",
+    "confirmed": true
+   },
+   {
+    "value": "4 + 2",
+    "label": "crew: 1 photographer, 2 videographers, 1 drone operator; Kirtan and Ohm managing",
+    "as_of": "2026-11-23",
+    "confirmed": true
+   },
+   {
+    "value": "3,677",
+    "label": "photos in the first real run (Sony A7R V, 61 MP)",
+    "as_of": "2026-09-18",
+    "confirmed": true
+   },
+   {
+    "value": "~11 min",
+    "label": "to index those 3,677 photos on an 8 GB M1, 0 failures",
+    "as_of": "2026-09-18",
+    "confirmed": true
+   },
+   {
+    "value": "6,569",
+    "label": "faces found in the same shoot",
+    "as_of": "2026-09-18",
+    "confirmed": true
+   },
+   {
+    "value": "955",
+    "label": "items (630 photos, 325 clips) off a 750 GB documentary disk, 0 errors",
+    "as_of": "2026-09-19",
+    "confirmed": true
+   },
+   {
+    "value": "503",
+    "label": "commits across all branches",
+    "as_of": "2026-11-22",
+    "confirmed": true
+   },
+   {
+    "value": "1,657",
+    "label": "tests passing, 0 failing",
+    "as_of": "2026-11-22",
+    "confirmed": true
+   },
+   {
+    "value": "0",
+    "label": "outbound network connections in 4 captured scan + Live runs",
+    "as_of": "2026-11-19",
+    "confirmed": true
+   },
+   {
+    "value": "0.8.5",
+    "label": "latest public build (sorted-app)",
+    "as_of": "2026-11-09",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Made at",
+    "value": "CrayWingz",
+    "url": "https://www.craywingz.com",
+    "link_label": "Visit CrayWingz"
+   },
+   {
+    "label": "Stack",
+    "value": "Python 3.11 engine (FastAPI), SigLIP image search on Core ML with ONNX fallback, YuNet + SFace faces, bundled LGPL ffmpeg, Swift Mac shell, Sony camera SDK for USB-C tethering"
+   },
+   {
+    "label": "Started",
+    "value": "17 Sep 2026, as photosort"
+   },
+   {
+    "label": "Renamed",
+    "value": "19 Sep 2026, after two naming rounds"
+   },
+   {
+    "label": "Landing site live",
+    "value": "20 Sep 2026"
+   },
+   {
+    "label": "Public sale",
+    "value": "Planned for 7 Dec 2026 on sortedframes.com"
+   },
+   {
+    "label": "Prices",
+    "value": "Free, Plus $119, Studio $200 ($150 with the launch code)"
+   },
+   {
+    "label": "Hardest part",
+    "value": "Making it survive a real disk. Everything worked on 60 photos; the 3,677-photo shoot found the bugs."
+   }
+  ],
+  "timeline": [
+   {
+    "date": "",
+    "title": "The Diu shoot for CrayWingz: 5 days, 3 TB"
+   },
+   {
+    "date": "2026-09-17",
+    "title": "First sort, for our designers and editors (photosort v1)"
+   },
+   {
+    "date": "2026-09-17",
+    "title": "photosort v1: search, sharpness and face clustering, all on the Mac"
+   },
+   {
+    "date": "2026-09-18",
+    "title": "First real shoot: 3,677 photos indexed in about 11 minutes"
+   },
+   {
+    "date": "2026-09-19",
+    "title": "Named sorted, logo picked from three directions, video indexing added"
+   },
+   {
+    "date": "2026-09-20",
+    "title": "Landing site and beta sign-up live"
+   },
+   {
+    "date": "",
+    "title": "Editing module"
+   },
+   {
+    "date": "2026-11-05",
+    "title": "A Dr. Naturals product shoot asks for product sorting: Products tab lands"
+   },
+   {
+    "date": "2026-11-07",
+    "title": "Live module: 0.8.0 public, shots sorted as the camera fires"
+   },
+   {
+    "date": "2026-11-15",
+    "title": "USB-C tethering works end to end through Sony's SDK"
+   },
+   {
+    "date": "2026-11-18",
+    "title": "sortedframes.com live with pricing"
+   },
+   {
+    "date": "2026-11-19",
+    "title": "First one-file tester DMG; a Microsoft telemetry leak in onnxruntime found and killed"
+   },
+   {
+    "date": "2026-12-07",
+    "title": "Public sale on sortedframes.com (planned)"
+   }
+  ],
+  "lesson": "Every number I had was measured on 60 photos. The first real disk had 3,677, and that is where the bugs lived. Now nothing ships until it has run on a full shoot.",
+  "iterations": [
+   {
+    "src": "software/sorted/bts/01-photosort-first-ui.jpg",
+    "caption": "Day three, still called photosort: indexing a real 4,894-file shoot at 4.5 photos a second. Plain HTML, no design yet.",
+    "date": "2026-09-19"
+   },
+   {
+    "src": "software/sorted/bts/02-logo-directions.jpg",
+    "caption": "Three logo directions tested at real sizes, down to 16 px in the menu bar. C, one tile lifting out of a contact sheet, won.",
+    "date": "2026-09-19"
+   },
+   {
+    "src": "software/sorted/bts/03-scan-atlas-concept.jpg",
+    "caption": "A scan-moment concept: the whole shoot laid out by what the model sees. Real model output on a stock test set.",
+    "date": "2026-11-05"
+   },
+   {
+    "src": "software/sorted/bts/04-scan-developing.jpg",
+    "caption": "Scan screen rebuilt: frames 'develop' tile by tile while it reads the disk.",
+    "date": "2026-11-05"
+   },
+   {
+    "src": "software/sorted/bts/05-scan-finder.jpg",
+    "caption": "Another take on the same moment: files leaving Finder windows and landing in the shoot.",
+    "date": "2026-11-06"
+   },
+   {
+    "src": "software/sorted/bts/06-welcome-redo.jpg",
+    "caption": "The welcome screen after a help pass: one big button, two side doors.",
+    "date": "2026-11-16"
+   },
+   {
+    "src": "software/sorted/bts/07-live-develop.jpg",
+    "caption": "A Live redesign with Lightroom-style develop sliders, tested before a real product shoot.",
+    "date": "2026-11-21"
+   }
+  ],
+  "story": "sorted started with a shoot in Diu for CrayWingz. Over 5 days we shot a documentary, more than an hour of podcast and over 30 testimonials, plus a lot of photos, and came home with 3 TB. I built the first version to sort that pile for our designers, and for the editors, because there were several videos to cut. It helped the designers a little. Then I built an editing module. On a later product shoot for Dr. Naturals we felt the need for product photo sorting and for something that sorts while you shoot, so I built product sorting and the Live module.",
+  "links": [
+   {
+    "label": "CrayWingz",
+    "url": "https://www.craywingz.com"
+   }
+  ],
+  "stack": [
+   {
+    "group": "Engine",
+    "items": [
+     {
+      "name": "Python",
+      "icon": "python"
+     },
+     {
+      "name": "FastAPI",
+      "icon": "fastapi"
+     },
+     {
+      "name": "FFmpeg",
+      "icon": "ffmpeg"
+     }
+    ]
+   },
+   {
+    "group": "AI on the Mac",
+    "items": [
+     {
+      "name": "SigLIP"
+     },
+     {
+      "name": "Core ML"
+     },
+     {
+      "name": "ONNX",
+      "icon": "onnx"
+     },
+     {
+      "name": "YuNet + SFace",
+      "icon": "opencv"
+     }
+    ]
+   },
+   {
+    "group": "App",
+    "items": [
+     {
+      "name": "Swift",
+      "icon": "swift"
+     },
+     {
+      "name": "Sony camera SDK",
+      "icon": "sony"
+     }
+    ]
+   }
+  ],
+  "compare": [
+   {
+    "screen": "Search",
+    "v1": {
+     "src": "software/sorted/compare/v1-1.jpg",
+     "date": "19 Sep, as photosort"
+    },
+    "final": {
+     "src": "software/sorted/compare/fin-1.jpg",
+     "date": "7 Nov"
+    }
+   },
+   {
+    "screen": "Sorting into groups",
+    "v1": {
+     "src": "software/sorted/compare/v1-2.jpg",
+     "date": "19 Sep, as photosort"
+    },
+    "final": {
+     "src": "software/sorted/products.jpg",
+     "date": "Nov"
+    }
+   },
+   {
+    "screen": "Indexing a shoot",
+    "v1": {
+     "src": "software/sorted/compare/v1-3.jpg",
+     "date": "19 Sep, as photosort"
+    },
+    "final": {
+     "src": "software/sorted/compare/fin-3.jpg",
+     "date": "16 Nov"
+    }
+   }
+  ]
+ },
+ "sparks": {
+  "stats": [
+   {
+    "value": "3 days",
+    "label": "from first test to live app (1 to 3 Sep)",
+    "as_of": "2026-09-03",
+    "confirmed": true
+   },
+   {
+    "value": "7",
+    "label": "build rounds, each logged",
+    "as_of": "2026-09-03",
+    "confirmed": true
+   },
+   {
+    "value": "42",
+    "label": "entries in the engineering log, including what failed",
+    "as_of": "2026-09-03",
+    "confirmed": true
+   },
+   {
+    "value": "19",
+    "label": "real fixtures in the library, 56 fixture and modifier combos",
+    "as_of": "2026-09-03",
+    "confirmed": true
+   },
+   {
+    "value": "5 of 56",
+    "label": "photometric values from published spec sheets; the rest are estimates",
+    "as_of": "2026-09-03",
+    "confirmed": true
+   },
+   {
+    "value": "27 MB",
+    "label": "depth model that runs in the browser, downloaded once",
+    "as_of": "2026-09-03",
+    "confirmed": true
+   },
+   {
+    "value": "0",
+    "label": "users asked to try it; no analytics",
+    "as_of": "2026-09-06",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Stack",
+    "value": "Static web app, Depth Anything V2 Small as a q8 ONNX in the browser, WebGL2 renderer with soft shadows, bounce and haze, GitHub Pages"
+   },
+   {
+    "label": "Started",
+    "value": "1 Sep 2026, as a Python test"
+   },
+   {
+    "label": "Live",
+    "value": "3 Sep 2026 on GitHub Pages"
+   },
+   {
+    "label": "Commits",
+    "value": "7 on GitHub (the rounds before that lived in a local test copy)"
+   },
+   {
+    "label": "Hardest part",
+    "value": "Getting real numbers out of a guessed depth map: lux at the subject, stops to key, total amps"
+   },
+   {
+    "label": "Status",
+    "value": "Built, not tested on a real recce yet"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-09-01",
+    "title": "First test: one photo, estimated depth, lights placed in 3D, about 2 s a photo"
+   },
+   {
+    "date": "2026-09-01",
+    "title": "Round 2: cast shadows, bounce, occlusion, haze"
+   },
+   {
+    "date": "2026-09-02",
+    "title": "Rounds 3 to 5: three display bugs fixed, quality settings measured"
+   },
+   {
+    "date": "2026-09-03",
+    "title": "Round 6: runs fully in the browser, published"
+   },
+   {
+    "date": "2026-09-03",
+    "title": "Round 7: aim lights, HEIC photos, deselect"
+   }
+  ],
+  "lesson": "The picture was the fun part. The product is the numbers: how many stops, how many amps. And I built it for three days without showing it to one gaffer, so I still don't know if anyone wants it.",
+  "iterations": [],
+  "stack": [
+   {
+    "group": "In the browser",
+    "items": [
+     {
+      "name": "Depth Anything V2"
+     },
+     {
+      "name": "ONNX",
+      "icon": "onnx"
+     },
+     {
+      "name": "WebGL2",
+      "icon": "webgl"
+     }
+    ]
+   },
+   {
+    "group": "Hosting",
+    "items": [
+     {
+      "name": "GitHub Pages",
+      "icon": "githubpages"
+     }
+    ]
+   }
+  ]
+ },
+ "retain-plus": {
+  "stats": [
+   {
+    "value": "2 days",
+    "label": "from design spec to live on its own server",
+    "as_of": "2026-06-30",
+    "confirmed": true
+   },
+   {
+    "value": "5",
+    "label": "agency client accounts tracked every week",
+    "as_of": "2026-07-05",
+    "confirmed": true
+   },
+   {
+    "value": "40",
+    "label": "commits",
+    "as_of": "2026-07-28",
+    "confirmed": true
+   },
+   {
+    "value": "265",
+    "label": "automated tests",
+    "as_of": "2026-07-28",
+    "confirmed": true
+   },
+   {
+    "value": "6",
+    "label": "emails every Monday morning: one per account lead plus a manager digest",
+    "as_of": "2026-07-05",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "What it does",
+    "value": "Counts the reels and posts we published for each client against the monthly retainer, then tells the right person on Monday if we're behind"
+   },
+   {
+    "label": "Stack",
+    "value": "Python, Flask, SQLite, Apify for reading public Instagram grids, Brevo for email, headless Chrome for PDF reports, DigitalOcean"
+   },
+   {
+    "label": "Who uses it",
+    "value": "The CrayWingz servicing team and the manager. Internal only"
+   },
+   {
+    "label": "Why Apify, not the official API",
+    "value": "Instagram's API can't see collab posts on a client's grid. On the first test account it saw 10 of 15 posts"
+   },
+   {
+    "label": "Security",
+    "value": "Tokens encrypted at rest, never shown in the browser, login lockout, nightly encrypted backups"
+   },
+   {
+    "label": "Rule",
+    "value": "No AI anywhere in the counting. Same input, same number, every week"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-06-29",
+    "title": "Design spec written"
+   },
+   {
+    "date": "2026-06-30",
+    "title": "Built, deployed with HTTPS, all five accounts onboarded"
+   },
+   {
+    "date": "2026-06-30",
+    "title": "Switched data source to Apify to catch collab posts"
+   },
+   {
+    "date": "2026-07-05",
+    "title": "'Report a problem' button in the Monday email"
+   },
+   {
+    "date": "2026-07-06",
+    "title": "Monthly PDF client reports built, kept switched off"
+   },
+   {
+    "date": "2026-07-14",
+    "title": "A dropped week found; 'Confirm counts' flow added"
+   },
+   {
+    "date": "2026-07-28",
+    "title": "Token fallback so one dead key can't stop the batch"
+   }
+  ],
+  "lesson": "The first Monday it got a number wrong, nothing had crashed. One request failed quietly and the email went out with last week's count. Now every number in the email can be confirmed or flagged by the person reading it, in one click.",
+  "iterations": [],
+  "stack": [
+   {
+    "group": "Backend",
+    "items": [
+     {
+      "name": "Python",
+      "icon": "python"
+     },
+     {
+      "name": "Flask",
+      "icon": "flask"
+     },
+     {
+      "name": "SQLite",
+      "icon": "sqlite"
+     }
+    ]
+   },
+   {
+    "group": "Data and mail",
+    "items": [
+     {
+      "name": "Apify"
+     },
+     {
+      "name": "Brevo",
+      "icon": "brevo"
+     },
+     {
+      "name": "Headless Chrome",
+      "icon": "googlechrome"
+     }
+    ]
+   },
+   {
+    "group": "Hosting",
+    "items": [
+     {
+      "name": "DigitalOcean",
+      "icon": "digitalocean"
+     }
+    ]
+   }
+  ],
+  "classified": {
+   "title": "How it works",
+   "steps": [
+    "Every client is on a retainer: a set number of reels and posts a month.",
+    "Each week Retain+ reads the client's public Instagram grid, collab posts included.",
+    "It counts what went out and checks it against what the retainer promised.",
+    "Monday morning, each account manager gets one email: on track, or behind and by how much.",
+    "Every number in that email can be confirmed or flagged in one click."
+   ],
+   "note": "Screens stay private. They show client names and their numbers."
+  }
+ },
+ "cravache": {
+  "stats": [
+   {
+    "value": "70",
+    "label": "people played it in its first two weeks",
+    "as_of": "2026-07-19",
+    "confirmed": true
+   },
+   {
+    "value": "6.9 hrs",
+    "label": "of total playtime across them",
+    "as_of": "2026-07-19",
+    "confirmed": true
+   },
+   {
+    "value": "75",
+    "label": "commits",
+    "as_of": "2026-06-28",
+    "confirmed": true
+   },
+   {
+    "value": "17 days",
+    "label": "first commit to last (12 to 28 Jun)",
+    "as_of": "2026-06-28",
+    "confirmed": true
+   },
+   {
+    "value": "4",
+    "label": "playable versions in the first two days (v1 to v4)",
+    "as_of": "2026-06-13",
+    "confirmed": true
+   },
+   {
+    "value": "70",
+    "label": "briefs, 18 clients, 25 events, 17 staff written for the game",
+    "as_of": "2026-06",
+    "confirmed": true
+   },
+   {
+    "value": "15/15",
+    "label": "end-to-end tests passing on the player sign-in",
+    "as_of": "2026-07-07",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Stack",
+    "value": "Vanilla canvas game wrapped in a Vite + TypeScript PWA, Flask + SQLite backend on a $6 droplet, nginx"
+   },
+   {
+    "label": "Started",
+    "value": "12 Jun 2026"
+   },
+   {
+    "label": "First playable",
+    "value": "13 Jun 2026"
+   },
+   {
+    "label": "Server and player gate",
+    "value": "6 to 7 Jul 2026"
+   },
+   {
+    "label": "Hardest part",
+    "value": "Making a day of agency life feel like a game: night shifts, change requests and chai had to be systems, not jokes"
+   },
+   {
+    "label": "Share feature",
+    "value": "Retire and the game draws a 1080x1350 career obituary you can save"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-06-12",
+    "title": "Game loop, money and art rules written down"
+   },
+   {
+    "date": "2026-06-13",
+    "title": "v1 to v4 in one day: departments, real brands, night shift, overtime mode"
+   },
+   {
+    "date": "2026-06-14",
+    "title": "Title screen and production studio options mocked"
+   },
+   {
+    "date": "2026-06-15",
+    "title": "Office v2 and the production studio"
+   },
+   {
+    "date": "2026-06-17",
+    "title": "Interactive retirement beach, coffee as a mini-game"
+   },
+   {
+    "date": "2026-06-28",
+    "title": "Managers, final cast, homepage credit"
+   },
+   {
+    "date": "2026-07-07",
+    "title": "Own server: player sign-in, playtime, the career obituary card"
+   }
+  ],
+  "lesson": "Four versions in one day was fun. The thing people actually share is the obituary at the end, and I built that last.",
+  "iterations": [
+   {
+    "src": "software/cravache/bts/01-agency-doom-prototype.jpg",
+    "caption": "The first playable day, when the agency was still called Agency Doom.",
+    "date": "2026-06-13"
+   },
+   {
+    "src": "software/cravache/bts/02-title-screen-option-a.jpg",
+    "caption": "Title screen option A: the night office with the team still at their desks.",
+    "date": "2026-06-14"
+   },
+   {
+    "src": "software/cravache/bts/03-studio-option-a.jpg",
+    "caption": "Production studio, option A: one set, drag a brief onto the pedestal.",
+    "date": "2026-06-15"
+   },
+   {
+    "src": "software/cravache/bts/04-studio-option-c.jpg",
+    "caption": "Production studio, option C: stations around the room and the crew walks over.",
+    "date": "2026-06-15"
+   },
+   {
+    "src": "software/cravache/bts/05-office-v2.jpg",
+    "caption": "Office v2: a big window, the hustle board, and empty desks waiting for hires.",
+    "date": "2026-06-15"
+   },
+   {
+    "src": "software/cravache/bts/06-office-late-june.jpg",
+    "caption": "Two weeks later: managers, meditation, a door to the studio, briefs from real brands.",
+    "date": "2026-06-27"
+   }
+  ],
+  "stack": [
+   {
+    "group": "Game",
+    "items": [
+     {
+      "name": "Canvas"
+     },
+     {
+      "name": "Vite",
+      "icon": "vite"
+     },
+     {
+      "name": "TypeScript",
+      "icon": "typescript"
+     },
+     {
+      "name": "PWA",
+      "icon": "pwa"
+     }
+    ]
+   },
+   {
+    "group": "Backend",
+    "items": [
+     {
+      "name": "Flask",
+      "icon": "flask"
+     },
+     {
+      "name": "SQLite",
+      "icon": "sqlite"
+     }
+    ]
+   },
+   {
+    "group": "Hosting",
+    "items": [
+     {
+      "name": "DigitalOcean",
+      "icon": "digitalocean"
+     },
+     {
+      "name": "nginx",
+      "icon": "nginx"
+     }
+    ]
+   }
+  ],
+  "compare": [
+   {
+    "screen": "Title screen",
+    "v1": {
+     "src": "software/cravache/compare/v1-1.jpg",
+     "date": "13 Jun, v1"
+    },
+    "final": {
+     "src": "software/cravache/live-01.jpg",
+     "date": "Live"
+    }
+   },
+   {
+    "screen": "The office",
+    "v1": {
+     "src": "software/cravache/compare/v1-2.jpg",
+     "date": "13 Jun, v1"
+    },
+    "final": {
+     "src": "software/cravache/bts/06-office-late-june.jpg",
+     "date": "Late June"
+    }
+   },
+   {
+    "screen": "A client brief",
+    "v1": {
+     "src": "software/cravache/compare/v1-3.jpg",
+     "date": "13 Jun, v1"
+    },
+    "final": {
+     "src": "software/cravache/live.jpg",
+     "date": "Live"
+    }
+   }
+  ]
+ },
+ "deepdive": {
+  "stats": [
+   {
+    "value": "175K",
+    "label": "followers on the page when we took it over (inherited, not grown)",
+    "as_of": "2026-04-21",
+    "confirmed": true
+   },
+   {
+    "value": "162K",
+    "label": "followers at the September insights pull",
+    "as_of": "2026-09-06",
+    "confirmed": true
+   },
+   {
+    "value": "733",
+    "label": "posts published in the first 8 weeks (390 reels, 155 carousels, 188 statics)",
+    "as_of": "2026-06-17",
+    "confirmed": true
+   },
+   {
+    "value": "1.33M",
+    "label": "views on the best reel, Pringles x Rick & Morty",
+    "as_of": "2026-06-17",
+    "confirmed": true
+   },
+   {
+    "value": "2.19M",
+    "label": "organic views across 420 posts in nine weeks (Jul 4 to Sep 6)",
+    "as_of": "2026-09-06",
+    "confirmed": true
+   },
+   {
+    "value": "3 of 420",
+    "label": "posts that carried 88.5% of all shares",
+    "as_of": "2026-09-06",
+    "confirmed": true
+   },
+   {
+    "value": "24.7%",
+    "label": "of engagement came from the US, which is 0.5% of followers",
+    "as_of": "2026-08-15",
+    "confirmed": true
+   },
+   {
+    "value": "~50s",
+    "label": "from 'go' to a reel being live on Instagram on the first run",
+    "as_of": "2026-05-15",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Stack",
+    "value": "Python, APScheduler, SQLite, headless Chrome for frames, FFmpeg, yt-dlp, Claude Haiku and Sonnet for copy, Instagram Graph API, Cloudflare R2, one DigitalOcean droplet"
+   },
+   {
+    "label": "Channels",
+    "value": "Instagram @thedeepdivemarketing, a daily blog, and the Deep Dive Marketing LinkedIn page"
+   },
+   {
+    "label": "Team",
+    "value": "Me on the build, my partner Jay on manual posts through a small publish API"
+   },
+   {
+    "label": "Running cost",
+    "value": "About Rs 712 a month in model spend for the video pipeline (estimate in my notes, May 2026)"
+   },
+   {
+    "label": "Reel layout",
+    "value": "Six versions. v4 dark letterbox, a white editorial v5 that got reverted, then v6 clean with no logo on the frame"
+   },
+   {
+    "label": "Approval",
+    "value": "Full autopilot, no human gate. Filters do the job a reviewer would"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-04-21",
+    "title": "Spec written, first Groww prototype card rendered"
+   },
+   {
+    "date": "2026-04-22",
+    "title": "v1 yellow-and-black static templates"
+   },
+   {
+    "date": "2026-04-29",
+    "title": "Dashboard, cost caps and judge pipeline done"
+   },
+   {
+    "date": "2026-05-15",
+    "title": "First automated reel goes live (Fevicol)"
+   },
+   {
+    "date": "2026-05-18",
+    "title": "Full video pipeline: discovery at 2am, render at 6am, publish on slots"
+   },
+   {
+    "date": "2026-06-17",
+    "title": "First proper teardown of 733 posts"
+   },
+   {
+    "date": "2026-07-25",
+    "title": "LinkedIn autopilot live"
+   },
+   {
+    "date": "2026-07-28",
+    "title": "Celebrity ad-film pipeline live"
+   },
+   {
+    "date": "2026-09-22",
+    "title": "v6 clean reel layout"
+   },
+   {
+    "date": "2026-11-20",
+    "title": "Quality gate added; teardown format killed"
+   }
+  ],
+  "lesson": "The machine was never the hard part. It posted 10 a day without me. The data said 3 posts out of 420 got almost all the shares, and the format I posted most was the weakest one. Volume doesn't fix a dull post. Now an empty slot beats a mid post.",
+  "iterations": [
+   {
+    "src": "software/deepdive/bts/01-prototype-apr21.jpg",
+    "caption": "The very first rendered card, a Groww news post, from the day I wrote the spec. Placeholder logo, stock photo.",
+    "date": "2026-04-21"
+   },
+   {
+    "src": "software/deepdive/bts/02-v1-yellow-stat.jpg",
+    "caption": "v1 static template: yellow on black, one giant number. Dropped when the page moved to video.",
+    "date": "2026-04-22"
+   },
+   {
+    "src": "software/deepdive/bts/03-reel-v4-vs-v6.jpg",
+    "caption": "The old reel frame (left, red pill and logo strip) next to the first v6 pass with both stripped out.",
+    "date": "2026-09-22"
+   },
+   {
+    "src": "software/deepdive/bts/04-reel-v6-drafts.jpg",
+    "caption": "v6 drafts on three real ads: inset video with a soft glow. The wordmark under the video got cut before it shipped.",
+    "date": "2026-09-22"
+   }
+  ],
+  "stack": [
+   {
+    "group": "Engine",
+    "items": [
+     {
+      "name": "Python",
+      "icon": "python"
+     },
+     {
+      "name": "APScheduler"
+     },
+     {
+      "name": "SQLite",
+      "icon": "sqlite"
+     }
+    ]
+   },
+   {
+    "group": "Video",
+    "items": [
+     {
+      "name": "Headless Chrome",
+      "icon": "googlechrome"
+     },
+     {
+      "name": "FFmpeg",
+      "icon": "ffmpeg"
+     },
+     {
+      "name": "yt-dlp"
+     }
+    ]
+   },
+   {
+    "group": "AI",
+    "items": [
+     {
+      "name": "Claude",
+      "icon": "claude"
+     }
+    ]
+   },
+   {
+    "group": "Publishing",
+    "items": [
+     {
+      "name": "Instagram Graph API",
+      "icon": "instagram"
+     },
+     {
+      "name": "Cloudflare R2",
+      "icon": "cloudflare"
+     },
+     {
+      "name": "DigitalOcean",
+      "icon": "digitalocean"
+     }
+    ]
+   }
+  ],
+  "compare": [
+   {
+    "screen": "A single post",
+    "v1": {
+     "src": "software/deepdive/compare/v1-1.jpg",
+     "date": "21 Apr, first card"
+    },
+    "final": {
+     "src": "software/deepdive/compare/fin-1.jpg",
+     "date": "v6 reel"
+    }
+   },
+   {
+    "screen": "Posts in the feed",
+    "v1": {
+     "src": "software/deepdive/compare/v1-2.jpg",
+     "date": "22 Apr, v1 yellow"
+    },
+    "final": {
+     "src": "software/deepdive/live-02.jpg",
+     "date": "Live grid"
+    }
+   }
+  ]
+ },
+ "sportified": {
+  "stats": [
+   {
+    "value": "39 days",
+    "label": "of a live FIFA World Cup covered, June 11 to July 19",
+    "as_of": "2026-07-19",
+    "confirmed": true
+   },
+   {
+    "value": "21",
+    "label": "reels queued on launch day",
+    "as_of": "2026-06-29",
+    "confirmed": true
+   },
+   {
+    "value": "~27/day",
+    "label": "posts at peak, enough to trip Instagram's rate limit",
+    "as_of": "2026-07-02",
+    "confirmed": true
+   },
+   {
+    "value": "9",
+    "label": "post types kept after I cut the catalogue back",
+    "as_of": "2026-07-14",
+    "confirmed": true
+   },
+   {
+    "value": "6.0s",
+    "label": "victory reel, built only from match data, zero broadcast footage",
+    "as_of": "2026-07-01",
+    "confirmed": true
+   },
+   {
+    "value": "~25,000",
+    "label": "lines of Python across the pipeline and templates",
+    "as_of": "2026-11-23",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Stack",
+    "value": "Python, API-Football (free tier), headless Chrome for frames, FFmpeg, rembg, Pexels for backgrounds, Instagram Graph API, systemd timers on a DigitalOcean droplet"
+   },
+   {
+    "label": "What it posts",
+    "value": "Match announcements, full-time results, player of the match, nightly results carousels, and an animated victory reel the moment a match ends"
+   },
+   {
+    "label": "Scheduling",
+    "value": "Keyed to kickoff times in the US venue's time zone, not to clock slots"
+   },
+   {
+    "label": "Sister page",
+    "value": "Same engine idea as Deepdive, separate droplet"
+   },
+   {
+    "label": "Status",
+    "value": "Ran through the tournament. X autopilot parked since July 13"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-06-22",
+    "title": "Content plan and design system approved"
+   },
+   {
+    "date": "2026-06-28",
+    "title": "Logo in; design v2 navy and orange; automation decided"
+   },
+   {
+    "date": "2026-06-29",
+    "title": "Live, reels only; X autopilot live"
+   },
+   {
+    "date": "2026-06-30",
+    "title": "Static autopilot and YouTube footage watcher live"
+   },
+   {
+    "date": "2026-07-01",
+    "title": "Animated victory reel posts itself at full time; grass theme"
+   },
+   {
+    "date": "2026-07-10",
+    "title": "Page goes silent for three days"
+   },
+   {
+    "date": "2026-07-13",
+    "title": "Outage fixed, X autopilot parked"
+   },
+   {
+    "date": "2026-07-14",
+    "title": "Cut back to the 9 post types that worked"
+   },
+   {
+    "date": "2026-07-19",
+    "title": "World Cup final"
+   }
+  ],
+  "lesson": "I built it while the World Cup was already being played, so every bug went out live. The best thing I made was the dullest one: a 6 second reel drawn from the score data. No footage meant no takedowns, and it never missed a full-time whistle.",
+  "iterations": [
+   {
+    "src": "software/sportified/bts/01-matchcard-option-a.jpg",
+    "caption": "Match card, option A: bright broadcast pitch. One of three looks I tried in an afternoon.",
+    "date": "2026-07-01"
+   },
+   {
+    "src": "software/sportified/bts/02-matchcard-option-c.jpg",
+    "caption": "Option C: the same card at night. Same data, darker pitch.",
+    "date": "2026-07-01"
+   },
+   {
+    "src": "software/sportified/bts/03-victory-reel-draft.jpg",
+    "caption": "Victory reel, first draft frame: winner, score, scorers.",
+    "date": "2026-07-01"
+   },
+   {
+    "src": "software/sportified/bts/04-victory-reel-shipped.jpg",
+    "caption": "The version that shipped an hour later, with player of the match added.",
+    "date": "2026-07-01"
+   },
+   {
+    "src": "software/sportified/bts/05-grass-potm.jpg",
+    "caption": "The grass theme the whole page moved to: a player of the match card.",
+    "date": "2026-07-01"
+   }
+  ],
+  "stack": [
+   {
+    "group": "Engine",
+    "items": [
+     {
+      "name": "Python",
+      "icon": "python"
+     },
+     {
+      "name": "API-Football"
+     },
+     {
+      "name": "systemd"
+     }
+    ]
+   },
+   {
+    "group": "Video",
+    "items": [
+     {
+      "name": "Headless Chrome",
+      "icon": "googlechrome"
+     },
+     {
+      "name": "FFmpeg",
+      "icon": "ffmpeg"
+     },
+     {
+      "name": "rembg"
+     },
+     {
+      "name": "Pexels",
+      "icon": "pexels"
+     }
+    ]
+   },
+   {
+    "group": "Publishing",
+    "items": [
+     {
+      "name": "Instagram Graph API",
+      "icon": "instagram"
+     },
+     {
+      "name": "DigitalOcean",
+      "icon": "digitalocean"
+     }
+    ]
+   }
+  ]
+ },
+ "vibe-raas-led": {
+  "stats": [
+   {
+    "value": "8",
+    "label": "visuals built for the night",
+    "as_of": "2026-10-19",
+    "confirmed": true
+   },
+   {
+    "value": "3000 x 720",
+    "label": "stage LED pixel map",
+    "as_of": "2026-10-19",
+    "confirmed": true
+   },
+   {
+    "value": "1200 x 750",
+    "label": "side LED pixel map",
+    "as_of": "2026-10-19",
+    "confirmed": true
+   },
+   {
+    "value": "1",
+    "label": "phone that ran every screen",
+    "as_of": "2026-10-19",
+    "confirmed": true
+   },
+   {
+    "value": "3",
+    "label": "welcome-screen concepts pitched before one was picked",
+    "as_of": "2026-10-18",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Stack",
+    "value": "Plain HTML, canvas and WebGL visuals that react to the beat, a phone remote talking to the screens over MQTT, a service worker so it runs offline"
+   },
+   {
+    "label": "Screens",
+    "value": "One big stage LED and two side LEDs, each told what to play from my phone"
+   },
+   {
+    "label": "Controls",
+    "value": "Pick the visual, the colour set (Kumkum, Haldi, Mor, Raat), the centre logo, tap tempo, intensity"
+   },
+   {
+    "label": "Backup plan",
+    "value": "A single offline file on the laptop in case the venue internet died"
+   },
+   {
+    "label": "What got cut",
+    "value": "Dancer cutouts, clip-art diyas and dandiyas, AI-looking dot transitions, a drawn Nataraja figure"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-10 (needs Kirtan's confirmation)",
+    "title": "Welcome screen: three pattern concepts, then four font tests"
+   },
+   {
+    "date": "2026-10 (needs Kirtan's confirmation)",
+    "title": "Eight beat visuals built against the real LED pixel maps"
+   },
+   {
+    "date": "2026-10 (needs Kirtan's confirmation)",
+    "title": "Phone remote: All, Stage or Sides, one tap each"
+   },
+   {
+    "date": "2026-10-18",
+    "title": "Show night at Tathastu Party Plot, Ahmedabad"
+   }
+  ],
+  "lesson": "Anything that looked like a stock garba graphic died in review. The visuals that worked were pure pattern and colour pushed on the beat, and they looked best on the small side screens.",
+  "iterations": [
+   {
+    "src": "software/vibe-raas-led/bts/01-welcome-concepts.jpg",
+    "caption": "Three welcome-screen concepts for stage and sides: Bandhani, Garbi and Abhla.",
+    "date": "2026-10 (before 18 Oct)"
+   },
+   {
+    "src": "software/vibe-raas-led/bts/02-welcome-fonts.jpg",
+    "caption": "Four fonts tried for the Welcome to line on the chosen Bandhani screen.",
+    "date": "2026-10 (before 18 Oct)"
+   },
+   {
+    "src": "software/vibe-raas-led/bts/03-tribe-banner-options.jpg",
+    "caption": "Three layouts for the Vibe Tribe 'roj e roj, moj e moj' banner.",
+    "date": "2026-10 (before 18 Oct)"
+   },
+   {
+    "src": "software/vibe-raas-led/bts/04-nataraja-rejected.jpg",
+    "caption": "A Shiv visual with a drawn Nataraja figure in the middle. Rejected: symbols stayed, the figure went.",
+    "date": "2026-10 (before 18 Oct)"
+   },
+   {
+    "src": "software/vibe-raas-led/bts/05-damru-stage-test.jpg",
+    "caption": "Damru visual rendered at the real 3000 x 720 stage size, frame caught on a beat.",
+    "date": "2026-10 (before 18 Oct)"
+   },
+   {
+    "src": "software/vibe-raas-led/bts/06-phone-remote.jpg",
+    "caption": "The phone remote in a test room: pick screens, visual, colours, centre logo and tap the tempo.",
+    "date": "2026-10 (before 18 Oct)"
+   }
+  ],
+  "stack": [
+   {
+    "group": "Visuals",
+    "items": [
+     {
+      "name": "HTML",
+      "icon": "html5"
+     },
+     {
+      "name": "Canvas"
+     },
+     {
+      "name": "WebGL",
+      "icon": "webgl"
+     }
+    ]
+   },
+   {
+    "group": "Control",
+    "items": [
+     {
+      "name": "MQTT",
+      "icon": "mqtt"
+     },
+     {
+      "name": "Service worker"
+     }
+    ]
+   }
+  ],
+  "compare": [
+   {
+    "screen": "Side screen welcome",
+    "v1": {
+     "src": "software/vibe-raas-led/compare/v1-1.jpg",
+     "date": "First concept"
+    },
+    "final": {
+     "src": "software/vibe-raas-led/led-05.jpg",
+     "date": "Show night"
+    }
+   },
+   {
+    "screen": "Stage visual",
+    "v1": {
+     "src": "software/vibe-raas-led/compare/v1-2.jpg",
+     "date": "First visual"
+    },
+    "final": {
+     "src": "software/vibe-raas-led/led-02.jpg",
+     "date": "Show night"
+    }
+   },
+   {
+    "screen": "The remote",
+    "v1": {
+     "src": "software/vibe-raas-led/compare/v1-3.jpg",
+     "date": "Desktop control"
+    },
+    "final": {
+     "src": "software/vibe-raas-led/sheet-3.jpg",
+     "date": "Phone remote"
+    }
+   }
+  ]
+ },
+ "vibe-raas-tickets": {
+  "stats": [
+   {
+    "value": "675",
+    "label": "passes sold across three nights (real, tests and a cancelled deal excluded)",
+    "as_of": "2026-10-26",
+    "confirmed": true
+   },
+   {
+    "value": "Rs 2,00,259",
+    "label": "pass sales logged through the bot",
+    "as_of": "2026-10-26",
+    "confirmed": true
+   },
+   {
+    "value": "449",
+    "label": "passes handed over through the scanner",
+    "as_of": "2026-10-21",
+    "confirmed": true
+   },
+   {
+    "value": "3",
+    "label": "nights it ran (17, 18 and 19 Oct)",
+    "as_of": "2026-10-21",
+    "confirmed": true
+   },
+   {
+    "value": "197",
+    "label": "tests green on day one",
+    "as_of": "2026-10-03",
+    "confirmed": true
+   },
+   {
+    "value": "26",
+    "label": "commits",
+    "as_of": "2026-11-23",
+    "confirmed": true
+   },
+   {
+    "value": "0",
+    "label": "LLM calls: the sale parser is plain rules",
+    "as_of": "2026-10-03",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Stack",
+    "value": "One Python process: a Telegram bot and a small web server, SQLite, QR cards drawn in Pillow, a phone scanner page that works offline"
+   },
+   {
+    "label": "How a sale works",
+    "value": "A seller types 'malhar, 10 pass for 350' in Telegram, checks the preview, taps Confirm, and the buyer's QR pass comes back"
+   },
+   {
+    "label": "Pickup points",
+    "value": "Any phone becomes a scanner. Green means hand over, amber means part collected, red means stop"
+   },
+   {
+    "label": "Built in",
+    "value": "First commit 3 Oct 2026, live the same day; event 17 to 19 Oct"
+   },
+   {
+    "label": "Extras added under pressure",
+    "value": "Partial pickups, payment status, food passes, a second night added the evening before"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-10-03",
+    "title": "First commit: Telegram sale bot, QR cards, offline scanner. Live the same day"
+   },
+   {
+    "date": "2026-10-05",
+    "title": "Maroon and gold pass card, partial pickups, offline scanner"
+   },
+   {
+    "date": "2026-10-05",
+    "title": "WhatsApp booking bot went live, then WhatsApp unlinked it the same evening. Switched off"
+   },
+   {
+    "date": "2026-10-17",
+    "title": "Second night added the day before the event; scanner warns when a pass is for another night"
+   },
+   {
+    "date": "2026-10-17 to 2026-10-19",
+    "title": "Three nights of pickups at the collection points"
+   },
+   {
+    "date": "2026-10-26",
+    "title": "Final accounts handed over as a spreadsheet"
+   }
+  ],
+  "lesson": "The boring version won. Sellers already lived in Telegram, so I made Telegram the till and kept a Confirm button between every typo and a real pass. The unofficial WhatsApp bot looked smarter and lasted one evening.",
+  "iterations": [
+   {
+    "src": "software/vibe-raas-tickets/bts/01-card-v1.jpg",
+    "caption": "First pass card: name, date, QR. QR blurred here so it can't be scanned.",
+    "date": "2026-10-03"
+   },
+   {
+    "src": "software/vibe-raas-tickets/bts/02-card-v4.jpg",
+    "caption": "Pass card v4 in the event's maroon and gold. QR blurred.",
+    "date": "2026-10-05"
+   },
+   {
+    "src": "software/vibe-raas-tickets/bts/03-scanner-pin.jpg",
+    "caption": "Scanner unlock: type the PIN once, the phone remembers it.",
+    "date": "2026-10-19"
+   },
+   {
+    "src": "software/vibe-raas-tickets/bts/04-scanner-live.jpg",
+    "caption": "A pickup point mid-shift, online and synced, with the running collected count.",
+    "date": "2026-10-19"
+   },
+   {
+    "src": "software/vibe-raas-tickets/bts/05-green-ready.jpg",
+    "caption": "Green: paid, nothing collected yet, hand over all 12. Buyer name hidden.",
+    "date": "2026-10-19"
+   },
+   {
+    "src": "software/vibe-raas-tickets/bts/06-amber-partial.jpg",
+    "caption": "Amber: 10 of 15 already picked up, 5 left. Buyer name hidden.",
+    "date": "2026-10-19"
+   },
+   {
+    "src": "software/vibe-raas-tickets/bts/07-red-collected.jpg",
+    "caption": "Red: every pass already collected, do not hand over. Buyer name hidden.",
+    "date": "2026-10-19"
+   }
+  ],
+  "stack": [
+   {
+    "group": "Bot",
+    "items": [
+     {
+      "name": "Python",
+      "icon": "python"
+     },
+     {
+      "name": "Telegram",
+      "icon": "telegram"
+     },
+     {
+      "name": "SQLite",
+      "icon": "sqlite"
+     },
+     {
+      "name": "Pillow"
+     }
+    ]
+   }
+  ]
+ },
+ "clapper": {
+  "stats": [
+   {
+    "value": "10",
+    "label": "real users (5+ takes logged on 2+ days)",
+    "as_of": "2026-08-30",
+    "confirmed": true
+   },
+   {
+    "value": "131",
+    "label": "devices that rolled at least one take",
+    "as_of": "2026-08-30",
+    "confirmed": true
+   },
+   {
+    "value": "1,525",
+    "label": "devices that opened it",
+    "as_of": "2026-08-30",
+    "confirmed": true
+   },
+   {
+    "value": "11",
+    "label": "people who exported a report",
+    "as_of": "2026-08-30",
+    "confirmed": true
+   },
+   {
+    "value": "2",
+    "label": "real users who ever exported",
+    "as_of": "2026-08-30",
+    "confirmed": true
+   },
+   {
+    "value": "682",
+    "label": "tests passing",
+    "as_of": "2026-08-31",
+    "confirmed": true
+   },
+   {
+    "value": "408",
+    "label": "commits on the working branch (428 across all branches)",
+    "as_of": "2026-11-23",
+    "confirmed": true
+   },
+   {
+    "value": "137 of 137",
+    "label": "shots read from a real shotlist PDF, on the phone",
+    "as_of": "2026-07-28",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "Stack",
+    "value": "React and TypeScript PWA, IndexedDB on the phone, pdf-lib for reports, Supabase for accounts and quotas, Razorpay for payments"
+   },
+   {
+    "label": "What it does",
+    "value": "Hit ROLL when the camera rolls, CUT when it stops. Clapper numbers the clip files itself and hands the editor a PDF, CSV or Premiere and Resolve timelines"
+   },
+   {
+    "label": "Works",
+    "value": "Offline on set, up to four cameras (A to D), each with its own file numbering"
+   },
+   {
+    "label": "Started",
+    "value": "11 Jul 2026, first version live on GitHub Pages the same day"
+   },
+   {
+    "label": "Launched",
+    "value": "Product Hunt, 21 Jul 2026"
+   },
+   {
+    "label": "Price",
+    "value": "First projects free, then Rs 699 a project"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-07-11",
+    "title": "Spec, scaffold and first live build in one day"
+   },
+   {
+    "date": "2026-07-16",
+    "title": "Google sign-in and server-side quotas live"
+   },
+   {
+    "date": "2026-07-20",
+    "title": "Landing page, free template pages, 16 film-school emails"
+   },
+   {
+    "date": "2026-07-21",
+    "title": "Product Hunt launch"
+   },
+   {
+    "date": "2026-07-22",
+    "title": "Multi-cam, Resolve export, clip renumbering that shifts instead of resequencing"
+   },
+   {
+    "date": "2026-07-28",
+    "title": "Shot layer; scripts dropped, shotlists parsed on the device"
+   },
+   {
+    "date": "2026-08-06",
+    "title": "Five poster themes explored for the brand"
+   },
+   {
+    "date": "2026-08-26",
+    "title": "Payments live in real money"
+   },
+   {
+    "date": "2026-08-30",
+    "title": "First real look at the analytics: 10 real users, 2 exporters"
+   },
+   {
+    "date": "2026-09-01",
+    "title": "20 ad agencies emailed; plan says fix activation before marketing"
+   }
+  ],
+  "lesson": "The product worked and almost nobody reached the good part. 131 devices rolled a take and only 2 real users ever handed an editor a report, because the export was hidden and the New roll button didn't roll. I should have watched the funnel before I built pricing.",
+  "iterations": [
+   {
+    "src": "software/clapper/bts/01-poster-themes.jpg",
+    "caption": "Four of five poster themes tried for Clapper's look: Swiss, Neo, Y2K and Big Type.",
+    "date": "2026-08-06"
+   },
+   {
+    "src": "software/clapper/bts/02-rolling-screen-directions.jpg",
+    "caption": "Six directions for the rolling screen, the one you stare at on set. Demo data.",
+    "date": "2026-08-01"
+   },
+   {
+    "src": "software/clapper/bts/03-landing-v3-frame.jpg",
+    "caption": "A concept frame for the third landing page, a scroll through a film set.",
+    "date": "2026-07-27"
+   },
+   {
+    "src": "software/clapper/bts/04-share-card.jpg",
+    "caption": "Where it landed: the clapperboard icon and the acid accent on the share card.",
+    "date": "2026-08-29"
+   }
+  ],
+  "stack": [
+   {
+    "group": "App",
+    "items": [
+     {
+      "name": "React",
+      "icon": "react"
+     },
+     {
+      "name": "TypeScript",
+      "icon": "typescript"
+     },
+     {
+      "name": "PWA",
+      "icon": "pwa"
+     },
+     {
+      "name": "IndexedDB"
+     },
+     {
+      "name": "pdf-lib"
+     }
+    ]
+   },
+   {
+    "group": "Backend",
+    "items": [
+     {
+      "name": "Supabase",
+      "icon": "supabase"
+     },
+     {
+      "name": "Razorpay",
+      "icon": "razorpay"
+     }
+    ]
+   }
+  ],
+  "compare": [
+   {
+    "screen": "Home",
+    "v1": {
+     "src": "software/clapper/compare/v1-1.jpg",
+     "date": "11 Jul, v1"
+    },
+    "final": {
+     "src": "software/clapper/compare/fin-1.jpg",
+     "date": "22 Aug"
+    }
+   },
+   {
+    "screen": "A project",
+    "v1": {
+     "src": "software/clapper/compare/v1-2.jpg",
+     "date": "11 Jul, v1"
+    },
+    "final": {
+     "src": "software/clapper/compare/fin-2.jpg",
+     "date": "22 Aug"
+    }
+   },
+   {
+    "screen": "Roll screen",
+    "v1": {
+     "src": "software/clapper/compare/v1-3.jpg",
+     "date": "11 Jul, v1"
+    },
+    "final": {
+     "src": "software/clapper/compare/fin-3.jpg",
+     "date": "22 Aug"
+    }
+   }
+  ]
+ },
+ "fitkit": {
+  "stats": [
+   {
+    "value": "600",
+    "label": "commits",
+    "as_of": "2026-11-23",
+    "confirmed": true
+   },
+   {
+    "value": "17",
+    "label": "days from first commit to the last one logged",
+    "as_of": "2026-11-15",
+    "confirmed": true
+   },
+   {
+    "value": "3,068",
+    "label": "tests passing",
+    "as_of": "2026-11-09",
+    "confirmed": true
+   },
+   {
+    "value": "3",
+    "label": "separate private instances on the server (me and two others)",
+    "as_of": "2026-11-09",
+    "confirmed": true
+   },
+   {
+    "value": "13",
+    "label": "background timers doing the daily work",
+    "as_of": "2026-10-30",
+    "confirmed": true
+   }
+  ],
+  "facts": [
+   {
+    "label": "What it is",
+    "value": "A personal WHOOP-style tracker for a Fitbit Air: sleep, readiness, strain, habits, and a coach that remembers"
+   },
+   {
+    "label": "Stack",
+    "value": "Python and Flask on a small server, SQLite, the Google Health API for the wearable data, Claude for the coach"
+   },
+   {
+    "label": "Why I built it",
+    "value": "The Fitbit coach forgets everything between chats. I wanted memory and the real cost of each habit in my own numbers"
+   },
+   {
+    "label": "Privacy",
+    "value": "Each person gets their own isolated instance, and backups are encrypted on my Mac"
+   },
+   {
+    "label": "Screenshots",
+    "value": "None on purpose. It holds private health data"
+   }
+  ],
+  "timeline": [
+   {
+    "date": "2026-10-29",
+    "title": "Design doc written"
+   },
+   {
+    "date": "2026-10-30",
+    "title": "First commit and first live build, frozen for a calibration week"
+   },
+   {
+    "date": "2026-10-30",
+    "title": "Rebuilt as five tabs: Today, Habits, Sleep, Train, Body"
+   },
+   {
+    "date": "2026-10-31",
+    "title": "Second user on a separate, isolated instance"
+   },
+   {
+    "date": "2026-11-07",
+    "title": "A stripped-down Today screen rejected; the fuller version kept"
+   },
+   {
+    "date": "2026-11-09",
+    "title": "Batch 8 live on all three instances; a second simplified Today rejected"
+   },
+   {
+    "date": "2026-11-15",
+    "title": "Scoring audit fixes live"
+   }
+  ],
+  "lesson": "I kept trying to make the home screen calmer and I kept hating it. Twice I cut it down to almost nothing and twice I put the readings back. Fewer blocks is not the same as clearer.",
+  "iterations": [],
+  "stack": [
+   {
+    "group": "Backend",
+    "items": [
+     {
+      "name": "Python",
+      "icon": "python"
+     },
+     {
+      "name": "Flask",
+      "icon": "flask"
+     },
+     {
+      "name": "SQLite",
+      "icon": "sqlite"
+     }
+    ]
+   },
+   {
+    "group": "Data and AI",
+    "items": [
+     {
+      "name": "Google Health API"
+     },
+     {
+      "name": "Claude",
+      "icon": "claude"
+     }
+    ]
+   }
+  ]
+ },
+ "fourside-studios": {
+  "stats": [],
+  "facts": [
+   {
+    "label": "Kind",
+    "value": "Internal billing and accounts software"
+   },
+   {
+    "label": "Built for",
+    "value": "Fourside Studios, a creative agency in Ahmedabad"
+   },
+   {
+    "label": "What it does",
+    "value": "Generates their bills and keeps their accounts"
+   }
+  ],
+  "timeline": [],
+  "lesson": "",
+  "iterations": [],
+  "classified": {
+   "note": "Screens stay private. It runs their bills and their accounts."
+  }
+ }
+}

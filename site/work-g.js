@@ -1,271 +1,575 @@
-/* Work, version G: Gallery. Led by how lusion.co shows its work, set in Kirtan's palette and voice.
-   1. Listing: a two column, staggered gallery. The DOM is the source of truth (index, title, kind, the image slot);
-      on desktop a three.js canvas paints each project as a plane over its slot: the planes curve gently with
-      the scroll, bend with its speed and settle with inertia, and the one under the pointer lifts and lenses
-      softly toward it. Titles trail the scroll a little. Phones, reduced motion and no WebGL get the same
-      layout as plain images with a clip reveal.
-   2. Transition: the clicked image leaves its slot and grows into the full-bleed hero of the project page,
-      then the title rises and the page fades in under it. Next project does the same from its preview.
-   3. Project page: its own vertical scroller (lerped wheel on a fine pointer, native touch). Full-bleed hero
-      (the loop when there is one; phone-ratio films sit three across), huge title, an info row, stats,
-      links, the writeup on a comfortable measure, the facts set large, every hero, gallery image and
-      loop in a sequence of full, two-up, offset and three-up rows, credits, then Next project.
-      Text-only work opens on a navy title plate, never a fake image.
-   Fonts: Gloock for display, Hanken Grotesk for text (already used by the C and F project pages).
+/* Work, version G6: Gallery, rebuilt for fluid motion after lusion.co (measured, see ref/pages/lusion/motion/NOTES.md).
+   1. Listing: a big grotesk heading (Software or Media) with a short line on the right, the category filters, then an
+      aligned two column grid of large rounded cards; under each card the kind, small, then the title, big.
+      On a desktop pointer one three.js canvas (fixed to the viewport, DPR at most 1.5, no MSAA) paints every card as a
+      plane over its slot. Slot positions are measured on layout changes only, never per frame. The planes bow a little
+      with scroll speed, and the one under the pointer eases into a slow zoom, drifts with the pointer and lenses softly
+      toward it. Nothing else on the page dims or blurs. Phones, reduced motion and no WebGL get the same layout as
+      plain images.
+   2. Entrance: heading lines rise out of masks, then cards reveal from their bottom edge while the picture settles from
+      a slight zoom (GSAP, expo out). A card never reveals before its picture is decoded and uploaded.
+   3. Open: the card's picture zooms to fill the screen (one DOM flyer: clip-path inset plus a transform on the image,
+      nothing that lays out), the rest of the list fades, and the project page appears under it.
+   4. Project page: one horizontal run. Wheel and trackpad move it with a smoothed follow, touch swipes natively, a
+      progress line runs along the bottom. Hero, intro (info, stats, links), channels, about, facts, every image and
+      loop, credits, then Next project, which zooms in the same way. Back reverses the zoom into the card.
+   5. Inside the page (G7, after Lusion's project pages, see ref/pages/lusion/motion/NOTES.md): the title rises line by
+      line, then the info; every panel's lines, labels, rules and numbers build in as they come within 88% of the view;
+      pictures wipe up out of their frames, settle from 1.14 and drift against the run; frames shear up to 2.5 deg and
+      compress up to 2% with speed; the ground blends between panels (two stacked layers, opacity only); the next
+      project's picture grows as the end arrives; Back takes the content out in 0.4 s, cuts to the hero picture and
+      zooms into the card. Website captures sit framed on the ground; photos and films stay full bleed.
+      ?inside=v runs the same page vertically. Phones: reveals, no parallax or shear. Reduced motion: all shown.
+   Data: ../content/<wing>/media-notes.json (curated pictures, captions, crop, focus) and bts.json (Behind the scenes),
+   both optional.
+   Libraries: three 0.160.0, gsap 3.12.5 with ScrollTrigger, Lenis 1.1.13 (set up site-wide in index.html, read from KP).
+   Fonts: Schibsted Grotesk for everything here (the landing already uses it), large titles at 500 to 600 with tight
+   tracking, text at 400 and 500.
 
-   OPTIONAL DATA FIELDS, same as version C and F (read when present, never guessed):
+   OPTIONAL DATA FIELDS (read when present, never guessed):
      stats: software { visitors }, media { views, shares, likes }; missing shows 000 and "number to come".
        Media views fall back to a facts entry labelled Views.
      links: [{ label, url }] after `link`.   brands: media brands line from ../content/media/brands.json.
      credits: [{ role, name }] shown before the role facts.   year / client: else from facts.
    Thumbnails: <name>.w640.webp and <name>.w1280.webp next to each original; a missing one falls back.
+   Software filters: All, Web dev, Automation, Web apps, Mac app, from each project's `category`; ?cat= keeps it.
+   parts: [{ name, link, one_line, gallery }] (Deepdive) open as channel panels after the intro.
    Fills <section id="work">. Every class and id starts with wkg-. Project pages live at #work/<id>. */
 
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+gsap.registerPlugin(ScrollTrigger);
+
 const ROOT = document.getElementById('work');
-const BASE = (window.KP && window.KP.content) || '../content/';
+const KP = (window.KP ||= {});
+const BASE = KP.content || '../content/';
 const RM = matchMedia('(prefers-reduced-motion: reduce)');
+/* ?inside=v: the project page as one vertical run instead of the horizontal one (same entry, back and content) */
+/* ?draft=1 shows the placeholders (000, number to come); the public site never does */
+const DRAFT = new URLSearchParams(location.search).get('draft') === '1';
+const VMODE = new URLSearchParams(location.search).get('inside') === 'v';
+const SPRING = 'cubic-bezier(.2,.8,.2,1)';
 const HOVER = matchMedia('(hover: hover) and (pointer: fine)');
-const HIDE = new Set(['gujarat-titans']);
+const HIDE = new Set([]);
 const TEXT_ONLY = new Set(['clapper', 'fitkit', 'fourside-studios', 'palladium', 'dvc']);
 
 const INK = '#0c0d0f', PAPER = '#f1f2f0', BLUE = '#c9d8f7', PINK = '#f2a7b6', SKY = '#7d9bf0', COBALT = '#1c3bb0', NAVY = '#0f2545';
+/* the line beside the Software heading (swap freely) */
+const SOFTWARE_LINE = 'Every one of these started as a problem on a set or in an inbox.';
 const WING = {
-  software: { title: 'Software', sub: 'Things I designed and built.', ground: BLUE, slot: SKY },
+  software: { title: 'Software', sub: SOFTWARE_LINE, ground: BLUE, slot: SKY },
   media: { title: 'Media', sub: 'Films and reels I produced, shot and cut.', ground: PINK, slot: PAPER },
 };
-const FONTS = 'https://fonts.googleapis.com/css2?family=Gloock&family=Hanken+Grotesk:wght@400;500;600&display=swap';
-const FD = '"Gloock",Georgia,serif', FT = '"Hanken Grotesk",system-ui,sans-serif';
-const ARRIVE = 'cubic-bezier(.2,.8,.2,1)', MOVE = 'cubic-bezier(.76,0,.18,1)';
-const FLY_MS = 1050;
+const CAT = { webdev: 'Web dev', automation: 'Automation', webapp: 'Web app', macapp: 'Mac app' };
+const FILTERS = [['all', 'All'], ['webdev', 'Web dev'], ['automation', 'Automation'], ['webapp', 'Web apps'], ['macapp', 'Mac app']];
+const ALIAS = { 'deepdive-blog': 'deepdive' };
+const FONTS = 'https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400..700&display=swap';
+const FF = '"Schibsted Grotesk",system-ui,sans-serif';
+const ARRIVE = 'cubic-bezier(.16,1,.3,1)', MOVE = 'cubic-bezier(.76,0,.24,1)';
+/* motion tokens, from the Lusion measurements: long expo and quart outs, no bounce */
+/* the wheel follow, per 60 Hz frame, measured on lusion.co (listing and project pages alike): frame-rate independent */
+const FOLLOW = 0.18;
+const T = { reveal: 1.25, rise: 1.1, zoom: 1.0, fade: 0.45, hoverIn: 0.16, hoverOut: 0.2 };
 
 const CSS = `
 #work{position:relative;background:var(--wkg-ground,${BLUE});color:${INK};transition:background-color .8s ${MOVE}}
-/* one grid for the listing and the pages: the same gutter, 12 columns (4 on a phone), the same column gap */
-.wkg,.wkg-page{--gut:clamp(18px,4vw,64px);--cg:clamp(16px,2.2vw,32px);--cols:12}
-.wkg{position:relative;font-family:${FT};font-weight:400;-webkit-font-smoothing:antialiased;padding-bottom:clamp(60px,10vh,120px)}
+.wkg,.wkg-page{--gut:clamp(18px,4vw,64px);--cg:clamp(16px,2.2vw,40px)}
+.wkg{position:relative;font-family:${FF};font-weight:400;-webkit-font-smoothing:antialiased;padding-bottom:clamp(72px,12vh,140px)}
 .wkg *,.wkg-page *,.wkg-fly *{box-sizing:border-box}
 :where(.wkg,.wkg-page) button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left}
 .wkg :focus-visible,.wkg-page :focus-visible{outline:2px solid ${COBALT};outline-offset:4px}
-.wkg-g{display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));column-gap:var(--cg)}
-.wkg-sub{grid-column:1/-1;display:grid;grid-template-columns:subgrid;column-gap:var(--cg)}
 
-.wkg-top{display:flex;gap:28px;padding:22px var(--gut) 0;position:relative;z-index:2}
-.wkg-tab{position:relative;font:500 20px/1.2 ${FT}!important;padding:6px 0!important;color:rgba(12,13,15,.62)!important;transition:color .3s}
-.wkg-tab::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:${INK};transform:scaleX(0);transform-origin:left;transition:transform .5s ${MOVE}}
+.wkg-top{display:flex;gap:28px;padding:24px var(--gut) 0;position:relative;z-index:2}
+.wkg-tab{position:relative;font:500 19px/1.2 ${FF}!important;letter-spacing:-.01em;padding:6px 0!important;color:rgba(12,13,15,.76)!important;transition:color .3s}
+.wkg-tab::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:${INK};transform:scaleX(0);transform-origin:left;transition:transform .6s ${ARRIVE}}
 .wkg-tab.wkg-on{color:${INK}!important}.wkg-tab.wkg-on::after{transform:none}
 @media (hover:hover){.wkg-tab:hover{color:${INK}!important}}
 
-.wkg-head{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;gap:24px;padding:clamp(30px,6vh,72px) var(--gut) clamp(34px,6vh,80px)}
-.wkg-title{margin:0;font:400 clamp(70px,13.4vw,232px)/.86 ${FD};letter-spacing:-.035em;display:flex;align-items:flex-start;gap:.08em}
-.wkg-title sup{font:500 clamp(16px,1.5vw,24px)/1 ${FT};letter-spacing:0;color:${COBALT};margin-top:.5em;font-variant-numeric:tabular-nums}
-.wkg-head p{margin:0 0 .6em;max-width:24ch;font-size:clamp(17px,1.35vw,21px);line-height:1.4}
+/* the heading: Lusion's "Featured Work" set as the wing's name, the line on the right */
+.wkg-head{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;gap:32px;padding:clamp(36px,7vh,88px) var(--gut) clamp(32px,5vh,64px)}
+.wkg-title{margin:0;font:500 clamp(68px,11.6vw,212px)/.9 ${FF};letter-spacing:-.058em;display:flex;align-items:flex-start;gap:.06em}
+.wkg-title sup{font:500 clamp(16px,1.4vw,22px)/1 ${FF};letter-spacing:0;color:${COBALT};margin-top:.55em;font-variant-numeric:tabular-nums}
+.wkg-head p{margin:0 0 .5em;max-width:28ch;font:400 clamp(18px,1.45vw,24px)/1.32 ${FF};letter-spacing:-.012em;text-wrap:balance}
+/* a line mask: 0.22em of room under the baseline so g, p and y never clip */
+.wkg-mk{display:block;overflow:hidden;padding-bottom:.22em;margin-bottom:-.22em}
+.wkg-title .wkg-mk{padding:0 .14em .22em 0;margin:0 -.14em -.22em 0}
+.wkg-page .wkg-mk{padding-right:.1em;margin-right:-.1em}.wkg-page .wkg-mk>span{white-space:nowrap}
+/* the hero's line can never be cut: if its column changes after the split, the masked line wraps inside its mask */
+.wkg-page .wkg-hlede .wkg-mk>span{white-space:normal}
+.wkg-mk>span{display:block}
 
-.wkg-brands{position:relative;z-index:2;margin:0 var(--gut) clamp(40px,6vh,72px);padding-top:20px;border-top:1px solid rgba(12,13,15,.18);align-items:baseline;row-gap:12px}
+.wkg-filt{position:relative;z-index:2;display:flex;flex-wrap:wrap;column-gap:clamp(20px,2.2vw,34px);row-gap:6px;margin:0 var(--gut) clamp(32px,5vh,60px)}
+.wkg-filt[hidden]{display:none}
+.wkg-fb{position:relative;display:inline-flex;align-items:baseline;gap:7px;font:500 18px/1.2 ${FF}!important;letter-spacing:-.01em;padding:6px 0!important;color:rgba(12,13,15,.76)!important;transition:color .3s;white-space:nowrap}
+.wkg-fb small{font:500 13px/1 ${FF};color:${COBALT};font-variant-numeric:tabular-nums}
+.wkg-fb.wkg-on{color:${INK}!important}
+@media (hover:hover){.wkg-fb:hover{color:${INK}!important}}
+.wkg-fbar{position:absolute;left:0;top:0;width:1px;height:2px;background:${INK};transform-origin:0 0;pointer-events:none}
+.wkg-fbar.wkg-mv{transition:transform .6s ${ARRIVE}}
+.wkg-brands{position:relative;z-index:2;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--cg);margin:0 var(--gut) clamp(40px,6vh,72px);padding-top:20px;border-top:1px solid rgba(12,13,15,.18);align-items:baseline;row-gap:12px}
 .wkg-brands[hidden]{display:none}
-.wkg-bh{grid-column:1/span 4;margin:0;font:400 clamp(28px,3vw,50px)/1 ${FD};letter-spacing:-.02em;white-space:nowrap}
-.wkg-bl{grid-column:5/-1;list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;column-gap:clamp(24px,3vw,50px);row-gap:8px;font:500 clamp(20px,2vw,32px)/1.15 ${FT};letter-spacing:-.01em}
+.wkg-bh{grid-column:1/span 4;margin:0;font:500 clamp(26px,2.6vw,44px)/1 ${FF};letter-spacing:-.04em;white-space:nowrap}
+.wkg-bl{grid-column:5/-1;list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;column-gap:clamp(24px,3vw,50px);row-gap:8px;font:500 clamp(20px,1.9vw,30px)/1.15 ${FF};letter-spacing:-.025em}
 .wkg-bl li{white-space:nowrap}.wkg-bl .wkg-tbc{color:${COBALT};font-weight:400}
 
-/* the canvas rides inside the list (absolute, re-pinned each frame), so when the browser scrolls the page
-   on its own thread the planes move with their slots instead of a frame behind them */
-.wkg-wrap{position:relative;overflow:clip}
-.wkg-gl{position:absolute;left:0;top:0;display:block;width:100%;pointer-events:none;z-index:0;visibility:hidden;will-change:transform}
+/* the grid: two equal columns, one gutter, every box one ratio, so rows share image top, bottom and title line */
+.wkg{--lg:clamp(16px,2.2vw,44px);--rg:clamp(56px,6vw,120px);--rad:clamp(12px,1.05vw,20px)}
+.wkg-wrap{position:relative}
+#work,#work *{overflow-anchor:none}
+.wkg-gl{position:fixed;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none;z-index:0;visibility:hidden}
 .wkg-gl.wkg-on{visibility:visible}
 .wkg-list{position:relative;z-index:1;box-sizing:border-box;width:100%;max-width:2560px;margin:0 auto;padding:0 var(--gut);
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--lg);row-gap:var(--rg);align-items:start;transition:opacity .35s ${ARRIVE}}
-.wkg-list.wkg-fade{opacity:0}
-/* Lusion's listing: two equal columns, one box ratio for every card, one caption block under every box,
-   so every row shares its image top, image bottom, title baseline and caption top */
-.wkg{--lg:clamp(16px,2.2vw,44px);--rg:clamp(56px,6.4vw,128px);--rad:clamp(12px,1vw,18px)}
-.wkg-card{display:block;width:100%;min-width:0}
-.wkg-m{position:relative;display:block;width:100%;aspect-ratio:16/10;border-radius:var(--rad);overflow:hidden;background:var(--wkg-slot,${SKY});container-type:inline-size}
-.wkg-m>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block;transition:transform .9s ${ARRIVE},opacity .5s}
-.wkg.wkg-glon .wkg-m{background:transparent}
-.wkg.wkg-glon .wkg-m>img,.wkg.wkg-glon .wkg-m>.wkg-pl{opacity:0}
-.wkg-cap{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:20px;align-items:baseline;margin-top:clamp(14px,1.3vw,22px)}
-.wkg-cap h3{margin:0;min-width:0;font:400 clamp(26px,2.3vw,44px)/1.08 ${FD};letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.wkg-k{display:flex;gap:14px;font:500 15px/1.2 ${FT};color:rgba(12,13,15,.7);white-space:nowrap}
-.wkg-n{color:${COBALT};font-variant-numeric:tabular-nums}
-.wkg-cap p{grid-column:1/-1;margin:10px 0 0;width:100%;max-width:44ch;font-size:clamp(15px,1.05vw,17px);line-height:1.45;height:2.9em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--lg);row-gap:var(--rg);align-items:start;align-content:start}
+.wkg-card{display:block;width:100%;min-width:0;cursor:pointer}
+.wkg-m{position:relative;display:block;width:100%;aspect-ratio:16/10;border-radius:var(--rad);overflow:hidden;container-type:inline-size;isolation:isolate}
+.wkg-mi{position:absolute;inset:0;display:block;background:var(--wkg-slot,${SKY});will-change:transform}
+.wkg-mi>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block;transition:transform 1s ${ARRIVE}}
+.wkg.wkg-glon .wkg-mi{visibility:hidden}
+.wkg .wkg-ghost .wkg-mi{visibility:visible}
+.wkg-cap{display:block;margin-top:clamp(14px,1.2vw,22px)}
+.wkg-k{display:block;font:500 15px/1.3 ${FF};letter-spacing:-.005em;color:rgba(12,13,15,.76)}
+.wkg-cap h3{margin:6px 0 0;font:500 clamp(28px,2.7vw,52px)/1.02 ${FF};letter-spacing:-.045em;text-wrap:balance}
+@media (hover:hover) and (pointer:fine){.wkg:not(.wkg-glon) .wkg-card:hover .wkg-mi>img{transform:scale(1.05)}}
 
-/* the plate: text-only work. Its own ground from the palette, a big index, the one line as a pull line, one real number */
-/* everything in cqw of the box, so it is the same picture at every width and can never spill out.
-   The logo (or the name set as a wordmark) is the hero; one real number sits bottom right. plateCanvas() draws the same. */
-.wkg-pl{position:absolute;inset:0;overflow:hidden;background:var(--pc);color:var(--pf);container-type:inline-size;transition:opacity .5s}
+/* the plate: text-only work. The logo (or the name set as a wordmark) is the hero; one real number bottom right */
+.wkg-pl{position:absolute;inset:0;overflow:hidden;background:var(--pc);color:var(--pf);container-type:inline-size}
 .wkg-plg{position:absolute;left:20cqw;right:20cqw;top:12cqw;height:32cqw;display:flex;align-items:center;justify-content:center}
 .wkg-pl.wkg-nf .wkg-plg{top:15.25cqw}
 .wkg-plg img{display:block;max-width:100%;max-height:100%;width:auto;height:auto}
 .wkg-plg.wkg-pw{left:8cqw;right:8cqw}
-.wkg-plg.wkg-pw span{font:400 8cqw/.95 ${FD};letter-spacing:-.025em;color:var(--pa);text-align:center;text-wrap:balance}
+.wkg-plg.wkg-pw span{font:500 8cqw/.95 ${FF};letter-spacing:-.05em;color:var(--pa);text-align:center;text-wrap:balance}
 .wkg-pf{position:absolute;right:5.5cqw;bottom:5.5cqw;max-width:40cqw;text-align:right}
-.wkg-pf b{display:block;font:400 7cqw/.85 ${FD};letter-spacing:-.03em;color:var(--pa);font-variant-numeric:tabular-nums}
-.wkg-pf small{display:block;margin-top:1.2cqw;font:500 max(10px,1.7cqw)/1.25 ${FT};color:var(--pk)}
+.wkg-pf b{display:block;font:500 7cqw/.85 ${FF};letter-spacing:-.05em;color:var(--pa);font-variant-numeric:tabular-nums}
+.wkg-pf small{display:block;margin-top:1.2cqw;font:500 max(10px,1.7cqw)/1.25 ${FF};color:var(--pk)}
 
-.wkg-cur{position:fixed;left:0;top:0;z-index:8;pointer-events:none;padding:7px 12px;border-radius:99px;background:${INK};color:${PAPER};font:500 13px/1 ${FT};transform:translate3d(-200px,-200px,0) scale(0);transform-origin:0 0;will-change:transform;white-space:nowrap}
-html.has-cursor .wkg-cur{display:none}
+/* ---------- the flight: a full-screen layer clipped to the card, its picture scaled to match ---------- */
+.wkg-fly{position:fixed;left:0;top:0;width:100%;height:100%;z-index:9;overflow:hidden;pointer-events:none;contain:strict}
+.wkg-fli{position:absolute;left:0;top:0;width:100%;height:100%;transform-origin:50% 50%;will-change:transform}
+.wkg-fli>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block}
+.wkg-fly .wkg-pl{container-type:inline-size}
 
-/* phone and no-WebGL: plain images, revealed with a clip as they arrive */
-.wkg-rv .wkg-m{clip-path:inset(14% 0 0 0 round var(--rad));transition:clip-path 1s ${ARRIVE}}
-.wkg-rv .wkg-m>img{transform:scale(1.12)}
-.wkg-rv.wkg-in .wkg-m{clip-path:inset(0 0 0 0 round var(--rad))}
-.wkg-rv.wkg-in .wkg-m>img{transform:none}
-@media (hover:hover) and (pointer:fine){.wkg:not(.wkg-glon) .wkg-card:hover .wkg-m>img{transform:scale(1.04)}}
-
-/* ---------- the flight ---------- */
-.wkg-fly{position:fixed;z-index:9;overflow:hidden;pointer-events:none;background:${NAVY};will-change:left,top,width,height}
-.wkg-fly>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
-.wkg-fly .wkg-pl{transition:none}
-
-/* ---------- the project page ---------- */
+/* ---------- the project page: one horizontal run ---------- */
 html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
-.wkg-page{position:fixed;inset:0;z-index:9;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
-  background:var(--wkg-pg,${BLUE});color:${INK};font-family:${FT};font-weight:400;-webkit-font-smoothing:antialiased}
-.wkg-page.wkg-pre .wkg-hm{visibility:hidden}
-.wkg-back{position:fixed;left:18px;top:18px;z-index:3;height:44px;padding:0 20px!important;border-radius:22px;background:${PAPER}!important;color:${INK}!important;font:500 16px/44px ${FT}!important;
-  opacity:0;transform:translateY(-8px);transition:opacity .5s ${ARRIVE},transform .5s ${ARRIVE}}
-.wkg-ready .wkg-back{opacity:1;transform:none}
-.wkg-line{display:block;overflow:hidden;padding-bottom:.06em;margin-bottom:-.06em}
-.wkg-line>span{display:inline-block;transform:translateY(105%);transition:transform 1s ${ARRIVE} var(--d,0ms)}
-.wkg-ready .wkg-line>span{transform:none}
+.wkg-page{position:fixed;inset:0;z-index:9;overflow:hidden;visibility:hidden;background:var(--wkg-pg,${BLUE});color:${INK};font-family:${FF};font-weight:400;
+  -webkit-font-smoothing:antialiased;--top:clamp(88px,12vh,120px);--bot:clamp(72px,10vh,104px);--pgap:clamp(48px,5.5vw,112px);--lab:0px}
+.wkg-page.wkg-show{visibility:visible}
+.wkg-page a{color:inherit}
+.wkg-sc{position:absolute;inset:0;overflow:hidden;touch-action:pan-x pan-y}
+.wkg-sc.wkg-native{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
+.wkg-sc.wkg-native::-webkit-scrollbar{display:none}
+.wkg-sc.wkg-drag{cursor:grabbing}
+.wkg-track{position:relative;display:flex;height:100%;width:max-content;will-change:transform}
+.wkg-bg{position:absolute;inset:0;pointer-events:none}.wkg-bg i{position:absolute;inset:0;background:var(--wkg-pg,${BLUE})}.wkg-bg i+i{opacity:0;will-change:opacity}
+.wkg-pn{flex:0 0 auto;position:relative;height:100%;padding:var(--top) 0 var(--bot) var(--pgap);display:flex;flex-direction:column;scroll-snap-align:start}
+.wkg-pi{margin-top:0}
+/* Back: a pill (navy on light grounds, paper on dark), Lusion's arrow swap on hover; hovering it (or Projects on touch)
+   opens a sheet of every project, its name read out as each is hovered; a click goes straight there */
+.wkg-page{--bkc:${NAVY};--bki:${PAPER};--bkh:${PINK};--bkhi:${NAVY}}
+.wkg-page.wkg-dark{--bkc:${PAPER};--bki:${NAVY}}
+.wkg-bk{position:absolute;left:var(--gut);top:16px;z-index:4;display:flex;align-items:flex-start;gap:8px}
+.wkg-back,.wkg-allb{position:relative;opacity:0;padding:0!important;border-radius:999px;-webkit-tap-highlight-color:transparent}
+.wkg-bm{position:relative;display:flex;align-items:center;gap:10px;height:46px;padding:0 22px 0 18px;border-radius:999px;background:var(--bkc);color:var(--bki);overflow:hidden;transition:background-color .35s ${SPRING},color .35s ${SPRING}}
+.wkg-bi{flex:0 0 auto;width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;transition:transform .45s ${SPRING},opacity .3s}
+.wkg-bi2{position:absolute;right:18px;top:50%;margin-top:-8px;opacity:0;transform:translateX(-10px) rotate(180deg)}
+.wkg-bt{display:block;overflow:hidden;padding:0 .1em .22em 0;margin-bottom:-.22em;font:500 16px/1.2 ${FF};letter-spacing:-.005em;transition:transform .45s ${SPRING}}
+.wkg-bt>span{display:block}
+.wkg-allb .wkg-bm{background:${SKY};color:${NAVY};padding:0 18px}
+@media (hover:hover) and (pointer:fine){
+  .wkg-back:hover .wkg-bm,.wkg-bk.wkg-sho .wkg-back .wkg-bm{background:var(--bkh);color:var(--bkhi)}
+  .wkg-back:hover .wkg-bi1{transform:translateX(-26px);opacity:0}.wkg-back:hover .wkg-bt{transform:translateX(-26px)}
+  .wkg-back:hover .wkg-bi2{opacity:1;transform:rotate(180deg)}
+}
+.wkg-back:active .wkg-bm{transform:scale(.95);transition-duration:.12s}
+.wkg-page .wkg-back:focus-visible,.wkg-page .wkg-allb:focus-visible{outline:none}.wkg-back:focus-visible .wkg-bm,.wkg-allb:focus-visible .wkg-bm{outline:2px solid ${PINK};outline-offset:3px}
+.wkg-sh{position:absolute;left:0;top:calc(100% + 10px);width:max-content;max-width:calc(100vw - 2 * var(--gut));padding:14px 14px 16px;border-radius:22px;background:${PAPER};color:${NAVY};
+  box-shadow:0 18px 50px rgba(15,37,69,.22);transform-origin:30px 0;opacity:0;visibility:hidden;transform:translate3d(0,-8px,0) scale(.97);
+  transition:opacity .25s ${ARRIVE},transform .45s ${ARRIVE},visibility 0s .45s}
+.wkg-sh::before{content:"";position:absolute;left:0;right:0;top:-12px;height:12px}
+.wkg-bk.wkg-sho .wkg-sh{opacity:1;visibility:visible;transform:none;transition:opacity .35s ${ARRIVE},transform .55s ${ARRIVE},visibility 0s}
+.wkg-shn{display:flex;justify-content:space-between;align-items:baseline;gap:24px;margin:2px 4px 12px}
+.wkg-shn small{font:500 13px/1.2 ${FF};color:rgba(15,37,69,.7);white-space:nowrap}
+.wkg-shr{display:block;overflow:hidden;padding:0 .1em .22em 0;margin-bottom:-.22em;font:500 22px/1.15 ${FF};letter-spacing:-.025em;white-space:nowrap}
+.wkg-shr>span{display:block}
+.wkg-shg{display:grid;grid-template-columns:repeat(var(--cols,8),104px);gap:8px}
+.wkg-th{position:relative;display:block;width:104px;min-width:0;opacity:0;transform:translate3d(0,8px,0);transition:opacity .3s,transform .5s ${ARRIVE}}
+.wkg-bk.wkg-sho .wkg-th{opacity:1;transform:none;transition:opacity .45s ${ARRIVE} calc(var(--i) * 18ms + 60ms),transform .6s ${ARRIVE} calc(var(--i) * 18ms + 60ms)}
+.wkg-thm{position:relative;display:block;width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:${SKY};container-type:inline-size;isolation:isolate}
+.wkg-thm>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block;transition:transform .7s ${ARRIVE}}
+.wkg-th.wkg-cur .wkg-thm{box-shadow:0 0 0 2px ${PAPER},0 0 0 4px ${NAVY}}
+.wkg-thn{display:none;margin-top:6px;font:500 13px/1.25 ${FF};letter-spacing:-.005em;text-align:left;text-wrap:balance}
+@media (hover:hover) and (pointer:fine){.wkg-th:hover .wkg-thm>img,.wkg-th:focus-visible .wkg-thm>img{transform:scale(1.08)}.wkg-th:hover{transform:translate3d(0,-3px,0)!important}}
+.wkg-th:focus-visible{outline:none}.wkg-th:focus-visible .wkg-thm{outline:2px solid ${COBALT};outline-offset:2px}
+@media (hover:none),(pointer:coarse),(max-width:760px){
+  .wkg-sh{position:fixed;left:10px;right:10px;top:auto;bottom:10px;width:auto;max-width:none;max-height:72vh;overflow-y:auto;overscroll-behavior:contain;transform-origin:50% 100%;transform:translate3d(0,24px,0)}
+  .wkg-shg{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 10px}
+  .wkg-th{width:auto}.wkg-thn{display:block}
+  .wkg-shr{font-size:19px}
+}
+.wkg-prog{position:absolute;left:var(--gut);right:var(--gut);bottom:clamp(26px,4vh,40px);z-index:3;height:2px;background:rgba(12,13,15,.16);pointer-events:none;opacity:0;transition:background-color .5s}
+.wkg-prog i{position:absolute;inset:0;background:${INK};transform:scaleX(0);transform-origin:0 50%;transition:background-color .5s}
+.wkg-page.wkg-dark .wkg-prog{background:rgba(241,242,240,.3)}.wkg-page.wkg-dark .wkg-prog i{background:${PAPER}}
 
-/* film heroes: full bleed, the title over a shade at the bottom */
-.wkg-hero{position:relative;height:100vh;height:100svh;min-height:520px;overflow:hidden;background:${NAVY};color:${PAPER}}
-.wkg-hm{position:absolute;inset:0}
-.wkg-hm img,.wkg-hm video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+/* hero: the full screen the card zoomed into */
+.wkg-hero{width:100vw;padding:0;overflow:hidden;background:${NAVY};color:${PAPER}}
+.wkg-hm{position:absolute;inset:0;will-change:transform}
+.wkg-hmi{position:absolute;inset:0;will-change:transform}
+.wkg-hero:not(.wkg-txt):not(.wkg-hfr)::before{content:"";position:absolute;left:0;right:0;top:0;height:170px;z-index:1;background:linear-gradient(rgba(12,13,15,.42),rgba(12,13,15,0));pointer-events:none}
+.wkg-hero.wkg-hfr{background:transparent;color:${INK};display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.6fr);align-items:center;column-gap:clamp(28px,4vw,80px);padding:var(--top) var(--gut) var(--bot)}
+.wkg-hfr::after{display:none}
+.wkg-hfr .wkg-hm{position:relative;inset:auto;justify-self:end;width:min(100%,calc((100vh - var(--top) - var(--bot)) * var(--ar,1.6)));aspect-ratio:var(--ar,1.6);border-radius:20px;overflow:hidden;background:var(--wkg-slot,${SKY});isolation:isolate}
+.wkg-hfr .wkg-hcap{position:static;display:block}
+.wkg-hfr .wkg-hcap>span{display:block;text-align:left;margin-bottom:clamp(18px,3vh,32px);opacity:1;color:rgba(12,13,15,.76)}
+.wkg-hfr .wkg-hcap h1{font-size:clamp(48px,5.4vw,104px);line-height:.92}
+.wkg-hlede{margin:clamp(20px,3.4vh,36px) 0 0;max-width:24ch;font:400 clamp(19px,1.5vw,25px)/1.3 ${FF};letter-spacing:-.015em;text-wrap:pretty}
+.wkg-hm img,.wkg-hm video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block}
 .wkg-hm .wkg-hi2{opacity:0;transition:opacity .6s}.wkg-hm .wkg-hi2.wkg-ld{opacity:1}
-.wkg-tri{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.wkg-tri{display:grid;grid-template-columns:repeat(3,1fr)}
 .wkg-tri>div{position:relative;overflow:hidden}
-.wkg-hero::after{content:"";position:absolute;inset:auto 0 0 0;height:58%;background:linear-gradient(to top,rgba(12,13,15,.62),rgba(12,13,15,0));pointer-events:none}
-.wkg-hcap{position:absolute;left:var(--gut);right:var(--gut);bottom:clamp(30px,6vh,64px);z-index:1;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:24px}
-.wkg-hcap h1{margin:0;font:400 clamp(60px,10.4vw,190px)/.9 ${FD};letter-spacing:-.035em;text-wrap:balance}
-.wkg-hcap>span{font:500 16px/1.3 ${FT};text-align:right;font-variant-numeric:tabular-nums;opacity:.9}
-/* screen heroes: a website screenshot has its own big type, so the title sits on the page ground above it and the screen sits on the grid */
-.wkg-hero.wkg-land{height:auto;min-height:0;overflow:visible;background:transparent;color:${INK};padding-top:clamp(104px,15vh,150px)}
-.wkg-hero.wkg-land::after{display:none}
-.wkg-hero.wkg-land .wkg-hcap{position:relative;left:auto;right:auto;bottom:auto;padding:0 var(--gut);margin-bottom:clamp(26px,4.5vh,48px)}
-.wkg-hero.wkg-land .wkg-hcap>span{color:rgba(12,13,15,.7);opacity:1}
-.wkg-hero.wkg-land .wkg-hm{position:relative;inset:auto;margin:0 var(--gut);aspect-ratio:16/10;border-radius:14px;overflow:hidden;background:var(--wkg-slot,${SKY})}
-/* text-only heroes: a typographic opener on the plate's ground */
-.wkg-hero.wkg-txt{height:auto;min-height:100vh;min-height:100svh;display:flex;flex-direction:column;justify-content:space-between;gap:56px;
-  padding:clamp(96px,14vh,140px) var(--gut) clamp(40px,7vh,72px);background:var(--pc);color:var(--pf)}
-.wkg-hero.wkg-txt::after{display:none}
-.wkg-tm{display:flex;justify-content:space-between;gap:24px;font:500 16px/1.3 ${FT};color:var(--pk);font-variant-numeric:tabular-nums}
-.wkg-tlogo{display:block;width:auto;height:auto;max-height:clamp(96px,11vw,190px);max-width:64%;margin:0 0 clamp(28px,5vh,56px)}
-.wkg-tlogo.wkg-tlw{max-height:none;max-width:min(36%,460px)}
-.wkg-txt h1{margin:0;font:400 clamp(64px,11.6vw,210px)/.88 ${FD};letter-spacing:-.035em;color:var(--pa);text-wrap:balance}
-.wkg-tg{margin-top:clamp(30px,6vh,64px);align-items:end;row-gap:32px}
-.wkg-tq{grid-column:1/span 7;margin:0;font:400 clamp(24px,2.5vw,42px)/1.14 ${FD};letter-spacing:-.012em;text-wrap:pretty}
-.wkg-tf{grid-column:9/-1}
-.wkg-tf b{display:block;font:400 clamp(88px,10vw,180px)/.84 ${FD};letter-spacing:-.04em;color:var(--pa);font-variant-numeric:tabular-nums}
-.wkg-tf small{display:block;margin-top:14px;font:500 16px/1.3 ${FT};color:var(--pk)}
+.wkg-hero .wkg-hcap{z-index:2}
+.wkg-hero:not(.wkg-txt)::after{content:"";position:absolute;inset:auto 0 0 0;height:60%;background:linear-gradient(to top,rgba(12,13,15,.66),rgba(12,13,15,0));pointer-events:none}
+.wkg-hcap{position:absolute;left:var(--gut);right:var(--gut);bottom:calc(var(--bot) - 8px);z-index:1;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:24px}
+.wkg-hcap h1{margin:0;font:500 clamp(58px,9vw,176px)/1.02 ${FF};letter-spacing:-.058em;text-wrap:balance}
+.wkg-hcap>span{font:500 16px/1.35 ${FF};text-align:right;font-variant-numeric:tabular-nums;opacity:.92}
+/* framed, after Lusion's Devin AI page (horizontal run, wider than a phone): the big title with the line and the info
+   in two columns under it on the left, the work from 46% of the width at the run's full height, bleeding off the
+   right edge until the run moves */
+.wkg-hcols{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:clamp(20px,2.4vw,44px);margin-top:clamp(22px,4vh,44px);align-items:start}
+.wkg-hcols .wkg-hlede{margin:0;max-width:none}
+.wkg-hcols dl{margin:0;display:grid;gap:14px}.wkg-hcols dl>div{min-width:0}
+.wkg-hcols dt{font:500 14px/1.3 ${FF};color:${COBALT};margin:0 0 3px}.wkg-hcols dd{margin:0;font:500 clamp(15px,1.1vw,18px)/1.35 ${FF}}
+@media (min-width:761px){
+  .wkg-page:not(.wkg-vm) .wkg-hero.wkg-hfr{display:block;padding:0;width:calc(46vw + (100vh - var(--top) - var(--bot)) * var(--ar,1.6) + var(--gut))}
+  .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hm{position:absolute;left:46vw;top:var(--top);height:calc(100vh - var(--top) - var(--bot));width:calc((100vh - var(--top) - var(--bot)) * var(--ar,1.6));max-height:none;aspect-ratio:auto}
+  .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hcap{position:absolute;left:var(--gut);top:var(--top);bottom:var(--bot);width:calc(46vw - var(--gut) - clamp(28px,3vw,60px));display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+  .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hcols{align-self:stretch}
+  .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hcap h1{font-size:clamp(60px,6.8vw,136px);line-height:.9}
+  .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hlede{font-size:clamp(17px,1.3vw,22px);line-height:1.38;letter-spacing:-.01em}
+  .wkg-page:not(.wkg-vm).wkg-hfrp .wkg-info-i{display:none}
+  .wkg-page:not(.wkg-vm).wkg-hfrp .wkg-intro.wkg-ionly{display:none}
+}
+@media (max-width:760px){.wkg-hcols dl{display:none}.wkg-hcols{display:block}}
+.wkg-vm .wkg-hcols dl{display:none}.wkg-vm .wkg-hcols{display:block}
+/* text-only: a typographic opener on the plate's ground */
+.wkg-hero.wkg-txt{display:flex;flex-direction:column;justify-content:space-between;gap:40px;padding:var(--top) var(--gut) var(--bot);background:var(--pc);color:var(--pf)}
+.wkg-tm{display:flex;justify-content:space-between;gap:24px;font:500 16px/1.3 ${FF};color:var(--pk);font-variant-numeric:tabular-nums}
+.wkg-tlogo{display:block;width:auto;height:auto;max-height:clamp(84px,10vw,170px);max-width:60%;margin:0 0 clamp(24px,4vh,48px)}
+.wkg-tlogo.wkg-tlw{max-height:none;max-width:min(34%,440px)}
+.wkg-txt h1{margin:0;font:500 clamp(62px,10.6vw,200px)/1.02 ${FF};letter-spacing:-.058em;color:var(--pa);text-wrap:balance}
+.wkg-tg{display:flex;justify-content:space-between;align-items:flex-end;gap:40px;margin-top:clamp(24px,5vh,56px)}
+.wkg-tq{margin:0;max-width:30ch;font:400 clamp(22px,2.1vw,36px)/1.2 ${FF};letter-spacing:-.025em;text-wrap:pretty}
+.wkg-tf{text-align:right;flex:0 0 auto}
+.wkg-tf b{display:block;font:500 clamp(80px,9vw,168px)/.86 ${FF};letter-spacing:-.06em;color:var(--pa);font-variant-numeric:tabular-nums}
+.wkg-tf small{display:block;margin-top:12px;font:500 16px/1.3 ${FF};color:var(--pk)}
+.wkg-ln{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .12em .22em 0;margin:0 -.12em -.22em 0}
+.wkg-ln>span{display:inline-block}
 
-.wkg-body{opacity:0;transform:translateY(40px);transition:opacity .8s ${ARRIVE} .25s,transform 1s ${ARRIVE} .25s}
-.wkg-ready .wkg-body{opacity:1;transform:none}
-/* every block below sits on the same 12 columns: A is column 1, B is column 5 */
-.wkg-sec{padding:clamp(56px,10vh,120px) var(--gut) 0}
-.wkg-lede{grid-column:1/span 10;margin:0;font:400 clamp(30px,3.4vw,58px)/1.08 ${FD};letter-spacing:-.02em;text-wrap:pretty}
-.wkg-info{margin:clamp(40px,7vh,80px) 0 0;padding-top:22px;border-top:1px solid rgba(12,13,15,.2);row-gap:24px}
-.wkg-info>div{grid-column:span 4;min-width:0}
-.wkg-lab{display:block;font:500 14px/1.3 ${FT};color:rgba(12,13,15,.66);margin:0 0 8px}
-.wkg-info dd{margin:0;font:500 clamp(18px,1.5vw,22px)/1.3 ${FT}}
-.wkg-stats{margin-top:clamp(36px,6vh,64px);row-gap:28px}
-.wkg-stat{grid-column:span 4}
-.wkg-stat b{display:block;font:400 clamp(56px,6.4vw,112px)/.9 ${FD};letter-spacing:-.03em;font-variant-numeric:tabular-nums}
-.wkg-stat.wkg-tbc b{color:${COBALT}}
-.wkg-stat small{display:block;margin-top:10px;font:500 15px/1.3 ${FT};color:rgba(12,13,15,.7)}
-.wkg-links{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:12px;margin-top:clamp(36px,6vh,60px)}
-.wkg-links a{display:inline-flex;align-items:center;height:52px;padding:0 24px;border-radius:26px;background:${INK};color:${PAPER};text-decoration:none;font:500 17px/1 ${FT};transition:background-color .3s,color .3s}
-.wkg-links a+a{background:transparent;color:${INK};box-shadow:inset 0 0 0 1.5px ${INK}}
-@media (hover:hover){.wkg-links a:hover{background:${COBALT};color:${PAPER};box-shadow:none}}
+/* text panels */
+.wkg-intro{width:clamp(560px,52vw,980px)}
+.wkg-lede{margin:0;max-width:22ch;font:500 clamp(30px,3.1vw,56px)/1.06 ${FF};letter-spacing:-.04em;text-wrap:pretty}
+.wkg-info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px var(--cg);margin:clamp(28px,5vh,56px) 0 0;padding-top:20px;border-top:1px solid rgba(12,13,15,.2)}
+.wkg-info>div{min-width:0}
+.wkg-pi>.wkg-info:first-child{margin-top:0}
+.wkg-lab{display:block;font:500 14px/1.3 ${FF};color:rgba(12,13,15,.76);margin:0 0 6px}
+.wkg-info dd{margin:0;font:500 clamp(17px,1.35vw,21px)/1.3 ${FF};letter-spacing:-.01em}
+.wkg-stats{display:flex;flex-wrap:wrap;gap:20px clamp(28px,4vw,72px);margin-top:clamp(26px,4.5vh,48px)}
+.wkg-stat b{display:block;font:500 clamp(52px,5.6vw,104px)/.9 ${FF};letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.wkg-stat.wkg-tbc b{font-size:clamp(30px,2.6vw,44px);letter-spacing:-.04em;color:rgba(12,13,15,.76)}
+.wkg-stat.wkg-tbc small{color:rgba(12,13,15,.76)}
+.wkg-stat small{display:block;margin-top:8px;font:500 15px/1.3 ${FF};color:rgba(12,13,15,.76)}
+.wkg-links{display:flex;flex-wrap:wrap;column-gap:28px;row-gap:8px;margin-top:clamp(24px,4vh,40px)}
+.wkg-links a{position:relative;display:inline-block;padding:6px 0;font:500 clamp(18px,1.4vw,22px)/1.2 ${FF};letter-spacing:-.015em;text-decoration:none;color:${INK}}
+.wkg-links a::after{content:"";position:absolute;left:0;right:0;bottom:2px;height:1.5px;background:currentColor;transform-origin:left;transition:transform .5s ${ARRIVE}}
+@media (hover:hover){.wkg-links a:hover{color:${COBALT}}.wkg-links a:hover::after{transform:scaleX(.35)}}
+.wkg-h2{margin:0 0 clamp(18px,3vh,32px);font:500 clamp(28px,2.4vw,44px)/1 ${FF};letter-spacing:-.045em;padding-right:.1em}
+.wkg-cols{column-width:24em;column-gap:clamp(28px,3vw,56px);column-fill:auto}
+.wkg-cols p{margin:0 0 .9em;font:400 clamp(17px,1.25vw,20px)/1.55 ${FF};text-wrap:pretty;break-inside:avoid-column}
+.wkg-cols p:last-child{margin-bottom:0}
+.wkg-tx .wkg-cols{column-width:20em}.wkg-tx .wkg-cols p{font:400 clamp(22px,1.8vw,30px)/1.28 ${FF};letter-spacing:-.02em}
+.wkg-facts{display:grid;grid-template-rows:repeat(var(--fr,2),auto);grid-auto-flow:column;grid-auto-columns:clamp(220px,16.5vw,320px);gap:0 var(--cg)}
+.wkg-fact{position:relative;padding:18px 0 26px;border-top:1px solid rgba(12,13,15,.2);min-width:0}
+.wkg-fx .wkg-fact,.wkg-fx .wkg-credits dl>div,.wkg-fx .wkg-info{border-top-color:transparent!important}
+.wkg-fx .wkg-fact::before,.wkg-fx .wkg-credits dl>div::before,.wkg-fx .wkg-info::before{content:"";position:absolute;left:0;right:0;top:-1px;height:1px;background:rgba(12,13,15,.2);transform:scaleX(0);transform-origin:0 50%;transition:transform 1.2s ${ARRIVE} var(--rd,0s)}
+.wkg-fx .wkg-in .wkg-fact::before,.wkg-fx .wkg-in .wkg-credits dl>div::before,.wkg-fx .wkg-in.wkg-credits dl>div::before,.wkg-fx .wkg-in .wkg-info::before{transform:none}
+.wkg-info,.wkg-credits dl>div{position:relative}
+.wkg-fact b{display:block;font:500 clamp(26px,2.2vw,40px)/1.05 ${FF};letter-spacing:-.04em;text-wrap:balance;overflow-wrap:anywhere}
+.wkg-fact.wkg-num b{font-size:clamp(52px,5vw,96px);line-height:.95;letter-spacing:-.06em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wkg-stat b,.wkg-tf b{white-space:nowrap}
+.wkg-stat b,.wkg-fact b,.wkg-tf b,.wkg-pf b{font-variant-numeric:normal!important}
+.wkg-u{font-size:.4em;letter-spacing:-.01em;font-weight:500}
+.wkg-bts>.wkg-pi{display:flex;align-items:flex-start;gap:clamp(40px,4.5vw,96px)}
+.wkg-cls>.wkg-pi{display:flex;align-items:flex-start;gap:clamp(48px,5.5vw,120px);height:100%}
+.wkg-clt{width:clamp(320px,27vw,480px);flex:0 0 auto}
+.wkg-cls-steps{list-style:none;margin:0;padding:0;counter-reset:st}
+.wkg-cls-steps li{counter-increment:st;display:grid;grid-template-columns:34px minmax(0,1fr);padding:0 0 clamp(14px,2.2vh,22px);font:400 clamp(18px,1.3vw,22px)/1.42 ${FF};letter-spacing:-.008em;text-wrap:pretty}
+.wkg-cls-steps li::before{content:counter(st);font:500 14px/1.9 ${FF};color:var(--pa,${COBALT});font-variant-numeric:tabular-nums}
+.wkg-file{margin:0;flex:0 0 auto;display:flex;flex-direction:column;gap:18px;height:min(100%,calc(100vh - var(--top) - var(--bot)))}
+.wkg-doc{position:relative;flex:1 1 auto;min-height:0;aspect-ratio:3/4;max-height:min(66vh,640px);padding:clamp(28px,3.4vw,52px);border-radius:6px;background:color-mix(in srgb,var(--pf,${INK}) 6%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pf,${INK}) 12%,transparent);display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.wkg-doc>i{display:block;height:14px;border-radius:2px;background:color-mix(in srgb,var(--pf,${INK}) 20%,transparent)}
+.wkg-doc>i.wkg-hd{height:24px;margin-bottom:8px;background:color-mix(in srgb,var(--pf,${INK}) 34%,transparent)}
+.wkg-doc>i.wkg-gap{height:10px;background:none}
+.wkg-seal{--wkg-sealbg:var(--pc,${PAPER});position:absolute;left:50%;top:54%;width:72%;max-width:340px;aspect-ratio:1;color:var(--pa,#c0392b);transform:translate(-50%,-50%) rotate(-14deg);opacity:.94;mix-blend-mode:normal}
+.wkg-seal svg{display:block;width:100%;height:100%;overflow:visible}
+.wkg-seal text{font-family:${FF}}
+.wkg-fx .wkg-seal{opacity:0;transform:translate(-50%,-50%) rotate(-4deg) scale(1.35);transition:opacity .25s linear .35s,transform .5s cubic-bezier(.2,1.6,.4,1) .35s}
+.wkg-fx .wkg-in .wkg-seal,.wkg-fx .wkg-in.wkg-cls .wkg-seal{opacity:.94;transform:translate(-50%,-50%) rotate(-14deg) scale(1)}
+.wkg-file .wkg-mcap{width:auto;max-width:34ch}
+.wkg-railp>.wkg-pi{display:flex;flex-direction:column;height:100%}
+.wkg-stops{--sup:300px;--lc:rgba(12,13,15,.28);position:relative;list-style:none;margin:0;padding:0 clamp(40px,4vw,80px) 0 0;display:flex;align-items:flex-start;gap:clamp(36px,3.4vw,64px)}
+.wkg-stops::before{content:"";position:absolute;left:0;right:0;top:calc(var(--sup) + 28px);height:2px;background:var(--lc);transform-origin:0 50%}
+.wkg-stop{position:relative;flex:0 0 auto;width:clamp(230px,15vw,280px);min-width:0}
+.wkg-sup{height:var(--sup);display:flex;align-items:flex-end}
+.wkg-sup>.wkg-fr{border-radius:12px}.wkg-sup .wkg-fm{left:0!important;top:0!important;width:100%!important;height:100%!important;transform:none!important}
+.wkg-dot{position:absolute;left:0;top:calc(var(--sup) + 22px);width:14px;height:14px;border-radius:50%;background:${COBALT};box-shadow:0 0 0 4px var(--wkg-pg,${BLUE})}
+.wkg-spic .wkg-dot{background:${PINK}}
+.wkg-slo{padding-top:62px}
+.wkg-sab .wkg-sup{flex-direction:column;justify-content:flex-end;align-items:flex-start}.wkg-sab .wkg-slo{padding:0 0 34px}
+.wkg-stop.wkg-stuck{margin-left:calc(clamp(230px,15vw,280px) * -.42)}
+.wkg-sdate{display:flex;align-items:baseline;gap:8px;margin:0 0 10px;white-space:nowrap}
+.wkg-sdate b{font:500 clamp(34px,2.6vw,48px)/1 ${FF};letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.wkg-sdate span{font:500 15px/1.2 ${FF};color:rgba(12,13,15,.62)}
+.wkg-sdate span:only-child{font-size:clamp(20px,1.5vw,26px);color:inherit;letter-spacing:-.02em}
+.wkg-stxt{margin:0;max-width:30ch;font:400 clamp(17px,1.2vw,20px)/1.42 ${FF};letter-spacing:-.006em;text-wrap:pretty}
+.wkg-fx .wkg-stops::before{transform:scaleX(0);transition:transform 2.4s cubic-bezier(.22,.8,.24,1)}
+.wkg-fx .wkg-in .wkg-stops::before,.wkg-fx .wkg-in.wkg-railp .wkg-stops::before{transform:none}
+.wkg-fx .wkg-dot{transform:scale(0);transition:transform .5s cubic-bezier(.2,1.7,.4,1) calc(.15s + var(--i) * .12s)}
+.wkg-fx .wkg-in .wkg-dot{transform:none}
+.wkg-gd .wkg-stops{--lc:rgba(241,242,240,.3)}.wkg-gd .wkg-sdate b,.wkg-gd .wkg-stxt{color:${PAPER}}.wkg-gd .wkg-sdate span{color:${BLUE}}.wkg-gd .wkg-dot{background:${BLUE}}.wkg-gd .wkg-spic .wkg-dot{background:${PINK}}
+.wkg-fact .wkg-fgo{margin-top:16px}
+.wkg-cmp>.wkg-pi{display:flex;align-items:flex-start;gap:clamp(40px,4.5vw,96px);height:100%}
+.wkg-cmph{flex:0 0 auto;width:clamp(220px,15vw,300px)}
+.wkg-cmpq{margin:0;font:400 17px/1.4 ${FF};color:rgba(12,13,15,.66);text-wrap:pretty}
+.wkg-bas{display:flex;align-items:flex-start;gap:clamp(28px,2.6vw,48px)}
+.wkg-ba{margin:0;flex:0 0 auto}
+.wkg-bav{--p:50%;position:relative;overflow:hidden;border-radius:14px;background:var(--wkg-slot,${SKY});cursor:ew-resize;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.wkg-bav img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.wkg-bv1{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--p)) 0 0);background:var(--wkg-slot,${SKY})}
+.wkg-bah{position:absolute;top:0;bottom:0;left:var(--p);width:2px;margin-left:-1px;background:${PAPER};box-shadow:0 0 0 1px rgba(12,13,15,.12)}
+.wkg-bah span{position:absolute;top:50%;left:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:${PAPER};color:${INK};display:grid;place-items:center;box-shadow:0 6px 20px rgba(12,13,15,.22);transition:transform .25s cubic-bezier(.2,1.6,.4,1)}
+.wkg-bah svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wkg-bav:hover .wkg-bah span,.wkg-bdr .wkg-bah span{transform:scale(1.1)}
+.wkg-bah:focus-visible{outline:none}.wkg-bah:focus-visible span{outline:2px solid ${COBALT};outline-offset:3px}
+.wkg-btag{position:absolute;top:12px;padding:5px 11px;border-radius:999px;font:500 13px/1.2 ${FF};background:rgba(12,13,15,.72);color:${PAPER};pointer-events:none}
+.wkg-btl{left:12px}.wkg-btr{right:12px;background:${PAPER};color:${INK}}
+.wkg-ba figcaption{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;margin-top:12px}
+.wkg-bs{font:500 17px/1.3 ${FF};letter-spacing:-.01em}
+.wkg-bd{font:400 15px/1.3 ${FF};color:rgba(12,13,15,.62);white-space:pre}
+.wkg-gd .wkg-cmpq,.wkg-gd .wkg-bd{color:${BLUE}}.wkg-gd .wkg-bs{color:${PAPER}}
+.wkg-bcs{width:clamp(300px,24vw,440px)}.wkg-bcs>.wkg-lab{margin:0 0 18px}
+.wkg-sg{padding:0 0 clamp(18px,2.6vh,28px)}
+.wkg-sgl{display:block;font:500 13px/1.3 ${FF};letter-spacing:.01em;color:rgba(12,13,15,.6);margin:0 0 10px}
+.wkg-chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
+.wkg-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px 8px 12px;border-radius:999px;background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px rgba(12,13,15,.1);font:500 15px/1.2 ${FF};letter-spacing:-.01em;color:${INK};white-space:nowrap}
+.wkg-chip i{flex:none;width:16px;height:16px;background:currentColor;-webkit-mask:center/contain no-repeat;mask:center/contain no-repeat}
+.wkg-gd .wkg-chip{background:rgba(241,242,240,.1);box-shadow:inset 0 0 0 1px rgba(241,242,240,.18);color:${PAPER}}
+.wkg-gd .wkg-sgl{color:rgba(241,242,240,.6)}
+.wkg-bcol{flex:0 0 auto;min-width:0}.wkg-bca{width:clamp(320px,26vw,460px)}
+.wkg-bts .wkg-lesson{font-size:clamp(22px,1.9vw,32px)}
+.wkg-bts .wkg-stats{display:grid;grid-template-rows:repeat(3,auto);grid-auto-flow:column;grid-auto-columns:clamp(200px,14.5vw,270px);gap:26px var(--cg);margin:0}
+.wkg-bts .wkg-stat b{font-size:clamp(36px,3vw,56px)}.wkg-bts .wkg-stat small{font-size:16px;line-height:1.35;max-width:22ch;text-wrap:pretty}
+.wkg-bts .wkg-fact b{font-size:clamp(19px,1.45vw,25px);line-height:1.2;overflow-wrap:break-word}
+.wkg-its{display:grid;grid-template-rows:repeat(2,auto);grid-auto-flow:column;gap:22px var(--cg);margin:0}
+.wkg-it{min-width:0}
+.wkg-lesson{margin-top:clamp(20px,3vh,32px)}
+.wkg-tl{list-style:none;margin:0;padding:0;display:grid;grid-template-rows:repeat(var(--tr,6),auto);grid-auto-flow:column;grid-auto-columns:clamp(280px,20vw,360px);gap:16px var(--cg)}
+.wkg-tl li{border-top:1px solid rgba(12,13,15,.2);padding-top:10px}
+.wkg-tl li{display:grid;grid-template-columns:6.4em minmax(0,1fr);gap:14px;font:500 clamp(15px,1.1vw,18px)/1.35 ${FF}}
+.wkg-tl .wkg-lab{margin:0}
+.wkg-it{margin:0}
+.wkg-media.wkg-cp{align-items:flex-start;gap:clamp(24px,2.6vw,48px)}
+.wkg-mcap{flex:0 0 auto;width:clamp(230px,19vw,340px);margin:0;font:400 clamp(17px,1.2vw,20px)/1.5 ${FF};letter-spacing:-.005em;text-wrap:pretty}
+.wkg-vm .wkg-media.wkg-cp{flex-wrap:nowrap;align-items:flex-end;padding-top:clamp(56px,9vh,110px)}
+.wkg-vm .wkg-media.wkg-cpr{flex-direction:row-reverse;justify-content:flex-end}
+.wkg-cap2{display:flex;flex-direction:column;gap:4px;margin-top:10px;font:400 15px/1.45 ${FF};text-wrap:pretty}
+.wkg-cap2 .wkg-lab{margin:0;font-size:13px;white-space:nowrap}
+@media (max-width:760px){.wkg-cap2{font-size:14px}}
+.wkg-credits dl{margin:0;display:grid;grid-auto-flow:column;grid-template-rows:repeat(var(--cr,4),auto);grid-auto-columns:minmax(220px,320px);gap:0 var(--cg)}
+.wkg-credits dl>div{padding:16px 0 18px;border-top:1px solid rgba(12,13,15,.2)}
+.wkg-credits dt{margin:0 0 6px;font:500 14px/1.3 ${FF};color:rgba(12,13,15,.76)}
+.wkg-credits dd{margin:0;font:500 clamp(17px,1.35vw,21px)/1.35 ${FF}}
 
-.wkg-about{align-items:baseline;row-gap:20px}
-.wkg-h2{grid-column:1/span 4;margin:0;font:400 clamp(28px,2.6vw,44px)/1 ${FD};letter-spacing:-.02em}
-.wkg-wr{grid-column:5/-1;min-width:0}
-.wkg-wr p{margin:0 0 1.1em;max-width:34em;font:400 clamp(19px,1.45vw,23px)/1.55 ${FT};text-wrap:pretty}
-.wkg-wr p:last-child{margin-bottom:0}
-.wkg-tx .wkg-wr p{max-width:24em;font:400 clamp(24px,2.1vw,36px)/1.24 ${FD};letter-spacing:-.01em}
+/* media: every frame takes the run's height; the picture inside drifts against the run */
+.wkg-media{flex-direction:row;align-items:flex-start;gap:var(--cg)}
+.wkg-media .wkg-shoot{position:absolute;left:var(--pgap);top:calc(var(--top) - 30px);margin:0;font:500 15px/1.3 ${FF};color:rgba(12,13,15,.76)}
+.wkg-fr{position:relative;flex:0 0 auto;overflow:hidden;border-radius:14px;background:var(--wkg-slot,${SKY})}
+.wkg-fr{will-change:transform}
+.wkg-fm{position:absolute;top:0;left:-5%;width:110%;height:100%;will-change:transform}
+.wkg-sw .wkg-fm{left:0;width:100%}.wkg-vm.wkg-sw .wkg-fm{top:0;height:100%}
+.wkg-vm .wkg-fm{left:0;top:-5%;width:100%;height:110%}
+.wkg-fm>img,.wkg-fm>video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block}
+.wkg-fr:has(.kpf-hide),.wkg-hm:has(.kpf-hide),.wkg-hero:has(.kpf-hide),.wkg-tri>div:has(.kpf-hide){background:transparent!important}
+.wkg-blr{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;pointer-events:none;will-change:opacity}
+.wkg-fm>video{opacity:0;transition:opacity .8s ${ARRIVE}}.wkg-fm>video.wkg-ld{opacity:1}
+.wkg-ch{flex-direction:row;align-items:flex-start;gap:var(--cg)}
+.wkg-chl{flex:0 0 auto;width:clamp(260px,22vw,380px)}
+.wkg-chn{display:block;font:500 15px/1.2 ${FF};color:${COBALT};font-variant-numeric:tabular-nums;margin-bottom:12px}
+.wkg-chl h3{margin:0;font:500 clamp(40px,4vw,76px)/1.04 ${FF};letter-spacing:-.055em}
+.wkg-chl p{margin:16px 0 0;font:400 clamp(17px,1.3vw,20px)/1.45 ${FF};text-wrap:pretty}
+.wkg-chl .wkg-links{margin-top:20px}
+.wkg-soon{display:block;margin-top:20px;font:500 16px/1.3 ${FF};color:rgba(12,13,15,.76)}
+.wkg-chq{flex:0 0 auto;margin:0;max-width:18ch;font:500 clamp(28px,3vw,52px)/1.08 ${FF};letter-spacing:-.04em}
 
-.wkg-fact{grid-column:span 4;padding:22px 0 30px;border-top:1px solid rgba(12,13,15,.2);min-width:0}
-.wkg-fact b{display:block;font:400 clamp(30px,2.6vw,44px)/1.05 ${FD};letter-spacing:-.02em;text-wrap:balance;overflow-wrap:anywhere}
-.wkg-fact.wkg-num b{font-size:clamp(72px,8.4vw,150px);line-height:.9;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
-
-/* media rows: every frame starts and ends on a column line; offsets move by whole columns */
-.wkg-seq{grid-column:1/-1;display:grid;grid-template-columns:subgrid;column-gap:var(--cg);row-gap:clamp(20px,3vw,48px)}
-.wkg-r{align-items:start;row-gap:clamp(20px,3vw,48px)}
-.wkg-r-full>.wkg-f{grid-column:1/-1}
-.wkg-r-pair>.wkg-f{grid-column:span 6}
-.wkg-r-off>.wkg-f{grid-column:1/span 8}.wkg-r-off.wkg-rt>.wkg-f{grid-column:5/span 8}
-.wkg-r-offp>.wkg-f{grid-column:2/span 4}.wkg-r-offp.wkg-rt>.wkg-f{grid-column:8/span 4}
-.wkg-r-trio>.wkg-f{grid-column:span 4}
-.wkg-r-trio>.wkg-f:nth-child(2){margin-top:clamp(40px,9vh,120px)}
-.wkg-r-pst>.wkg-f:nth-child(1){grid-column:3/span 4}.wkg-r-pst>.wkg-f:nth-child(2){grid-column:7/span 4;margin-top:clamp(60px,14vh,180px)}
-.wkg-shoot{grid-column:1/-1;margin:clamp(20px,4vh,40px) 0 -4px;font:500 15px/1.3 ${FT};color:rgba(12,13,15,.7)}
-.wkg-f{position:relative;overflow:hidden;border-radius:14px;background:var(--wkg-slot,${SKY});clip-path:inset(10% 0 0 0 round 14px);transition:clip-path 1.1s ${ARRIVE};min-width:0}
-.wkg-f.wkg-in{clip-path:inset(0 0 0 0 round 14px)}
-.wkg-f>img,.wkg-f>video{position:absolute;left:0;top:-6%;width:100%;height:112%;object-fit:cover;display:block;will-change:transform}
-
-.wkg-credits dl{grid-column:5/-1;margin:0}
-.wkg-credits dl>div{padding:18px 0 20px;border-top:1px solid rgba(12,13,15,.2)}
-.wkg-credits dt{margin:0 0 6px;font:500 14px/1.3 ${FT};color:rgba(12,13,15,.66)}
-.wkg-credits dd{margin:0;font:500 clamp(18px,1.5vw,22px)/1.4 ${FT};max-width:34em}
-
-.wkg-next{display:block;margin-top:clamp(80px,14vh,170px);background:${NAVY};color:${PAPER};padding:clamp(40px,8vh,90px) var(--gut) clamp(56px,10vh,110px);cursor:pointer}
-.wkg-nx{align-items:end;row-gap:28px}
-.wkg-nx>div:first-child{grid-column:1/span 6}
-.wkg-nl{display:block;font:500 16px/1.3 ${FT};color:${PINK};margin-bottom:18px}
-.wkg-nt{display:block;font:400 clamp(56px,8vw,150px)/.9 ${FD};letter-spacing:-.035em;text-wrap:balance}
-.wkg-nk{display:block;margin-top:18px;font:500 17px/1.3 ${FT};color:${BLUE}}
-.wkg-nm{grid-column:7/-1;position:relative;aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:${SKY};container-type:inline-size;transition:transform 1s ${ARRIVE}}
-.wkg-nm.wkg-v{aspect-ratio:4/5;grid-column:9/-1}
-.wkg-nm>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-@media (hover:hover){.wkg-next:hover .wkg-nm{transform:scale(1.025)}}
+/* the end: the run holds on the next project's name, its picture peeking in from the right edge; once the scroll has
+   come to rest, "Scroll to continue" fades in, and a further deliberate scroll (or a click) carries on into it */
+.wkg-next{width:min(80vw,1480px);margin-left:var(--pgap);padding:var(--top) 0 var(--bot);background:transparent;color:inherit;cursor:pointer;flex-direction:row;align-items:flex-end;gap:clamp(28px,3.2vw,64px);overflow:hidden}
+.wkg-nx{flex:0 0 auto;width:clamp(260px,24vw,440px)}
+.wkg-nl{display:block;font:500 16px/1.3 ${FF};color:${COBALT};margin-bottom:16px}
+.wkg-nt{display:block;font:500 clamp(52px,6vw,120px)/1.04 ${FF};letter-spacing:-.058em;text-wrap:balance;margin-left:-.06em;padding-bottom:.1em}
+.wkg-nk{display:block;margin-top:20px;font:500 17px/1.3 ${FF};color:rgba(12,13,15,.76)}
+.wkg-ncue{display:flex;align-items:center;gap:14px;margin-top:clamp(28px,5vh,52px);font:500 17px/1.2 ${FF};letter-spacing:-.01em;opacity:0;transform:translate3d(0,12px,0);transition:opacity .7s ${ARRIVE},transform .9s ${ARRIVE}}
+.wkg-ncue i{position:relative;flex:0 0 auto;width:56px;height:2px;overflow:hidden;background:rgba(12,13,15,.16)}
+.wkg-ncue b{position:absolute;inset:0;background:currentColor;transform:scaleX(var(--acc,0));transform-origin:0 50%;transition:transform .25s ${ARRIVE}}
+.wkg-page.wkg-nxon .wkg-ncue{opacity:1;transform:none}
+.wkg-gd .wkg-nl{color:${PINK}}.wkg-gd .wkg-nk{color:${BLUE}}.wkg-gd .wkg-ncue i{background:rgba(241,242,240,.3)}
+.wkg-nm{position:relative;flex:0 0 auto;height:min(64vh,46vw);aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:var(--wkg-slot,${SKY});container-type:inline-size;transform-origin:0 100%;will-change:transform}
+.wkg-nm.wkg-v{aspect-ratio:4/5}
+.wkg-nm>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;transition:transform 1.1s ${ARRIVE}}
+@media (hover:hover){.wkg-next:hover .wkg-nm>img{transform:scale(1.05)}}
 
 @media (max-width:760px){
-  .wkg,.wkg-page{--gut:18px;--cg:14px;--cols:4}
-  .wkg-head{flex-direction:column;align-items:flex-start;gap:14px;padding-top:34px;padding-bottom:36px}
-  .wkg-title{font-size:clamp(60px,19vw,92px)}
+  .wkg,.wkg-page{--gut:18px;--cg:14px}
+  .wkg-head{flex-direction:column;align-items:flex-start;gap:14px;padding-top:36px;padding-bottom:30px}
+  .wkg-title{font-size:clamp(60px,18.5vw,92px)}
   .wkg-bh,.wkg-bl{grid-column:1/-1}
-  .wkg-list{grid-template-columns:minmax(0,1fr);row-gap:56px}
-  .wkg-cap{column-gap:12px;margin-top:14px}.wkg-cap h3{font-size:28px}
-  .wkg-tlogo{max-height:110px;max-width:80%}.wkg-tlogo.wkg-tlw{max-width:70%}
-  .wkg-k{font-size:14px;gap:10px}
-  .wkg-back{left:16px;top:16px}
-  .wkg-hero{min-height:0}
+  .wkg-filt{column-gap:20px;row-gap:2px;margin-bottom:28px}
+  .wkg-fb{font-size:17px!important}
+  .wkg-list{grid-template-columns:minmax(0,1fr);row-gap:52px}
+  .wkg-cap h3{font-size:30px}
+  .wkg-page{--top:76px;--bot:64px;--pgap:18px}
+  .wkg-pn{max-width:calc(100vw - 36px)}
+  .wkg-pn:not(.wkg-media):not(.wkg-hero):not(.wkg-next){overflow-y:auto;overscroll-behavior:contain;width:calc(100vw - 36px)}
+  .wkg-hero,.wkg-next{max-width:none}
+  .wkg-intro{width:calc(100vw - 36px)}
+  .wkg-info{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .wkg-lede{font-size:30px}
+  .wkg-cols{column-width:auto;columns:1}
+  .wkg-facts{grid-template-rows:none;grid-auto-flow:row;grid-auto-columns:auto;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wkg-bts{width:calc(100vw - 36px)}
+  .wkg-bts>.wkg-pi{flex-direction:column;gap:36px}.wkg-bca,.wkg-bcs{width:100%}
+  .wkg-cmp{width:calc(100vw - 36px)}.wkg-cmp>.wkg-pi,.wkg-bas{flex-direction:column;height:auto}.wkg-cmph,.wkg-ba{width:100%}.wkg-bav{width:100%}
+  .wkg-fx .wkg-stops::before{transform:scaleY(0)}.wkg-fx .wkg-in .wkg-stops::before{transform:none}.wkg-railp{width:calc(100vw - 36px)}.wkg-stops{flex-direction:column;gap:30px;padding:0 0 0 30px}.wkg-stops::before{left:6px;right:auto;top:6px;bottom:0;width:2px;height:auto;transform-origin:50% 0}.wkg-stop,.wkg-stop.wkg-stuck{width:100%!important;margin:0}.wkg-sup{height:auto;display:block}.wkg-sab .wkg-sup{display:block}.wkg-dot{left:-30px;top:6px}.wkg-slo,.wkg-sab .wkg-slo{padding:0}.wkg-spic .wkg-slo{padding-top:12px}.wkg-sup>.wkg-fr{width:100%!important;height:auto!important}
+  .wkg-cls{width:calc(100vw - 36px)}.wkg-cls>.wkg-pi{flex-direction:column;gap:40px;height:auto}.wkg-clt,.wkg-file{width:100%;height:auto}.wkg-doc{width:100%;max-height:none}
+  .wkg-bts .wkg-stats{grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .wkg-its,.wkg-tl{grid-template-rows:none;grid-auto-flow:row;grid-auto-columns:auto}
+  .wkg-media.wkg-cp,.wkg-vm .wkg-media.wkg-cp,.wkg-vm .wkg-media.wkg-cpr{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:16px}
+  .wkg-mcap{width:100%;font-size:17px}
+  .wkg-media .wkg-shoot{top:calc(var(--top) + 2px)}
+  .wkg-fact.wkg-num b{font-size:44px}
+  .wkg-credits dl{grid-auto-flow:row;grid-template-rows:none;grid-auto-columns:auto}
   .wkg-tri{grid-template-columns:1fr}.wkg-tri>div:not(.wkg-hp){display:none}
   .wkg-hcap{grid-template-columns:1fr;gap:10px}
-  .wkg-hcap h1{font-size:clamp(46px,14.5vw,72px)}
+  .wkg-hcap h1{font-size:clamp(46px,14vw,72px)}
   .wkg-hcap>span{text-align:left;order:-1}
-  .wkg-hero.wkg-land{padding-top:84px}
-  .wkg-hero.wkg-txt{padding-top:84px;gap:40px}
-  .wkg-txt h1{font-size:clamp(54px,17vw,84px)}
-  .wkg-tq,.wkg-tf{grid-column:1/-1}
-  .wkg-tq{font-size:24px}
-  .wkg-tf b{font-size:96px}
-  .wkg-lede{grid-column:1/-1;font-size:28px}
-  .wkg-info>div,.wkg-stat{grid-column:span 2}
-  .wkg-h2,.wkg-wr,.wkg-credits dl{grid-column:1/-1}
-  .wkg-wr p{font-size:18px}
-  .wkg-tx .wkg-wr p{font-size:24px}
-  .wkg-fact{grid-column:1/-1}
-  .wkg-r-full>.wkg-f,.wkg-r-pair>.wkg-f,.wkg-r-off>.wkg-f,.wkg-r-off.wkg-rt>.wkg-f{grid-column:1/-1}
-  .wkg-r-offp>.wkg-f{grid-column:1/span 3}.wkg-r-offp.wkg-rt>.wkg-f{grid-column:2/span 3}
-  .wkg-r-trio>.wkg-f,.wkg-r-pst>.wkg-f:nth-child(1),.wkg-r-pst>.wkg-f:nth-child(2){grid-column:span 2}
-  .wkg-r-trio>.wkg-f:nth-child(2){margin-top:48px}
-  .wkg-r-trio>.wkg-f:nth-child(3){grid-column:2/span 2;margin-top:0}
-  .wkg-r-pst>.wkg-f:nth-child(2){margin-top:64px}
-  .wkg-nx>div:first-child,.wkg-nm{grid-column:1/-1}
-  .wkg-nm.wkg-v{grid-column:1/span 3}
+  .wkg-hero.wkg-txt{gap:28px}
+  .wkg-txt h1{font-size:clamp(52px,16vw,84px)}
+  .wkg-tg{flex-direction:column;align-items:flex-start;gap:24px}.wkg-tf{text-align:left}
+  .wkg-tq{font-size:22px}.wkg-tf b{font-size:88px}
+  .wkg-ch{flex-direction:column;align-items:flex-start;overflow-y:auto}
+  .wkg-chl{width:100%}
+  .wkg-next{flex-direction:column;align-items:flex-start;justify-content:flex-end;width:calc(100vw - 18px);gap:24px}
+  .wkg-nx{width:100%}.wkg-ncue{margin-top:20px}
+  .wkg-nm{height:auto;width:118%}.wkg-nm.wkg-v{width:62%}
+  .wkg-bk{top:12px;left:12px}
+  .wkg-bm{height:44px}
+  .wkg-hero.wkg-hfr{grid-template-columns:minmax(0,1fr);align-content:center;row-gap:24px;padding:var(--top) 18px var(--bot)}
+  .wkg-hfr .wkg-hm{justify-self:stretch;width:100%;max-height:46vh}
+  .wkg-hfr .wkg-hcap h1{font-size:clamp(44px,13vw,64px)}
+  .wkg-hlede{font-size:19px;margin-top:16px}
+  .wkg-stat.wkg-tbc b{font-size:30px}
 }
-@media (prefers-reduced-motion:reduce){
-  .wkg-rv .wkg-m,.wkg-f{clip-path:none!important;transition:none}
-  .wkg-rv .wkg-m>img{transform:none}
-  .wkg-line>span{transform:none;transition:none}
-  .wkg-body{transform:none;transition:opacity .3s}
+/* ---------- ?inside=v: the same page as one vertical run ---------- */
+.wkg-vm .wkg-sc.wkg-native{overflow-x:hidden;overflow-y:auto;scroll-snap-type:none;overscroll-behavior:contain}
+.wkg-vm .wkg-track{flex-direction:column;width:100%;height:auto}
+.wkg-vm .wkg-pn{width:100%!important;max-width:none!important;height:auto;overflow:visible!important;display:block;padding:clamp(96px,15vh,190px) var(--gut) 0}
+.wkg-vm .wkg-hero{height:100vh;padding:0}
+.wkg-vm .wkg-hero.wkg-hfr{display:grid;padding:var(--top) var(--gut) var(--bot)}
+.wkg-vm .wkg-hero.wkg-txt{display:flex;padding:var(--top) var(--gut) var(--bot)}
+.wkg-vm .wkg-intro .wkg-pi,.wkg-vm .wkg-about .wkg-pi,.wkg-vm .wkg-factp .wkg-pi,.wkg-vm .wkg-credits .wkg-pi{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--cg);align-items:start}
+.wkg-vm .wkg-intro .wkg-lede{grid-column:1/span 7;max-width:none;font-size:clamp(34px,3.4vw,64px)}
+.wkg-vm .wkg-intro .wkg-info{grid-column:9/-1;grid-row:1/span 3;grid-template-columns:minmax(0,1fr);margin:0}
+.wkg-vm .wkg-intro .wkg-stats,.wkg-vm .wkg-intro .wkg-links{grid-column:1/span 7}
+.wkg-vm .wkg-pi>.wkg-h2{grid-column:1/span 3}
+.wkg-vm .wkg-about .wkg-cols{grid-column:5/-1;columns:2;column-fill:balance;width:auto!important;height:auto!important}
+.wkg-vm .wkg-facts{grid-column:5/-1;grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.wkg-vm .wkg-credits dl{grid-column:5/-1;grid-auto-flow:row;grid-template-rows:none;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.wkg-vm .wkg-media,.wkg-vm .wkg-ch{display:flex;flex-direction:row;flex-wrap:wrap;align-items:flex-start;gap:var(--cg);padding-top:var(--cg)}
+.wkg-vm .wkg-pn:not(.wkg-media)+.wkg-media{padding-top:clamp(96px,15vh,190px)}
+.wkg-vm .wkg-media.wkg-hs{padding-top:clamp(72px,10vh,110px)}
+.wkg-vm .wkg-media .wkg-shoot,.wkg-page.wkg-vm .wkg-media .wkg-shoot{position:static;flex:1 1 100%;margin:0}
+.wkg-vm .wkg-chl{width:100%;max-width:640px}
+.wkg-vm .wkg-cmp>.wkg-pi{flex-wrap:wrap;height:auto}.wkg-vm .wkg-bas{flex-wrap:wrap}.wkg-vm .wkg-ba{flex:1 1 300px}.wkg-vm .wkg-cmph{width:100%}
+.wkg-vm .wkg-cls>.wkg-pi{flex-wrap:wrap;height:auto}.wkg-vm .wkg-clt{flex:1 1 380px}.wkg-vm .wkg-file{height:auto;flex:1 1 380px}.wkg-vm .wkg-doc{max-height:none}
+.wkg-vm .wkg-stops{flex-direction:column;gap:30px;padding:0 0 0 30px}.wkg-vm .wkg-stops::before{left:6px;right:auto;top:6px;bottom:0;width:2px;height:auto;transform-origin:50% 0}.wkg-vm .wkg-stop,.wkg-vm .wkg-stop.wkg-stuck{width:100%!important;margin:0}.wkg-vm .wkg-sup{height:auto;display:block}.wkg-vm .wkg-sab .wkg-sup{display:block}.wkg-vm .wkg-dot{left:-30px;top:6px}.wkg-vm .wkg-slo,.wkg-vm .wkg-sab .wkg-slo{padding:0}.wkg-vm .wkg-spic .wkg-slo{padding-top:12px}.wkg-vm .wkg-sup>.wkg-fr{width:100%!important;height:auto!important}
+.wkg-fx.wkg-vm .wkg-stops::before{transform:scaleY(0)}.wkg-fx.wkg-vm .wkg-in .wkg-stops::before{transform:none}
+.wkg-vm .wkg-bts>.wkg-pi{flex-wrap:wrap}.wkg-vm .wkg-bcb,.wkg-vm .wkg-bcc,.wkg-vm .wkg-bcs{flex:1 1 40%}
+.wkg-vm .wkg-bts .wkg-stats,.wkg-vm .wkg-bts .wkg-facts{grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.wkg-vm .wkg-bcd,.wkg-vm .wkg-bce{flex:1 1 100%}.wkg-vm .wkg-tl{grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}.wkg-vm .wkg-its{grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(260px,max-content))}
+.wkg-vm .wkg-next{width:100%;min-height:100vh;margin:clamp(96px,15vh,190px) 0 0;display:flex;padding:var(--top) var(--gut) var(--bot)}
+.wkg-vm .wkg-nm{transform-origin:50% 100%}
+@media (max-width:760px){
+  .wkg-vm .wkg-pn{padding-top:72px}
+  .wkg-vm .wkg-intro .wkg-pi,.wkg-vm .wkg-about .wkg-pi,.wkg-vm .wkg-factp .wkg-pi,.wkg-vm .wkg-credits .wkg-pi{grid-template-columns:minmax(0,1fr)}
+  .wkg-vm .wkg-intro .wkg-lede,.wkg-vm .wkg-intro .wkg-info,.wkg-vm .wkg-intro .wkg-stats,.wkg-vm .wkg-intro .wkg-links,.wkg-vm .wkg-pi>.wkg-h2,.wkg-vm .wkg-about .wkg-cols,.wkg-vm .wkg-facts,.wkg-vm .wkg-credits dl{grid-column:1/-1;grid-row:auto}
+  .wkg-vm .wkg-intro .wkg-lede{font-size:30px}.wkg-vm .wkg-intro .wkg-info{margin-top:28px}
+  .wkg-vm .wkg-about .wkg-cols{columns:1}
+  .wkg-vm .wkg-next{flex-direction:column;align-items:flex-start;justify-content:flex-end}
+  .wkg-vm .wkg-pn:not(.wkg-media)+.wkg-media{padding-top:72px}
 }
+/* dark grounds (navy, cobalt, ink plates): paper text, light blue labels, light pink accents, light rules */
+.wkg-page.wkg-gd{color:${PAPER}}
+.wkg-gd :is(.wkg-lab,.wkg-stat small,.wkg-credits dt,.wkg-shoot,.wkg-soon,.wkg-tl .wkg-lab,.wkg-cap2 .wkg-lab,.wkg-bf small,.wkg-bf h3){color:${BLUE}!important}
+.wkg-gd :is(.wkg-links a,.wkg-info dd,.wkg-credits dd,.wkg-fact b,.wkg-stat b,.wkg-tl li,.wkg-mcap,.wkg-lede,.wkg-cols p,.wkg-h2,.wkg-bf){color:${PAPER}}
+.wkg-gd .wkg-chn{color:${PINK}}
+.wkg-gd .wkg-stat.wkg-tbc b{color:${BLUE}}.wkg-gd .wkg-stat.wkg-tbc small{color:${BLUE}}
+.wkg-gd :is(.wkg-info,.wkg-fact,.wkg-credits dl>div,.wkg-tl li,.wkg-bf li){border-top-color:rgba(241,242,240,.28)}
+.wkg-gd.wkg-fx :is(.wkg-fact,.wkg-credits dl>div,.wkg-info)::before{background:rgba(241,242,240,.28)}
+@media (hover:hover){.wkg-gd .wkg-links a:hover{color:${PINK}}}
+/* Project brief */
+.wkg-bf{width:clamp(560px,50vw,980px)}
+.wkg-bf small{display:block;font:500 15px/1.3 ${FF};color:rgba(12,13,15,.76);margin-bottom:14px}
+.wkg-bf .wkg-lede{max-width:28ch}
+.wkg-bfl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--cg);margin-top:clamp(24px,4vh,44px)}
+.wkg-bf h3{margin:0 0 8px;font:500 14px/1.3 ${FF};color:rgba(12,13,15,.76)}
+.wkg-bf ul{list-style:none;margin:0;padding:0}
+.wkg-bf li{padding:10px 0;border-top:1px solid rgba(12,13,15,.2);font:500 clamp(16px,1.2vw,19px)/1.35 ${FF}}
+@media (max-width:760px){.wkg-bf{width:calc(100vw - 36px)}.wkg-bfl{grid-template-columns:minmax(0,1fr)}}
+.wkg-vm .wkg-bf{width:100%!important}
+/* no decorative rules anywhere: groups are separated by space; only the progress line is a line */
+.wkg-brands,.wkg-info,.wkg-fact,.wkg-credits dl>div,.wkg-tl li,.wkg-bf li{border-top:0!important}
+.wkg-fx :is(.wkg-fact,.wkg-credits dl>div,.wkg-info)::before{display:none}
+.wkg-brands{padding-top:clamp(12px,2vh,24px)}.wkg-info{padding-top:0}
+.wkg-fact{padding:0 0 clamp(26px,4vh,44px)}.wkg-credits dl>div{padding:0 0 clamp(20px,3vh,32px)}
+.wkg-tl li{padding-top:0}.wkg-bf li{padding:6px 0}
+/* listing: on hover a drawn arrow slides in before the title and the title makes room (after Lusion) */
+.wkg-cap h3{position:relative;transition:transform .6s ${ARRIVE}}
+.wkg-cap h3::before{content:"";position:absolute;left:-.78em;top:.3em;width:.56em;height:.44em;background:currentColor;opacity:0;transform:translateX(-.35em);transition:opacity .4s ${ARRIVE},transform .6s ${ARRIVE};
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 17'%3E%3Cpath d='M1 8.5h19M13 1.5l7 7-7 7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 17'%3E%3Cpath d='M1 8.5h19M13 1.5l7 7-7 7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
+@media (hover:hover) and (pointer:fine){.wkg-card:hover .wkg-cap h3{transform:translateX(.78em)}.wkg-card:hover .wkg-cap h3::before{opacity:1;transform:none}}
+/* the live button */
+.wkg-go{display:inline-block;margin-top:clamp(22px,3.6vh,36px);text-decoration:none;color:${INK}!important;-webkit-tap-highlight-color:transparent}
+.wkg-gm{position:relative;display:inline-flex;align-items:center;gap:12px;height:56px;padding:0 24px 0 20px;border-radius:999px;background:${PAPER};overflow:hidden;isolation:isolate;transition:transform .45s ${SPRING}}
+.wkg-gm i{flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:${INK};transition:background-color .3s}
+.wkg-gf{position:absolute;left:24px;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:${INK};transform:scale(0);transition:transform .6s ${SPRING};z-index:-1}
+.wkg-gt{display:flex;flex-direction:column;gap:4px;font:500 16px/1 ${FF};letter-spacing:-.005em;white-space:nowrap;transition:color .3s}
+.wkg-gt small{font:500 12px/1 ${FF};letter-spacing:0;opacity:.62}
+.wkg-lbs{column-gap:12px;row-gap:12px}.wkg-lbs .wkg-go{margin-top:0}.wkg-lbs a.wkg-go::after{display:none}.wkg-links a.wkg-go{padding:0}
+.wkg-gm svg{width:16px;height:16px;margin-left:-28px;opacity:0;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transform:translateX(-8px);transition:margin .5s ${SPRING},opacity .3s,transform .5s ${SPRING}}
+@media (hover:hover) and (pointer:fine){
+  .wkg-go:hover .wkg-gf{transform:scale(60)}.wkg-go:hover .wkg-gt{color:${PAPER}}.wkg-go:hover .wkg-gm i{background:${PAPER}}
+  .wkg-go:hover .wkg-gm svg{margin-left:0;opacity:1;transform:none;stroke:${PAPER}}
+}
+.wkg-go:active .wkg-gm{transform:scale(.96)}
+.wkg-go:focus-visible{outline:none}.wkg-go:focus-visible .wkg-gm{outline:2px solid ${COBALT};outline-offset:3px}
+.wkg-gd .wkg-go:focus-visible .wkg-gm{outline-color:${PINK}}
+.wkg-hero:not(.wkg-txt):not(.wkg-hfr) .wkg-gol{grid-column:1/-1}
+@media (max-width:760px){.wkg-gm{height:50px}.wkg-go,.wkg-links a.wkg-go{display:block}.wkg-gm{width:100%;justify-content:center}.wkg-gf{left:50%}.wkg-lbs{flex-direction:column;align-items:stretch}}
+@media (prefers-reduced-motion:reduce){.wkg-mi>img,.wkg-nm>img{transition:none}.wkg-cap h3,.wkg-cap h3::before{transition:none}}
 `;
+
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const src = (p) => BASE + p;
-const clean = (s) => String(s == null ? '' : s).replace(/\s*[—–]\s*/g, ', ').replace(/--/g, ',').replace(/[←-⇿·]/g, '');
+const clean = (s) => String(s == null ? '' : s).replace(/\s*[—–]\s*/g, ', ').replace(/--/g, ',').replace(/[←-⇿·]/g, '')
+  .replace(/(\d) (?=(sq|ft|m|km|kg|min|sec|hrs?|days?|K|M|B)\b)/g, '$1\u00a0').replace(/\bsq ft\b/g, 'sq\u00a0ft');
 const isText = (p) => TEXT_ONLY.has(p.id) || !p.hero;
 const isVert = (p) => /^(vertical|portrait)$/i.test(p.orientation || '');
 const KIND_RE = /^(kind|output|work|format|what it is)$/i;
@@ -308,6 +612,35 @@ function spread(list) {
   for (let i = 0; i < n; i++) out.push(at.has(i) ? txt[a++] : rest[b++]);
   return out;
 }
+
+/* per view (All and each filter): images keep the manifest order and the text-only cards take the slots that
+   never put two of them in one row of the two columns, nor back to back on a phone, nor (when it can be helped)
+   one above another or first. Every way of placing them is scored; n is small. */
+function arrange(list) {
+  const txt = list.filter(isText), img = list.filter(p => !isText(p)), n = list.length, k = txt.length;
+  if (!k || !img.length || n > 16) return n > 16 ? spread(list) : list;
+  let best = null, bs = Infinity;
+  const pick = [];
+  const score = (S) => {
+    let v = 0; const has = new Set(S);
+    S.forEach((a, j) => {
+      if (has.has(a + 1)) v += a % 2 === 0 ? 100 : 30;   // same row on desktop / back to back on a phone
+      if (has.has(a + 2)) v += 6;                         // one above the other in a column
+      v += Math.abs(a - ((j + .5) * n / k - .5)) * .5;      // spread through the list
+    });
+    if (has.has(0)) v += 8;                               // open on an image
+    return v;
+  };
+  (function rec(from) {
+    if (pick.length === k) { const v = score(pick); if (v < bs) { bs = v; best = pick.slice(); } return; }
+    for (let i = from; i <= n - (k - pick.length); i++) { pick.push(i); rec(i + 1); pick.pop(); }
+  })(0);
+  const at = new Set(best), out = []; let a = 0, b = 0;
+  for (let i = 0; i < n; i++) out.push(at.has(i) ? txt[a++] : img[b++]);
+  return out;
+}
+const cardKind = (p) => (p.wing === 'software' && CAT[p.category]) || kindOf(p);
+const partsOf = (p) => (Array.isArray(p.parts) ? p.parts : []).filter(x => x && x.name);
 
 const THUMBABLE = /\.(jpe?g|png)$/i;
 const thumb = (p, w) => p.replace(THUMBABLE, `.w${w}.webp`);
@@ -364,27 +697,66 @@ function videosOf(p) {
   return out;
 }
 
-let DATA = { software: [], media: [] }, ALL = [], byId = new Map(), BRANDS = [], tab = 'software';
+/* fluid-g.js (the pointer fluid and photo lens) through one hook. One canvas for the whole section, kept UNDER the
+   content in tree order: in the listing right after the card canvas (so captions sit on it), on a project page right
+   after the ground (so text, Back, the progress line and the end cue all sit on it). While it draws a picture's GL
+   copy it hides the DOM picture, so the frame's own ground turns transparent then (.kpf-hide rules below).
+   Listing cards are NOT attached: they are already planes on the card canvas; there the fluid draws only its trail. */
+let FLUID = null, FLUIDC = null, WORKON = false;
+function fluidGate() { if (!FLUID) return; const on = WORKON || !!openId; FLUID.setEnabled(on); FLUIDC.style.visibility = on ? '' : 'hidden'; }
+function fluidAttach(media, clip) {
+  const page = curPage; if (!FLUID || !media || !page) return;
+  FLUID.attach(media, { clip: clip || media.parentElement });
+  (page._fl ||= []).push(media);
+}
+function fluidDetach(page) { if (!FLUID || !page || !page._fl) return; page._fl.forEach(m => FLUID.detach(m)); page._fl = []; }
+function fluidHome(page) {
+  if (!FLUIDC) return;
+  if (page) { const bg = page.querySelector('.wkg-bg'); if (bg && FLUIDC.previousSibling !== bg) bg.after(FLUIDC); }
+  else if (ui.wrap) { const g = ui.wrap.querySelector('.wkg-gl'); if (g) g.after(FLUIDC); else ui.wrap.prepend(FLUIDC); }
+}
+async function initFluid() {
+  if (RM.matches || !HOVER.matches) return;
+  try {
+    const { createFluid } = await import('./fluid-g.js');
+    const f = createFluid({ root: ui.wrap, zIndex: 0, kpPause: 'ignore' });
+    const c = ui.wrap.querySelector('canvas.kp-fluid');
+    if (!c) return;
+    FLUID = f; FLUIDC = c; fluidHome(null);
+    // only while #work covers the screen (index.html's kp:pause, paused: true) or a project is open: the landing and the
+    // numbers never get the trail
+    addEventListener('kp:pause', (e) => { WORKON = !!(e.detail && e.detail.paused); fluidGate(); });
+    WORKON = document.body.classList.contains('kp-work'); fluidGate();
+  } catch (e) { console.warn('work-g: fluid-g.js did not load', e); }
+}
+let DATA = { software: [], media: [] }, ALL = [], byId = new Map(), BRANDS = [], tab = 'software', SW = [], cat = 'all';
 let ui = {}, gl = null, openId = null, curPage = null, busy = false;
 const holds = [];                        // running flight animations, so a test can hold them still
 
+
 /* ---------- the listing ---------- */
-/* a logo trimmed to its ink (some files carry wide transparent margins), cached per project */
+/* a logo trimmed to its ink (some files carry wide transparent margins), cached per project. The ink box is found on
+   a copy at most 256 px across, so the pixel scan stays well under a millisecond whatever the file size. */
 const LOGOS = new Map();
 function logoOf(p) {
   if (!p.logo) return null;
   if (LOGOS.has(p.id)) return LOGOS.get(p.id);
   const pr = new Promise((res) => {
     const im = new Image();
+    im.decoding = 'async';
     im.onload = () => {
       try {
-        const w = im.naturalWidth, h = im.naturalHeight, c = document.createElement('canvas'); c.width = w; c.height = h;
-        const g = c.getContext('2d'); g.drawImage(im, 0, 0);
-        const a = g.getImageData(0, 0, w, h).data; let x0 = w, y0 = h, x1 = -1, y1 = -1;
-        for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (a[(y * w + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        const w = im.naturalWidth, h = im.naturalHeight, k = Math.min(1, 256 / Math.max(w, h));
+        const sw = Math.max(1, Math.round(w * k)), sh = Math.max(1, Math.round(h * k));
+        const c = document.createElement('canvas'); c.width = sw; c.height = sh;
+        const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(im, 0, 0, sw, sh);
+        const a = g.getImageData(0, 0, sw, sh).data; let x0 = sw, y0 = sh, x1 = -1, y1 = -1;
+        for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) if (a[(y * sw + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
         if (x1 < 0) return res(null);
-        const t = document.createElement('canvas'); t.width = x1 - x0 + 1; t.height = y1 - y0 + 1;
-        t.getContext('2d').drawImage(c, -x0, -y0);
+        const X0 = Math.max(0, Math.floor((x0 - 1) / k)), Y0 = Math.max(0, Math.floor((y0 - 1) / k));
+        const X1 = Math.min(w, Math.ceil((x1 + 2) / k)), Y1 = Math.min(h, Math.ceil((y1 + 2) / k));
+        const t = document.createElement('canvas'); t.width = X1 - X0; t.height = Y1 - Y0;
+        t.getContext('2d').drawImage(im, -X0, -Y0);
         t.toBlob((b) => res({ canvas: t, url: b ? URL.createObjectURL(b) : t.toDataURL() }));
       } catch (e) { res({ canvas: im, url: im.src }); }
     };
@@ -403,240 +775,442 @@ function plateEl(p) {
   else d.classList.add('wkg-nf');
   return d;
 }
-function cardEl(p, i, n) {
+function cardEl(p) {
   const c = el('button', 'wkg-card'); c.type = 'button'; c.dataset.id = p.id;
-  c.setAttribute('aria-label', `${clean(p.name)}. Open the project`);
-  // no Open label: Kirtan removed it
-  const m = el('span', 'wkg-m');
-  if (isText(p)) m.appendChild(plateEl(p));
-  else { const im = el('img'); im.alt = ''; im.decoding = 'async'; im.draggable = false; im.loading = i < 2 ? 'eager' : 'lazy'; setImg(im, p.hero, '(max-width:760px) 92vw, 46vw'); m.appendChild(im); }
+  c.setAttribute('aria-label', `${clean(p.name)}. ${clean(cardKind(p))}. Open the project`);
+  const m = el('span', 'wkg-m'), mi = el('span', 'wkg-mi');
+  if (isText(p)) mi.appendChild(plateEl(p));
+  else { const im = el('img'); im.alt = ''; im.decoding = 'async'; im.draggable = false; im.loading = 'lazy'; setImg(im, p.hero, '(max-width:760px) 92vw, 46vw'); mi.appendChild(im); }
+  m.appendChild(mi);
   const cap = el('span', 'wkg-cap');
-  const k = el('span', 'wkg-k'); k.append(el('span', '', clean(kindOf(p))), el('span', 'wkg-n', pad(i + 1)));
-  cap.append(el('h3', '', clean(p.name)), k);
-  cap.appendChild(el('p', '', clean(p.one_line)));   // every card, so every caption block is the same height
+  cap.append(el('span', 'wkg-k', clean(cardKind(p))), el('h3', '', clean(p.name)));
   c.append(m, cap);
   c.addEventListener('click', () => go(p.id, m));
+  c.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') prefetch(p); });
+  c.addEventListener('focus', () => prefetch(p));
   return c;
 }
+const CARDS = new Map();
+function cardOf(p) { let c = CARDS.get(p.id); if (!c) { c = cardEl(p); CARDS.set(p.id, c); } return c; }
+function viewOf(t) {
+  if (t !== 'software' || cat === 'all') return DATA[t];
+  return arrange(SW.filter(p => p.category === cat));
+}
+let fanims = [], ftok = 0;
+function stopFilterAnims() { fanims.forEach(a => a.cancel()); fanims = []; }
+function place(list) {
+  const cards = list.map(cardOf);
+  ui.list.replaceChildren(...cards);
+  ui.cards = cards;
+  if (gl) gl.setCards(list, cards);
+  return cards;
+}
+
+/* ---------- entrance: the heading rises out of its masks, cards reveal as they arrive ---------- */
+const REVEALED = new Set();                 // card ids already shown, so a filter or tab never replays them
+let batchST = [];
+function watchCards(cards) {
+  batchST.forEach(s => s.kill()); batchST = [];
+  const todo = cards.filter(c => !REVEALED.has(c.dataset.id));
+  if (RM.matches) { todo.forEach(c => { REVEALED.add(c.dataset.id); showCardNow(c); }); return; }
+  todo.forEach(hideCard);
+  if (!todo.length) return;
+  batchST = ScrollTrigger.batch(todo, {
+    start: 'top 92%', once: true, interval: 0.08, batchMax: 4,
+    onEnter: (batch) => batch.forEach((c, i) => revealCard(c, i * 0.09)),
+  });
+}
+function hideCard(c) {
+  const cap = c.querySelector('.wkg-cap');
+  gsap.set(cap, { autoAlpha: 0, y: 28 });
+  if (!gl) { gsap.set(c.querySelector('.wkg-mi'), { yPercent: 101 }); const im = c.querySelector('.wkg-mi>img'); if (im) gsap.set(im, { yPercent: -40, scale: 1.16 }); }
+}
+function showCardNow(c) {
+  gsap.set(c.querySelector('.wkg-cap'), { clearProps: 'all' });
+  gsap.set(c.querySelector('.wkg-mi'), { clearProps: 'transform' });
+  const im = c.querySelector('.wkg-mi>img'); if (im) gsap.set(im, { clearProps: 'transform' });
+  if (gl) gl.reveal(c.dataset.id, 0, 0);
+}
+async function revealCard(c, delay) {
+  const id = c.dataset.id; if (REVEALED.has(id)) return;
+  REVEALED.add(id);
+  // the picture is decoded (and on the canvas, uploaded) before anything moves, so nothing pops in half drawn
+  const ready = gl ? gl.ready(id) : decodeIn(c);
+  await Promise.race([ready, new Promise(r => setTimeout(r, 1400))]);
+  const cap = c.querySelector('.wkg-cap');
+  gsap.to(cap, { autoAlpha: 1, y: 0, duration: T.rise, ease: 'expo.out', delay: delay + 0.12, clearProps: 'transform,visibility,opacity' });
+  if (gl) { gl.reveal(id, T.reveal, delay); return; }
+  const mi = c.querySelector('.wkg-mi'), im = mi.querySelector('img');
+  gsap.to(mi, { yPercent: 0, duration: T.reveal, ease: 'expo.out', delay, clearProps: 'transform' });
+  if (im) gsap.to(im, { yPercent: 0, scale: 1, duration: T.reveal + 0.2, ease: 'expo.out', delay, clearProps: 'transform' });
+}
+function decodeIn(c) {
+  const im = c.querySelector('.wkg-mi>img');
+  if (!im) return Promise.resolve();
+  im.loading = 'eager';
+  return (im.complete && im.naturalWidth ? Promise.resolve() : new Promise(r => { im.addEventListener('load', r, { once: true }); im.addEventListener('error', r, { once: true }); }))
+    .then(() => im.decode ? im.decode().catch(() => {}) : null);
+}
+function headIn() {
+  const lines = [ui.titleIn, ui.subIn].filter(Boolean);
+  if (RM.matches) return;
+  gsap.set(ui.titleIn, { yPercent: 110 });
+  gsap.set([ui.sub, ui.top, ui.filt, ui.brands], { autoAlpha: 0, y: 18 });
+  ScrollTrigger.create({
+    trigger: ui.head, start: 'top 88%', once: true,
+    onEnter: () => {
+      const tl = gsap.timeline();
+      tl.to(ui.titleIn, { yPercent: 0, duration: T.rise + 0.2, ease: 'expo.out' })
+        .to([ui.top, ui.sub], { autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08, clearProps: 'transform' }, 0.12)
+        .to([ui.filt, ui.brands], { autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08, clearProps: 'transform' }, 0.22);
+    },
+  });
+  return lines;
+}
+
 function setTab(t, first) {
   tab = t;
   ROOT.style.setProperty('--wkg-ground', WING[t].ground);
   ROOT.style.setProperty('--wkg-slot', WING[t].slot);
   ui.tabs.forEach(b => { const on = b.dataset.tab === t; b.classList.toggle('wkg-on', on); b.setAttribute('aria-selected', on); });
   const build = () => {
-    const list = DATA[t];
-    ui.title.firstChild.textContent = WING[t].title;
-    ui.count.textContent = pad(list.length);
+    stopFilterAnims(); ftok++;
+    ui.titleIn.textContent = WING[t].title;
     ui.sub.textContent = WING[t].sub;
     ui.brands.hidden = t !== 'media';
-    ui.list.textContent = '';
-    const cards = list.map((p, i) => { const c = cardEl(p, i, list.length); ui.list.appendChild(c); return c; });
-    ui.cards = cards;
-    if (gl) gl.setCards(list, cards); else revealCards(cards);
-    ui.list.classList.remove('wkg-fade');
+    ui.filt.hidden = t !== 'software';
+    const cards = place(viewOf(t));
+    if (t === 'software') requestAnimationFrame(() => placeBar(false));
+    watchCards(cards);
+    ScrollTrigger.refresh();
   };
-  if (first || RM.matches) build();
-  else { ui.list.classList.add('wkg-fade'); if (gl) gl.fadeAll(); setTimeout(build, 330); }
+  if (first) { build(); return; }
+  // a switch never scrolls the page: the grid keeps its height while the cards change, then eases to the new one
+  holdHeight();
+  if (RM.matches) { build(); easeHeight(); return; }
+  gsap.killTweensOf(ui.titleIn);
+  // out: the cards drop and fade together, then the new wing's heading rises and its cards reveal in order
+  const old = ui.cards || [];
+  if (gl) gl.fadeAll(0.32);
+  gsap.to([...old.map(c => c.querySelector('.wkg-cap')), ...(gl ? [] : old.map(c => c.querySelector('.wkg-m')))], { autoAlpha: 0, y: 16, duration: 0.32, ease: 'power2.in' });
+  gsap.to(ui.titleIn, { yPercent: -110, duration: 0.36, ease: 'power3.in', onComplete: () => {
+    old.forEach(c => { REVEALED.delete(c.dataset.id); gsap.set([c.querySelector('.wkg-cap'), c.querySelector('.wkg-m')], { clearProps: 'all' }); });
+    build(); easeHeight();
+    gsap.fromTo(ui.titleIn, { yPercent: 110 }, { yPercent: 0, duration: T.rise + 0.2, ease: 'expo.out' });
+  } });
 }
-let rio = null;
-function revealCards(cards) {
-  if (RM.matches) return;
-  if (!rio) rio = new IntersectionObserver((es) => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('wkg-in'); rio.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
-  cards.forEach(c => { c.classList.add('wkg-rv'); rio.observe(c); });
+/* the grid's height is held through a tab or filter swap (no collapse, so the page never jumps), then eased */
+function holdHeight() { const l = ui.list; gsap.killTweensOf(l); l.style.minHeight = Math.max(l.offsetHeight, parseFloat(l.style.minHeight) || 0) + 'px'; }
+function easeHeight() {
+  // the new height is read from the cards, never by letting the grid collapse (that would clamp the scroll at once)
+  const l = ui.list, old = parseFloat(l.style.minHeight) || 0;
+  const nh = [...l.children].reduce((m, c) => Math.max(m, c.offsetTop + c.offsetHeight), 0);
+  const done = () => { l.style.minHeight = ''; ScrollTrigger.refresh(); };
+  if (nh >= old - 1) { done(); return; }
+  // if the shorter grid can't hold the current position, the page eases up to its new end first (no clamp, no jump)
+  const end = document.documentElement.scrollHeight - innerHeight - (old - nh);
+  if (scrollY > end + 1) {
+    const o = { y: scrollY };
+    gsap.to(o, { y: end, duration: 0.9, ease: 'power2.inOut', delay: 0.35,
+      onUpdate: () => { if (KP.lenis) KP.lenis.scrollTo(o.y, { immediate: true, force: true }); else scrollTo(0, o.y); },
+      onComplete: () => gsap.to(l, { minHeight: nh, duration: 0.2, onComplete: done }) });
+  } else gsap.to(l, { minHeight: nh, duration: 0.8, ease: 'power2.inOut', delay: 0.6, onComplete: done });
+}
+/* ---------- the software filters ---------- */
+const readCat = () => { const v = new URLSearchParams(location.search).get('cat'); return FILTERS.some(([k]) => k === v) ? v : 'all'; };
+function writeCat() {
+  const q = new URLSearchParams(location.search);
+  if (cat === 'all') q.delete('cat'); else q.set('cat', cat);
+  const qs = q.toString();
+  history.replaceState(history.state, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+}
+function placeBar(move) {
+  const b = ui.fbtn && ui.fbtn.find(x => x.dataset.cat === cat); if (!b || ui.filt.hidden) return;
+  ui.fbar.classList.toggle('wkg-mv', !!move && !RM.matches);
+  ui.fbar.style.transform = `translate3d(${b.offsetLeft}px,${b.offsetTop + b.offsetHeight - 2}px,0) scaleX(${b.offsetWidth})`;
+}
+function markFilters() {
+  ui.fbtn.forEach(b => { const on = b.dataset.cat === cat; b.classList.toggle('wkg-on', on); b.setAttribute('aria-pressed', on); });
+}
+async function setCat(c, fromUrl) {
+  if (c === cat) return;
+  cat = c; markFilters(); placeBar(true);
+  if (!fromUrl) writeCat();
+  if (tab !== 'software') return;
+  ++ftok;
+  const prev = ui.cards || [];
+  stopFilterAnims();
+  // the reveal triggers of the cards being swapped out go too: left alive, the next refresh measures cards that are no
+  // longer laid out where they were, and on a phone that moved the page by 2,000 px (every new card is shown below)
+  batchST.forEach(t => t.kill()); batchST = [];
+  ui.wrap.querySelectorAll('.wkg-ghost').forEach(g => g.remove());
+  const list = viewOf('software');
+  if (RM.matches) { const cards = place(list); cards.forEach(c => { REVEALED.add(c.dataset.id); showCardNow(c); }); return; }
+  // one continuous move: the old cards fade where they stood (as copies) while the new grid rises in its own slots.
+  // A card that stays in the same slot does not move at all; nothing travels across another card.
+  const wr = ui.wrap.getBoundingClientRect();
+  const was = new Map(prev.map(c => [c, c.getBoundingClientRect()]));
+  holdHeight();
+  const cards = place(list);
+  const now = new Map(cards.map(c => [c, c.getBoundingClientRect()]));
+  const same = (a, b) => a && b && Math.abs(a.left - b.left) < 1 && Math.abs(a.top - b.top) < 1;
+  prev.forEach(c => {
+    if (same(was.get(c), now.get(c))) return;
+    const r = was.get(c); if (!r || r.bottom < -200 || r.top > innerHeight + 200) return;
+    const g = c.cloneNode(true); g.classList.add('wkg-ghost'); g.setAttribute('aria-hidden', 'true'); g.tabIndex = -1;
+    Object.assign(g.style, { position: 'absolute', left: (r.left - wr.left) + 'px', top: (r.top - wr.top) + 'px', width: r.width + 'px', margin: '0', pointerEvents: 'none', zIndex: '2' });
+    ui.wrap.appendChild(g);
+    const a = g.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translate3d(0,-10px,0) scale(.985)' }], { duration: 240, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
+    a.finished.then(() => g.remove(), () => g.remove()); fanims.push(a);
+  });
+  let j = 0;
+  cards.forEach((c) => {
+    if (!REVEALED.has(c.dataset.id)) REVEALED.add(c.dataset.id);
+    showCardNow(c);
+    if (same(was.get(c), now.get(c))) return;
+    const dl = 0.2 + Math.min(j++, 6) * 0.06;
+    // on the canvas the picture grows up from its slot's bottom edge (the list's own reveal); the caption rises with it
+    if (gl) { gl.reveal(c.dataset.id, 0.9, dl, 0); fanims.push(c.querySelector('.wkg-cap').animate([{ opacity: 0, transform: 'translate3d(0,24px,0)' }, { opacity: 1, transform: 'none' }], { duration: 850, delay: dl * 1000 + 80, easing: ARRIVE, fill: 'backwards' })); }
+    else fanims.push(c.animate([{ opacity: 0, transform: 'translate3d(0,36px,0)' }, { opacity: 1, transform: 'none' }], { duration: 850, delay: dl * 1000, easing: ARRIVE, fill: 'backwards' }));
+  });
+  if (gl) gl.sync(1600);
+  easeHeight();
 }
 function buildListing() {
   ROOT.textContent = '';
   const w = el('div', 'wkg'); ui.w = w;
-  const top = el('div', 'wkg-top'); top.setAttribute('role', 'tablist');
+  const top = el('div', 'wkg-top'); top.setAttribute('role', 'tablist'); ui.top = top;
   ui.tabs = ['software', 'media'].map(t => { const b = el('button', 'wkg-tab', WING[t].title); b.type = 'button'; b.dataset.tab = t; b.setAttribute('role', 'tab'); b.addEventListener('click', () => { if (tab !== t) setTab(t); }); top.appendChild(b); return b; });
-  const head = el('div', 'wkg-head');
-  ui.title = el('h2', 'wkg-title'); ui.title.append(document.createTextNode(''), (ui.count = el('sup')));
+  const head = el('div', 'wkg-head'); ui.head = head;
+  ui.title = el('h2', 'wkg-title');
+  const mk = el('span', 'wkg-mk'); ui.titleIn = el('span'); mk.appendChild(ui.titleIn);
+  ui.title.append(mk);
   ui.sub = el('p');
   head.append(ui.title, ui.sub);
-  ui.brands = el('div', 'wkg-brands wkg-g');
+  ui.filt = el('div', 'wkg-filt'); ui.filt.setAttribute('aria-label', 'Filter the software');
+  ui.fbtn = FILTERS.map(([k, label]) => {
+    const n = k === 'all' ? SW.length : SW.filter(p => p.category === k).length;
+    const b = el('button', 'wkg-fb'); b.type = 'button'; b.dataset.cat = k;
+    b.append(document.createTextNode(label), el('small', '', String(n)));
+    b.setAttribute('aria-label', `${label}, ${n}`);
+    b.addEventListener('click', () => setCat(k));
+    if (k !== 'all' && !n) b.hidden = true;
+    ui.filt.appendChild(b); return b;
+  });
+  ui.fbar = el('span', 'wkg-fbar'); ui.fbar.setAttribute('aria-hidden', 'true'); ui.filt.appendChild(ui.fbar);
+  markFilters();
+  if (window.ResizeObserver) new ResizeObserver(() => placeBar(false)).observe(ui.filt);
+  ui.brands = el('div', 'wkg-brands');
   const bl = el('ul', 'wkg-bl');
   if (BRANDS.length) BRANDS.forEach(b => bl.appendChild(el('li', '', b))); else bl.appendChild(el('li', 'wkg-tbc', 'Brand names to come'));
   ui.brands.append(el('h3', 'wkg-bh', 'Brands impacted'), bl);
   ui.wrap = el('div', 'wkg-wrap');
   ui.list = el('div', 'wkg-list');
   ui.wrap.appendChild(ui.list);
-  w.append(top, head, ui.brands, ui.wrap);
+  w.append(top, head, ui.filt, ui.brands, ui.wrap);
   ROOT.appendChild(w);
 }
 
-/* ---------- the WebGL gallery ---------- */
+/* ---------- the WebGL gallery: one canvas, fixed to the viewport, drawn only when something moved ---------- */
 const VERT = `
-uniform float uVel; uniform float uViewH; uniform float uHover; uniform vec2 uMouse; uniform vec2 uSize;
+uniform float uVel;
 varying vec2 vUv;
 void main(){
   vUv = uv;
   vec4 wp = modelMatrix * vec4(position, 1.0);
-  float ny = clamp(wp.y / (uViewH * 0.5), -1.4, 1.4);
-  wp.y += sin(uv.x * 3.14159265) * uVel;                     // the plane bows with the scroll speed
-  wp.z -= ny * ny * abs(uVel) * 2.6;                         // a drum that deepens with speed: at rest the planes sit flat, exactly on their boxes
-  vec2 d = (uv - uMouse) * uSize / max(uSize.x, uSize.y);
-  wp.z += uHover * 22.0 * exp(-dot(d, d) * 6.0);              // the pointer lifts a soft dome, no rings
+  wp.y += sin(uv.x * 3.14159265) * uVel;                     // a slight bow with the scroll speed, flat at rest
   gl_Position = projectionMatrix * viewMatrix * wp;
 }`;
 const FRAG = `
-uniform sampler2D uTex; uniform vec2 uSize; uniform vec2 uImg; uniform float uHover; uniform vec2 uMouse;
-uniform float uLoad; uniform vec3 uBase; uniform float uAlpha; uniform float uRad; uniform float uVel;
+uniform sampler2D uTex; uniform vec2 uSize; uniform vec2 uImg; uniform float uHover; uniform vec2 uMouse; uniform vec2 uPar;
+uniform float uReveal; uniform float uLoad; uniform vec3 uBase; uniform float uAlpha; uniform float uRad; uniform float uVel;
 varying vec2 vUv;
+float box(vec2 p, vec2 b, float r){ vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
 void main(){
+  // the reveal: the rounded box grows up from the card's bottom edge
+  float hv = uSize.y * uReveal;
+  vec2 px = vec2((vUv.x - 0.5) * uSize.x, vUv.y * uSize.y - hv * 0.5);
+  float d = box(px, vec2(uSize.x * 0.5, hv * 0.5), min(uRad, hv * 0.5));
+  float a = (1.0 - smoothstep(-0.7, 0.7, d)) * uAlpha;
+  if (a <= 0.001 || uReveal <= 0.0) discard;
   float pa = uSize.x / uSize.y, ia = uImg.x / uImg.y;
   vec2 s = pa > ia ? vec2(1.0, ia / pa) : vec2(pa / ia, 1.0);
   vec2 c = (vUv - 0.5) * s;
-  c *= 1.0 - 0.05 * uHover;
-  c.y *= 1.0 - min(abs(uVel) * 0.0016, 0.05);
+  c /= 1.0 + 0.16 * (1.0 - uReveal) + 0.07 * uHover;          // settles from a slight zoom; hover zooms in slowly
+  c.y += 0.07 * (1.0 - uReveal) * s.y;                         // and rises a little as it settles
+  c -= uPar * s * 0.035 * uHover;                              // drifts with the pointer
   vec2 dd = (vUv - uMouse) * vec2(pa, 1.0);
-  float f = exp(-dot(dd, dd) * 5.0);
-  c -= (vUv - uMouse) * s * f * 0.07 * uHover;                // a lens toward the pointer
+  c -= (vUv - uMouse) * s * exp(-dot(dd, dd) * 5.0) * 0.055 * uHover;   // a soft lens toward the pointer
+  c.y *= 1.0 - min(abs(uVel) * 0.0014, 0.035);
   vec3 col = mix(uBase, texture2D(uTex, c + 0.5).rgb, uLoad);
-  vec2 px = (vUv - 0.5) * uSize;
-  vec2 q = abs(px) - (uSize * 0.5 - uRad);
-  float dist = length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - uRad;
-  float a = (1.0 - smoothstep(-0.8, 0.8, dist)) * uAlpha;
   gl_FragColor = vec4(col * a, a);
 }`;
 
 async function initGL() {
-  if (RM.matches || !HOVER.matches || innerWidth <= 760) return null;
+  if (RM.matches || !HOVER.matches || innerWidth <= 760 || !KP.lenis) return null;
   let THREE;
   try { THREE = await import('three'); } catch (e) { console.warn('work-g: three did not load, plain images instead'); return null; }
   const canvas = el('canvas', 'wkg-gl'); canvas.setAttribute('aria-hidden', 'true');
   let renderer;
-  try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' }); }
+  try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'high-performance' }); }
   catch (e) { return null; }
-  renderer.setPixelRatio(Math.min(2, devicePixelRatio || 1));
+  const DPR = () => Math.min(1.5, devicePixelRatio || 1);
+  renderer.setPixelRatio(DPR());
   renderer.setClearColor(0x000000, 0);
   ui.wrap.insertBefore(canvas, ui.list);
   const scene = new THREE.Scene();
-  const cam = new THREE.PerspectiveCamera(30, 1, 1, 10000);
-  const geo = new THREE.PlaneGeometry(1, 1, 24, 24);
+  const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, -10, 10);
+  const geo = new THREE.PlaneGeometry(1, 1, 24, 1);
   const blank = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1); blank.needsUpdate = true;
-  const cur = el('div', 'wkg-cur', ''); cur.style.display = 'none'; cur.setAttribute('aria-hidden', 'true');
-  const meshes = new Map();          // id -> { mesh, u, hov, hovT, load, loadT, tex }
-  let items = [];                    // [{ p, card, slot, cap, m }]
-  const M = 280;                     // the canvas overhangs the viewport by this much above and below
-  let W = 1, H = 1, HC = 1, raf = 0, lastY = scrollY, vel = 0, pin = null, visible = false, frames = 2;
-  let mx = -1, my = -1, cx = -200, cy = -200, cs = 0, csT = 0, over = null, rad = 18;
+  const meshes = new Map();          // id -> rec
+  let items = [];                    // [{ p, card, slot, m, r: cached doc rect }]
+  let W = 1, H = 1, visible = false, paused = false, dirty = 3, lastY = scrollY, vel = 0;
+  let mx = -1, my = -1, syncUntil = 0, rad = 18;
   const readRad = () => { const s0 = ui.list.querySelector('.wkg-m'); if (s0) rad = parseFloat(getComputedStyle(s0).borderTopLeftRadius) || rad; for (const m of meshes.values()) m.u.uRad.value = rad; };
 
-  const col3 = (hex) => new THREE.Color(hex);    // the slot colour, raw like the texels
+  /* textures: fetched and decoded ahead of the reveal (well before the card is on screen), then uploaded one per frame */
+  const uploads = [];
   function texFor(p, rec) {
-    if (rec.tex) return;
-    rec.tex = 'loading';
-    const done = (img, w, h) => {
-      const t = img instanceof HTMLCanvasElement ? new THREE.CanvasTexture(img) : new THREE.Texture(img);
-      t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.anisotropy = 4; t.needsUpdate = true;
-      rec.tex = t; rec.u.uTex.value = t; rec.u.uImg.value.set(w, h); rec.loadT = 1; kick();
-    };
-    if (isText(p)) {
-      const waits = [logoOf(p) || Promise.resolve(null)];
-      if (document.fonts) waits.push(document.fonts.load(`400 120px ${FD}`), document.fonts.load(`500 30px ${FT}`));
-      Promise.all(waits).then(([l]) => done(plateCanvas(p, l), 1280, 800), () => done(plateCanvas(p, null), 1280, 800));
-      return;
-    }
-    const im = new Image(); im.decoding = 'async';
-    im.onload = () => (im.decode ? im.decode().catch(() => {}) : Promise.resolve()).then(() => done(im, im.naturalWidth, im.naturalHeight));
-    im.onerror = () => { if (!im._fb) { im._fb = 1; im.src = src(p.hero); } };
-    im.src = big(p.hero);
+    if (rec.texP) return rec.texP;
+    rec.texP = new Promise((resolve) => {
+      const done = (img, w, h) => {
+        const t = img instanceof HTMLCanvasElement ? new THREE.CanvasTexture(img) : new THREE.Texture(img);
+        t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.anisotropy = 4; t.needsUpdate = true;
+        uploads.push(() => { renderer.initTexture(t); rec.u.uTex.value = t; rec.u.uImg.value.set(w, h); rec.u.uLoad.value = 1; dirty = 2; resolve(); });
+      };
+      if (isText(p)) {
+        const waits = [logoOf(p) || Promise.resolve(null)];
+        if (document.fonts) waits.push(document.fonts.load(`500 120px ${FF}`), document.fonts.load(`500 30px ${FF}`));
+        Promise.all(waits).then(([l]) => done(plateCanvas(p, l), 1280, 800), () => done(plateCanvas(p, null), 1280, 800));
+        return;
+      }
+      const im = new Image(); im.decoding = 'async';
+      im.onload = () => (im.decode ? im.decode().catch(() => {}) : Promise.resolve()).then(() => done(im, im.naturalWidth, im.naturalHeight));
+      im.onerror = () => { if (!im._fb) { im._fb = 1; im.src = src(p.hero); } else resolve(); };
+      im.src = big(p.hero);
+    });
+    return rec.texP;
   }
-  const tio = new IntersectionObserver((es) => es.forEach(e => { if (!e.isIntersecting) return; const it = items.find(x => x.card === e.target); if (it) texFor(it.p, it.m); }), { rootMargin: '120% 0px' });
+  const tio = new IntersectionObserver((es) => es.forEach(e => { if (!e.isIntersecting) return; const it = items.find(x => x.card === e.target); if (it) texFor(it.p, it.m); }), { rootMargin: '160% 0px' });
+
+  function rec(p) {
+    let m = meshes.get(p.id);
+    if (m) return m;
+    const u = { uTex: { value: blank }, uSize: { value: new THREE.Vector2(1, 1) }, uImg: { value: new THREE.Vector2(16, 10) }, uHover: { value: 0 }, uMouse: { value: new THREE.Vector2(.5, .5) },
+      uPar: { value: new THREE.Vector2(0, 0) }, uReveal: { value: 0 }, uLoad: { value: 0 }, uBase: { value: new THREE.Color(WING[p.wing].slot) }, uAlpha: { value: 1 }, uRad: { value: rad }, uVel: { value: 0 } };
+    const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: FRAG, transparent: true, premultipliedAlpha: true, depthTest: false, depthWrite: false });
+    const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; mesh.visible = false; scene.add(mesh);
+    m = { mesh, u, hov: 0, mu: 0.5, mv: 0.5, alpha: 1, alphaT: 1, alphaK: 0.2, st: { reveal: 0 }, texP: null };
+    meshes.set(p.id, m);
+    return m;
+  }
+  /* slot rects in document coordinates, measured only when the layout can have changed */
+  function measure() {
+    const sy = scrollY;
+    for (const it of items) { const r = it.slot.getBoundingClientRect(); it.r = { x: r.left, y: r.top + sy, w: r.width, h: r.height }; }
+    dirty = 2;
+  }
   function setCards(list, cards) {
     tio.disconnect();
     for (const r of meshes.values()) r.mesh.visible = false;
     readRad();
     items = list.map((p, i) => {
-      let m = meshes.get(p.id);
-      if (!m) {
-        const u = { uTex: { value: blank }, uSize: { value: new THREE.Vector2(1, 1) }, uImg: { value: new THREE.Vector2(16, 10) }, uHover: { value: 0 }, uMouse: { value: new THREE.Vector2(.5, .5) },
-          uLoad: { value: 0 }, uBase: { value: col3(WING[p.wing].slot) }, uAlpha: { value: 1 }, uRad: { value: rad }, uVel: { value: 0 }, uViewH: { value: 900 } };
-        u.uAlpha.value = 0;
-        const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: FRAG, transparent: true, premultipliedAlpha: true, depthTest: false, depthWrite: false });
-        const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; scene.add(mesh);
-        m = { mesh, u, hov: 0, hovT: 0, load: 0, loadT: 0, tex: null, alphaT: 1 };
-        meshes.set(p.id, m);
-      }
-      m.alphaT = 1; m.u.uRad.value = rad;
-      const card = cards[i];
-      tio.observe(card);
-      return { p, card, slot: card.querySelector('.wkg-m'), cap: card.querySelector('.wkg-cap'), m };
+      const m = rec(p); m.alphaT = 1; m.alpha = 1; m.u.uRad.value = rad;
+      tio.observe(cards[i]);
+      return { p, card: cards[i], slot: cards[i].querySelector('.wkg-m'), m, r: null };
     });
-    cards.forEach(c => c.classList.remove('wkg-rv', 'wkg-in'));
     ui.w.classList.add('wkg-glon');
-    frames = 3; kick();
+    measure();
   }
   function resize() {
-    W = ui.wrap.clientWidth || document.documentElement.clientWidth; H = innerHeight; HC = H + 2 * M; readRad();
-    renderer.setSize(W, HC, false); canvas.style.height = HC + 'px';
-    cam.aspect = W / HC; cam.position.set(0, 0, (HC / 2) / Math.tan(Math.PI * 15 / 180)); cam.updateProjectionMatrix();
-    frames = 2; kick();
+    W = document.documentElement.clientWidth; H = innerHeight;
+    renderer.setPixelRatio(DPR()); renderer.setSize(W, H, false);
+    cam.left = -W / 2; cam.right = W / 2; cam.top = H / 2; cam.bottom = -H / 2; cam.updateProjectionMatrix();
+    readRad(); measure();
   }
-  function force() { if (raf) cancelAnimationFrame(raf); raf = 0; if (visible) frame(); }
-  function kick() { if (!raf && visible && !openId) raf = requestAnimationFrame(frame); }
-  function frame() {
-    raf = 0;
+  const damp = (a, b, tau, dt) => (tau > 0 ? b + (a - b) * Math.exp(-dt / tau) : b);
+  function tick(time, dtMs) {
+    if (uploads.length) { uploads.shift()(); }
+    if (!visible || paused) return;
+    const dt = Math.min(0.05, (dtMs || 16.7) / 1000);
     const y = scrollY, dy = y - lastY; lastY = y;
-    vel += (clamp(dy, -80, 80) * 0.55 - vel) * 0.14;
-    if (Math.abs(vel) < 0.02) vel = 0;
-    const bend = pin != null ? pin : vel;
-    // read everything first (the wrap and every slot, measured this frame), then write
-    const wr = ui.wrap.getBoundingClientRect();
-    const rects = items.map(it => it.slot.getBoundingClientRect());
-    // pin the canvas so it spans the viewport plus M each side; it scrolls with the list between frames
-    canvas.style.transform = `translate3d(0,${(-wr.top - M).toFixed(1)}px,0)`;
-    const cr = { top: -M, bottom: H + M, left: wr.left };
-    over = null;
-    if (mx >= 0) for (let i = 0; i < items.length; i++) { const r = rects[i]; if (mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom) { over = i; break; } }
-    let moving = Math.abs(vel) > 0.02 || frames > 0;
+    vel = damp(vel, clamp(dy * 0.5, -36, 36), 0.1, dt);
+    if (Math.abs(vel) < 0.03) vel = 0;
+    let moving = dy !== 0 || vel !== 0 || dirty > 0;
+    const syncing = performance.now() < syncUntil;
+    let over = null;
+    const rects = items.map((it, i) => {
+      let r;
+      if (syncing) { const b = it.slot.getBoundingClientRect(); r = { x: b.left, y: b.top, w: b.width, h: b.height }; }
+      else r = it.r ? { x: it.r.x, y: it.r.y - y, w: it.r.w, h: it.r.h } : { x: 0, y: -9999, w: 0, h: 0 };
+      if (over == null && !busy && mx >= 0 && mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h) over = i;
+      return r;
+    });
+    const ops = syncing ? items.map(it => +getComputedStyle(it.card).opacity) : null;
+    if (syncing) moving = true;
     items.forEach((it, i) => {
       const r = rects[i], m = it.m, u = m.u;
-      const vis = r.bottom > cr.top && r.top < cr.bottom && r.width > 0;
+      const vis = r.y + r.h > -60 && r.y < H + 60 && r.w > 0 && m.st.reveal > 0;
       m.mesh.visible = vis;
-      m.hovT = i === over ? 1 : 0;
-      m.hov += (m.hovT - m.hov) * 0.1; if (Math.abs(m.hovT - m.hov) < 0.002) m.hov = m.hovT; else moving = true;
-      m.load += (m.loadT - m.load) * 0.08; if (Math.abs(m.loadT - m.load) < 0.003) m.load = m.loadT; else moving = true;
-      if (Math.abs(u.uAlpha.value - m.alphaT) > 0.002) { u.uAlpha.value += (m.alphaT - u.uAlpha.value) * 0.2; moving = true; } else u.uAlpha.value = m.alphaT;
+      const ht = i === over ? 1 : 0;
+      const nh = damp(m.hov, ht, ht ? T.hoverIn : T.hoverOut, dt);
+      m.hov = Math.abs(nh - ht) < 0.002 ? ht : nh; if (m.hov !== ht) moving = true;
+      if (i === over) {
+        const tu = clamp((mx - r.x) / r.w, 0, 1), tv = clamp(1 - (my - r.y) / r.h, 0, 1);
+        const nu = damp(m.mu, tu, 0.12, dt), nv = damp(m.mv, tv, 0.12, dt);
+        if (Math.abs(nu - tu) + Math.abs(nv - tv) > 0.001) moving = true;
+        m.mu = nu; m.mv = nv;
+      }
+      const na = damp(m.alpha, m.alphaT, m.alphaK, dt);
+      m.alpha = Math.abs(na - m.alphaT) < 0.002 ? m.alphaT : na; if (m.alpha !== m.alphaT) moving = true;
       if (!vis) return;
-      m.mesh.position.set(r.left - cr.left + r.width / 2 - W / 2, HC / 2 - (r.top - cr.top + r.height / 2), 0);
-      m.mesh.scale.set(r.width, r.height, 1);
-      u.uSize.value.set(r.width, r.height); u.uViewH.value = H; u.uVel.value = clamp(bend * 0.62, -42, 42);
-      u.uHover.value = m.hov; u.uLoad.value = m.load;
-      if (i === over) u.uMouse.value.set((mx - r.left) / r.width, 1 - (my - r.top) / r.height);
+      m.mesh.position.set(r.x + r.w / 2 - W / 2, H / 2 - (r.y + r.h / 2), 0);
+      m.mesh.scale.set(r.w, r.h, 1);
+      u.uSize.value.set(r.w, r.h); u.uVel.value = clamp(vel * 0.55, -20, 20);
+      u.uHover.value = m.hov; u.uReveal.value = m.st.reveal;
+      u.uMouse.value.set(m.mu, m.mv); u.uPar.value.set(m.mu - 0.5, m.mv - 0.5);
+      u.uAlpha.value = m.alpha * (ops ? ops[i] : 1);
     });
-    // the Open pill trails the pointer
-    csT = over != null ? 1 : 0;
-    if (mx >= 0) { cx += (mx - cx) * 0.2; cy += (my - cy) * 0.2; }
-    cs += (csT - cs) * 0.16;
-    if (Math.abs(csT - cs) > 0.003 || Math.abs(mx - cx) > 0.3 || Math.abs(my - cy) > 0.3) moving = true; else cs = csT;
-    cur.style.transform = `translate3d(${(cx + 14).toFixed(1)}px,${(cy + 14).toFixed(1)}px,0) scale(${cs.toFixed(3)})`;
-    renderer.render(scene, cam);
-    if (frames > 0) frames--;
-    if (moving && visible && !openId) raf = requestAnimationFrame(frame);
+    if (moving) { renderer.render(scene, cam); if (dirty > 0) dirty--; }
+    if (!syncing && syncWas) { syncWas = false; measure(); }
+    if (syncing) syncWas = true;
   }
-  addEventListener('scroll', kick, { passive: true });
+  let syncWas = false;
+  gsap.ticker.add(tick);
   addEventListener('resize', resize);
-  // the wrap can change width without a window resize (the scrollbar arrives when the page unlocks)
-  if (window.ResizeObserver) { let lw = 0; new ResizeObserver(() => { const w = ui.wrap.clientWidth; if (w !== lw) { lw = w; resize(); } }).observe(ui.wrap); }
-  addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') return; mx = e.clientX; my = e.clientY; if (visible) kick(); }, { passive: true });
-  document.documentElement.addEventListener('pointerleave', () => { mx = my = -1; kick(); });
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; canvas.classList.toggle('wkg-on', visible); if (visible) { lastY = scrollY; frames = 2; kick(); } }).observe(ui.wrap);
-  if (document.fonts) document.fonts.ready.then(() => { frames = 2; kick(); });
+  if (window.ResizeObserver) new ResizeObserver(() => measure()).observe(ui.list);
+  ScrollTrigger.addEventListener('refresh', measure);
+  addEventListener('pointermove', (e) => { if (e.pointerType !== 'mouse') return; mx = e.clientX; my = e.clientY; }, { passive: true });
+  document.documentElement.addEventListener('pointerleave', () => { mx = my = -1; });
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; canvas.classList.toggle('wkg-on', visible && !paused); if (visible) { lastY = scrollY; dirty = 2; } }, { rootMargin: '10% 0px' }).observe(ui.wrap);
+  if (document.fonts) document.fonts.ready.then(measure);
   resize();
+  // compile the one program now, not on the first reveal frame
+  try { const tmp = rec({ id: '__warm', wing: 'software' }); tmp.mesh.visible = true; await renderer.compileAsync(scene, cam); tmp.mesh.visible = false; } catch (e) {}
   return {
-    setCards, kick,
-    alpha(id, a, instant) { const m = meshes.get(id); if (!m) return; m.alphaT = a; if (instant) m.u.uAlpha.value = a; force(); },
-    restore() { for (const m of meshes.values()) { m.alphaT = 1; m.u.uAlpha.value = 1; } force(); },
-    fadeAll() { for (const m of meshes.values()) m.alphaT = 0; frames = 2; kick(); },
-    pin(v) { pin = v; frames = 2; kick(); }, point(x, y) { mx = x; my = y; frames = 2; kick(); },
-    resume() { lastY = scrollY; frames = 2; kick(); },
+    setCards, measure,
+    ready(id) { const it = items.find(x => x.p.id === id); return it ? texFor(it.p, it.m) : Promise.resolve(); },
+    reveal(id, dur, delay, from) {
+      const m = meshes.get(id); if (!m) return;
+      gsap.killTweensOf(m.st);
+      if (from != null) { m.st.reveal = from; dirty = 2; }
+      if (!dur) { m.st.reveal = 1; dirty = 2; return; }
+      gsap.to(m.st, { reveal: 1, duration: dur, delay, ease: 'expo.out', onUpdate: () => { dirty = 1; } });
+    },
+    hover(id) { const m = meshes.get(id); return m ? m.hov : 0; },
+    alpha(id, a, k) { const m = meshes.get(id); if (!m) return; m.alphaT = a; m.alphaK = k || 0.0001; if (!k) m.alpha = a; dirty = 2; },
+    others(id, a, k) { for (const [i, m] of meshes) if (i !== id) { m.alphaT = a; m.alphaK = k || 0.0001; if (!k) m.alpha = a; } dirty = 2; },
+    fadeAll(d) { for (const m of meshes.values()) { m.alphaT = 0; m.alphaK = d / 3; } dirty = 2; },
+    pause(v) { paused = v; canvas.classList.toggle('wkg-on', visible && !paused); if (!v) { lastY = scrollY; measure(); } },
+    sync(ms) { syncUntil = Math.max(syncUntil, performance.now() + ms); dirty = 2; },
+    point(x, y) { mx = x; my = y; },
+    get canvas() { return canvas; },
   };
 }
 function plateCanvas(p, logo) {
   // the same composition as the DOM plate (.wkg-pl), in cqw of a 1280 wide card
   const Wd = 1280, Hd = 800, u = Wd / 100, c = document.createElement('canvas'); c.width = Wd; c.height = Hd;
-  const g = c.getContext("2d"), sc = schemeOf(p), f = plateFact(p);
+  const g = c.getContext('2d'), sc = schemeOf(p), f = plateFact(p);
   g.fillStyle = sc.pc; g.fillRect(0, 0, Wd, Hd);
   const wrap = (text, maxW) => { const ls = []; let ln = ''; for (const w of text.split(/\s+/)) { const t = ln ? ln + ' ' + w : w; if (g.measureText(t).width > maxW && ln) { ls.push(ln); ln = w; } else ln = t; } ls.push(ln); return ls; };
   const bx = { y: (f ? 12 : 15.25) * u, h: 32 * u };
@@ -645,112 +1219,215 @@ function plateCanvas(p, logo) {
     g.imageSmoothingQuality = 'high';
     g.drawImage(logo.canvas, (Wd - dw) / 2, bx.y + (bx.h - dh) / 2, dw, dh);
   } else {
-    g.fillStyle = sc.pa; g.font = `400 ${8 * u}px ${FD}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = sc.pa; g.font = `500 ${8 * u}px ${FF}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if ('letterSpacing' in g) g.letterSpacing = `${-0.05 * 8 * u}px`;
     const ls = wrap(clean(p.name), 84 * u), lh = 8 * u * .95;
     let y = bx.y + bx.h / 2 - (ls.length - 1) * lh / 2;
     for (const l of ls) { g.fillText(l, Wd / 2, y); y += lh; }
+    if ('letterSpacing' in g) g.letterSpacing = '0px';
   }
   if (f) {
     g.textAlign = 'right'; g.textBaseline = 'alphabetic';
     const bottom = Hd - 5.5 * u, fs = 1.7 * u, lh = fs * 1.25;
-    g.fillStyle = sc.pk; g.font = `500 ${fs}px ${FT}`;
+    g.fillStyle = sc.pk; g.font = `500 ${fs}px ${FF}`;
     const ll = wrap(clean(f.label), 40 * u);
     let y = bottom - (ll.length - 1) * lh - 0.32 * fs;
     for (const l of ll) { g.fillText(l, Wd - 5.5 * u, y); y += lh; }
-    g.fillStyle = sc.pa; g.font = `400 ${7 * u}px ${FD}`;
+    g.fillStyle = sc.pa; g.font = `500 ${7 * u}px ${FF}`;
+    if ('letterSpacing' in g) g.letterSpacing = `${-0.05 * 7 * u}px`;
     g.fillText(clean(f.value), Wd - 5.5 * u, bottom - ll.length * lh - 1.2 * u - 0.12 * 7 * u);
+    if ('letterSpacing' in g) g.letterSpacing = '0px';
   }
   return c;
 }
 
-/* ---------- the project page ---------- */
-function lines(node, text, d0) {
-  // split a title into rising lines by word groups the browser would break anyway: one line per word set as spans
+/* ---------- the project page: one horizontal run ---------- */
+function rise(node, text) {
+  // a title split into words, each in a mask with room for descenders, so it can rise without clipping a g or a y
   node.textContent = '';
   const words = text.split(/\s+/);
-  words.forEach((w, i) => { const l = el('span', 'wkg-line'); l.style.display = 'inline-block'; const s = el('span', '', w); s.style.setProperty('--d', (d0 + i * 70) + 'ms'); l.appendChild(s); node.appendChild(l); if (i < words.length - 1) node.appendChild(document.createTextNode(' ')); });
+  words.forEach((w, i) => { const l = el('span', 'wkg-ln'); l.appendChild(el('span', '', w)); node.appendChild(l); if (i < words.length - 1) node.appendChild(document.createTextNode(' ')); });
+  node.setAttribute('aria-label', text);
 }
 function heroOf(p) {
-  const hero = el('header', 'wkg-hero');
+  const hero = el('section', 'wkg-pn wkg-hero');
   const hm = el('div', 'wkg-hm');
-  let primary = hm;
   if (isText(p)) {
     hero.classList.add('wkg-txt'); paint(hero, p);
-    const tm = el('div', 'wkg-tm'); tm.append(el('span', '', clean(kindOf(p))), el('span', '', `${pad(indexOf(p))} / ${pad(DATA[p.wing].length)}`));
+    const tm = el('div', 'wkg-tm'); tm.append(el('span', '', clean(kindOf(p))));
     const bd = el('div');
     const lp = logoOf(p);
     if (lp) { const lg = el('img', 'wkg-tlogo'); lg.alt = ''; lg.hidden = true; bd.appendChild(lg); lp.then(l => { if (l) { if (l.canvas.width / l.canvas.height > 1.6) lg.classList.add('wkg-tlw'); lg.src = l.url; lg.hidden = false; } }); }
-    const h1 = el('h1'); lines(h1, clean(p.name), 0);
-    const tg = el('div', 'wkg-tg wkg-g'), q = el('p', 'wkg-tq'), f = keyFact(p);
+    const h1 = el('h1'); rise(h1, clean(p.name));
+    const tg = el('div', 'wkg-tg'), q = el('p', 'wkg-tq'), f = keyFact(p);
     q.textContent = clean(p.one_line);
     tg.appendChild(q);
     if (f) { const x = el('div', 'wkg-tf'); x.append(el('b', '', clean(f.value)), el('small', '', clean(f.label))); tg.appendChild(x); }
+    const go = launchEl(p); if (go) tg.firstChild.after(go);
     bd.append(h1, tg); hero.append(tm, bd);
-    hero._primary = hero;
+    hero._title = h1;
     return hero;
-  } else if (isVert(p)) {
+  }
+  const framed = isFramed(p), hmi = el('div', 'wkg-hmi');
+  if (framed) hero.classList.add('wkg-hfr');
+  if (isVert(p)) {
     hm.classList.add('wkg-tri');
     const vids = videosOf(p);
-    const panes = [];
     const heroV = vids.find(v => v.poster === p.hero) || vids[0];
     const rest = vids.filter(v => v !== heroV);
     const stills = (p.gallery || []).filter(g => g !== p.hero && !vids.some(v => v.poster === g));
     const fill = (x) => x || (stills.length ? { still: stills.shift() } : null);
     const left = fill(rest[0]), right = fill(rest[1]);
-    [left, { ...heroV, main: true }, right].forEach(v => {
+    const panes = [];
+    [left, { ...(heroV || { still: p.hero }), main: true }, right].forEach(v => {
       if (!v) return;
-      const d = el('div'); if (v.main) { d.classList.add('wkg-hp'); primary = d; }
-      if (v.still || v.poster) { const im = el('img'); im.alt = ''; im.src = big(v.still || v.poster); d.appendChild(im); }
-      if (v.video) { const vd = el('video'); vd.muted = true; vd.loop = true; vd.playsInline = true; vd.autoplay = !RM.matches; vd.preload = 'auto'; vd.poster = big(v.poster); vd.src = src(v.video); vd.setAttribute('aria-hidden', 'true'); d.appendChild(vd); panes.push(v.video); }
+      const d = el('div'); if (v.main) d.classList.add('wkg-hp');
+      if (v.still || v.poster) { const im = el('img'); im.alt = ''; im.decoding = 'async'; im.src = big(v.still || v.poster); d.appendChild(im); }
+      if (v.video) { const vd = el('video'); vd.muted = true; vd.loop = true; vd.playsInline = true; vd.autoplay = false; vd.preload = 'auto'; vd.poster = big(v.poster); vd.src = src(v.video); vd.setAttribute('aria-hidden', 'true'); d.appendChild(vd); panes.push(v.video); }
       hm.appendChild(d);
     });
     hero._used = new Set([...panes, ...[left, right].filter(x => x && x.still).map(x => x.still)]);
   } else {
-    hero.classList.add('wkg-land');
-    const lo = el('img'); lo.alt = ''; lo.src = big(p.hero); hm.appendChild(lo);
+    const lo = el('img'); lo.alt = ''; lo.decoding = 'async'; lo.src = big(p.hero); hmi.appendChild(lo); hm.appendChild(hmi);
+    const hn = framed && noteFor(p, p.hero), hc = hn && parseFloat(hn.crop);
+    if (hn && hn.focus) lo.style.objectPosition = hn.focus;
+    if (hc > 0.3 && hc < 4) hm.style.setProperty('--ar', hc.toFixed(4));
+    else if (framed) lo.addEventListener('load', () => {
+      // the frame takes the capture's own shape, so nothing of the screenshot is cropped
+      const ar = clamp(lo.naturalWidth / lo.naturalHeight || 1.6, 0.56, 2.4);
+      hm.style.setProperty('--ar', ar.toFixed(4));
+      const pg = hero.closest('.wkg-page'); if (pg && pg._hx) { layoutPage(pg); pg._dirty = true; }
+    }, { once: true });
     const vids = videosOf(p);
     if (vids.length && !RM.matches) {
-      const vd = el('video'); vd.muted = true; vd.loop = true; vd.playsInline = true; vd.autoplay = true; vd.preload = 'auto'; vd.className = 'wkg-hi2'; vd.src = src(vids[0].video); vd.setAttribute('aria-hidden', 'true');
-      vd.addEventListener('playing', () => vd.classList.add('wkg-ld'), { once: true }); hm.appendChild(vd);
+      const vd = el('video'); vd.muted = true; vd.loop = true; vd.playsInline = true; vd.autoplay = false; vd.preload = 'auto'; vd.className = 'wkg-hi2'; vd.src = src(vids[0].video); vd.setAttribute('aria-hidden', 'true');
+      vd.addEventListener('playing', () => vd.classList.add('wkg-ld'), { once: true }); hmi.appendChild(vd);
       hero._used = new Set([vids[0].video]);
     } else if (THUMBABLE.test(p.hero)) {
-      const hi = el('img', 'wkg-hi2'); hi.alt = ''; hi.decoding = 'async';
-      hi.addEventListener('load', () => hi.classList.add('wkg-ld'), { once: true }); hi.src = src(p.hero); hm.appendChild(hi);
+      // the full size picture, once it is decoded, over the 1280 one the card zoomed in with
+      const hi = el('img', 'wkg-hi2'); hi.alt = ''; hi.decoding = 'async'; hi.loading = 'eager';
+      hero._hi = () => { hi.src = src(p.hero); (hi.decode ? hi.decode() : Promise.resolve()).then(() => hi.classList.add('wkg-ld'), () => {}); };
+      hmi.appendChild(hi);
     }
   }
   const cap = el('div', 'wkg-hcap');
-  const h1 = el('h1'); lines(h1, clean(p.name), 0);
-  const list = DATA[p.wing], k = list.indexOf(p);
-  const meta = el('span'); meta.append(document.createTextNode(`${pad(k + 1)} / ${pad(list.length)}`));
-  if (!isText(p)) meta.append(el('br'), document.createTextNode(clean(kindOf(p))));
-  cap.append(h1, meta);
-  // a screen hero: the title first, on the ground, then the screen; a film hero: the title over the film
-  if (hero.classList.contains('wkg-land')) hero.append(cap, hm); else hero.append(hm, cap);
-  hero._primary = primary;
+  const h1 = el('h1'); rise(h1, clean(p.name));
+  const meta = el('span', '', clean(kindOf(p)));
+  if (framed) {
+    // Lusion's opener: the title and a short line on the left, the work framed on the right
+    cap.append(meta, h1);
+    const cols = el('div', 'wkg-hcols');
+    if (p.one_line) cols.appendChild(el('p', 'wkg-hlede', clean(p.one_line)));
+    const dl = infoEl(p); if (dl) cols.appendChild(dl);
+    if (cols.children.length) cap.appendChild(cols);
+    hero._cols = cols;
+    const go = launchEl(p); if (go) cap.appendChild(go);
+    hero.append(cap, hm);
+  } else { cap.append(h1, meta); const go = launchEl(p); if (go) { go.classList.add('wkg-gol'); cap.appendChild(go); } hero.append(hm, cap); }
+  hero._title = h1; hero._meta = meta;
+  hero._t = hm; hero._s = hm.classList.contains('wkg-tri') ? hm : hmi;
   return hero;
 }
 const NUM_RE = /^(\d[\d,.]*\s?[KMB]?\+?|\d+\/\d+|\d+\s?(min|sec|hrs?|days?))$/i;
+/* website captures sit framed on the ground (no UI of theirs under our controls); photos and films stay full bleed */
+const isFramed = (p) => p.wing === 'software' && !isText(p);
+/* a number with its unit kept on one line, the unit smaller */
+function numEl(v) {
+  const b = el('b'), m = v.match(/^(.*?\d)(\s?)(min|sec|hrs?|days?)$/i);
+  if (m) { b.append(document.createTextNode(m[1])); b.appendChild(el('small', 'wkg-u', '\u00a0' + m[3])); } else b.textContent = v;
+  return b;
+}
 const INFO = [[KIND_RE], [/^clients?$/i], [/^year$/i], [/^status$/i]];
 const CREDIT_RE = /^(role|team|hands on|concepts|covered|in frame)$/i;
-function introOf(p) {
-  const s = el('section', 'wkg-sec wkg-intro wkg-g');
-  if (!isText(p)) s.appendChild(el('p', 'wkg-lede', clean(p.one_line)));   // a text-only hero already sets it
-  const dl = el('dl', 'wkg-info wkg-sub');
-  for (const [re] of INFO) { const f = factOf(p, re); if (!f) continue; const d = el('div'); d.append(el('dt', 'wkg-lab', clean(f.label)), el('dd', '', clean(f.value))); dl.appendChild(d); }
-  if (p.year && !factOf(p, /^year$/i)) { const d = el('div'); d.append(el('dt', 'wkg-lab', 'Year'), el('dd', '', clean(p.year))); dl.appendChild(d); }
-  if (dl.children.length) s.appendChild(dl);
-  const st = el('div', 'wkg-stats wkg-sub');
-  for (const x of statsOf(p)) { const d = el('div', 'wkg-stat'); if (x.v == null) { d.classList.add('wkg-tbc'); d.append(el('b', '', '000'), el('small', '', `${x.label}, number to come`)); } else d.append(el('b', '', x.v), el('small', '', x.label)); st.appendChild(d); }
-  s.appendChild(st);
-  const ls = linksOf(p);
-  if (ls.length) { const l = el('div', 'wkg-links'); ls.forEach(x => { const a = el('a', '', x.label); a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; l.appendChild(a); }); s.appendChild(l); }
+const panel = (cls) => { const s = el('section', 'wkg-pn ' + cls); const i = el('div', 'wkg-pi'); s.appendChild(i); s._in = i; return s; };
+/* the live link as a real button (Lusion's "Launch project"): the dot grows into a fill that wipes the pill, a drawn
+   arrow slides in, it leans toward the pointer and presses in */
+function launchEl(p) { const l = linksOf(p)[0]; return l ? liveBtn(l.url) : null; }
+/* every external link is this button, never a raw address: "Live project" (or "Open on Instagram") with a small
+   "Click to open" ("Tap to open" on touch) under it; new tab, noopener */
+function liveBtn(url, own) {
+  const a = el('a', 'wkg-go'); a.href = url; a.target = '_blank'; a.rel = 'noopener';
+  const label = own ? String(own).replace(/[<>&"]/g, '') : /instagram\.com/i.test(url) ? 'Open on Instagram' : 'Live project';
+  a.setAttribute('aria-label', `${label}: ${domain(url)}, opens in a new tab`);
+  a.innerHTML = `<span class="wkg-gm"><span class="wkg-gf"></span><i></i><span class="wkg-gt"><span>${label}</span><small>${HOVER.matches ? 'Click' : 'Tap'} to open</small></span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg></span>`;
+  const gm = a.firstChild, qx = gsap.quickTo(gm, 'x', { duration: 0.5, ease: 'power3.out' }), qy = gsap.quickTo(gm, 'y', { duration: 0.5, ease: 'power3.out' });
+  a.addEventListener('pointermove', (e) => { if (!HOVER.matches || RM.matches) return; const r = a.getBoundingClientRect(); qx((e.clientX - r.left - r.width / 2) * 0.18); qy((e.clientY - r.top - r.height / 2) * 0.3); });
+  a.addEventListener('pointerleave', () => { qx(0); qy(0); });
+  a.addEventListener('pointerdown', (e) => e.stopPropagation());
+  return a;
+}
+function linksEl(ls) { const l = el('div', 'wkg-links wkg-lbs'); ls.forEach(x => l.appendChild(liveBtn(x.url))); return l; }
+/* Project brief, from ../content/<wing>/briefs.json: { client, brief, asked_for: [], delivered: [] }, all optional */
+let BRIEFS = {};
+function briefOf(p) {
+  const b = BRIEFS[p.id]; if (!b || typeof b !== 'object') return null;
+  const text = (Array.isArray(b.brief) ? b.brief : typeof b.brief === 'string' ? b.brief.split(/\n\s*\n/) : []).map(clean).map(t => t.trim()).filter(Boolean);
+  const list = (x) => (Array.isArray(x) ? x : []).map(clean).map(t => t.trim()).filter(Boolean);
+  const asked = list(b.asked_for), done = list(b.delivered), client = typeof b.client === 'string' ? clean(b.client).trim() : '';
+  if (!text.length && !asked.length && !done.length) return null;
+  const s = panel('wkg-bf'), i = s._in;
+  i.appendChild(el('h2', 'wkg-h2', 'Project brief'));
+  if (client) i.appendChild(el('small', '', client));
+  text.forEach(t => i.appendChild(el('p', 'wkg-lede', t)));
+  if (asked.length || done.length) {
+    const g = el('div', 'wkg-bfl');
+    [['What they asked for', asked], ['What I delivered', done]].forEach(([h, xs]) => { if (!xs.length) return; const d = el('div'); d.appendChild(el('h3', '', h)); const ul = el('ul'); xs.forEach(x => ul.appendChild(el('li', '', x))); d.appendChild(ul); g.appendChild(d); });
+    i.appendChild(g);
+  }
   return s;
 }
+function infoEl(p) {
+  const dl = el('dl');
+  // the kind already sits over the title
+  for (const [re] of INFO.slice(1)) { const f = factOf(p, re); if (!f) continue; const d = el('div'); d.append(el('dt', '', clean(f.label)), el('dd', '', clean(f.value))); dl.appendChild(d); }
+  if (p.year && !factOf(p, /^year$/i)) { const d = el('div'); d.append(el('dt', '', 'Year'), el('dd', '', clean(p.year))); dl.appendChild(d); }
+  return dl.children.length ? dl : null;
+}
+function introOf(p) {
+  const s = panel('wkg-intro'), b = s._in;
+  if (!isText(p) && !isFramed(p)) b.appendChild(el('p', 'wkg-lede', clean(p.one_line)));   // text-only and framed heroes already set it
+  const dl = el('dl', 'wkg-info' + (isFramed(p) ? ' wkg-info-i' : ''));
+  for (const [re] of INFO) { const f = factOf(p, re); if (!f) continue; const d = el('div'); d.append(el('dt', 'wkg-lab', clean(f.label)), el('dd', '', clean(f.value))); dl.appendChild(d); }
+  if (p.year && !factOf(p, /^year$/i)) { const d = el('div'); d.append(el('dt', 'wkg-lab', 'Year'), el('dd', '', clean(p.year))); dl.appendChild(d); }
+  if (dl.children.length) b.appendChild(dl);
+  const st = el('div', 'wkg-stats');
+  for (const x of statsOf(p)) { if (x.v == null && !DRAFT) continue; const d = el('div', 'wkg-stat'); if (x.v == null) { d.classList.add('wkg-tbc'); d.append(el('b', '', '000'), el('small', '', `${x.label}, number to come`)); } else d.append(el('b', '', x.v), el('small', '', x.label)); st.appendChild(d); }
+  if (st.children.length) b.appendChild(st);
+  const ls = linksOf(p);
+  if (ls.length && !partsOf(p).length) b.appendChild(linksEl(ls));
+  // framed on a wide screen: the info and the button are in the hero (and the button again at the end), so a panel with
+  // nothing else in it is left out there; phones keep it
+  if (isFramed(p) && ![...b.children].some(c => !c.classList.contains('wkg-info-i') && !c.classList.contains('wkg-lbs'))) s.classList.add('wkg-ionly');
+  return s;
+}
+/* one project, several channels: a panel each, with its name, its line, its link (or a quiet note) and its own images */
+function channelsOf(p) {
+  const parts = partsOf(p); if (!parts.length) return [];
+  return parts.map((x, i) => {
+    const s = el('section', 'wkg-pn wkg-ch');
+    const l = el('div', 'wkg-chl');
+    const gal = (Array.isArray(x.gallery) ? x.gallery : []).filter(Boolean);
+    if (i === 0) l.appendChild(el('h2', 'wkg-h2', `${WORDS[parts.length] || parts.length} channel${parts.length === 1 ? '' : 's'}`));
+    l.append(el('span', 'wkg-chn', pad(i + 1)), el('h3', '', clean(x.name)));
+    if (gal.length && x.one_line) l.appendChild(el('p', '', clean(x.one_line)));
+    if (typeof x.link === 'string' && /^https?:\/\//i.test(x.link)) {
+      const w = linksEl([{ url: x.link }]); w.firstChild.setAttribute('aria-label', `${clean(x.name)}: ${domain(x.link)}, opens in a new tab`); l.appendChild(w);
+    } else l.appendChild(el('span', 'wkg-soon', 'Link to come'));
+    s.appendChild(l);
+    const ns = notesOf(p);
+    // curated: only the channel pictures the notes keep, cut and captioned as they say
+    const keep = ns ? gal.filter(g => ns.some(n => n.src === g)) : gal;
+    if (keep.length) s._items = keep.map(g => { const n = noteFor(p, g); return n ? noteItem(n) : { still: g }; });
+    else if (x.one_line) s.appendChild(el('p', 'wkg-chq', clean(x.one_line)));
+    return s;
+  });
+}
+const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
 function aboutOf(p) {
   const w = (p.writeup || []).map(clean).filter(Boolean); if (!w.length) return null;
-  const s = el('section', 'wkg-sec wkg-about wkg-g');
-  s.appendChild(el('h2', 'wkg-h2', 'About'));
-  const d = el('div', 'wkg-wr'); w.forEach(t => d.appendChild(el('p', '', t))); s.appendChild(d);
+  const s = panel('wkg-about'), b = s._in;
+  b.appendChild(el('h2', 'wkg-h2', 'About'));
+  const d = el('div', 'wkg-cols'); w.forEach(t => d.appendChild(el('p', '', t))); b.appendChild(d);
   return s;
 }
 function factsOf(p) {
@@ -758,249 +1435,1020 @@ function factsOf(p) {
   if (isText(p)) { const k = keyFact(p); if (k) used.add(k); }
   const rest = (p.facts || []).filter(f => !used.has(f) && !INFO.some(([re]) => re.test(f.label)) && !CREDIT_RE.test(f.label));
   if (!rest.length) return null;
-  const s = el('section', 'wkg-sec wkg-g'); const g = el('div', 'wkg-facts wkg-sub');
-  rest.forEach(f => { const v = clean(f.value); const d = el('div', 'wkg-fact' + (NUM_RE.test(v) ? ' wkg-num' : '')); d.append(el('span', 'wkg-lab', clean(f.label)), el('b', '', v)); g.appendChild(d); });
-  s.appendChild(g); return s;
+  const s = panel('wkg-factp'), g = el('div', 'wkg-facts'); g.style.setProperty('--fr', Math.min(3, Math.ceil(rest.length / 2)));
+  rest.forEach(f => { const v = clean(f.value), num = NUM_RE.test(v.replace(/\u00a0/g, ' ')); const d = el('div', 'wkg-fact' + (num ? ' wkg-num' : '')); d.append(el('span', 'wkg-lab', clean(f.label)), num ? numEl(v) : el('b', '', v)); g.appendChild(d); });
+  s._in.append(el('h2', 'wkg-h2', 'Facts'), g); return s;
 }
 function creditsOf(p) {
   const rows = [];
   for (const c of Array.isArray(p.credits) ? p.credits : []) if (c && c.role && c.name) rows.push([clean(c.role), clean(c.name)]);
   for (const f of p.facts || []) if (CREDIT_RE.test(f.label)) rows.push([clean(f.label), clean(f.value)]);
   if (!rows.length) return null;
-  const s = el('section', 'wkg-sec wkg-credits wkg-about wkg-g');
-  s.appendChild(el('h2', 'wkg-h2', 'Credits'));
-  const dl = el('dl'); rows.forEach(([a, b]) => { const d = el('div'); d.append(el('dt', '', a), el('dd', '', b)); dl.appendChild(d); }); s.appendChild(dl);
+  const s = panel('wkg-credits');
+  const dl = el('dl'); dl.style.setProperty('--cr', Math.min(4, rows.length)); rows.forEach(([a, b]) => { const d = el('div'); d.append(el('dt', '', a), el('dd', '', b)); dl.appendChild(d); });
+  s._in.append(el('h2', 'wkg-h2', 'Credits'), dl);
   return s;
 }
-/* every image and loop the project has, minus what the hero already shows, laid in rows */
-function seqOf(p, used) {
-  if (isText(p)) return null;
-  const vids = videosOf(p);
-  const items = [];
-  // a landscape hero image already fills the top; a loop hero (or a film triptych) leaves the still for the sequence
-  const all = [...(isVert(p) || vids.length ? [p.hero] : []), ...(p.gallery || [])].filter((g, i, a) => g && a.indexOf(g) === i);
-  for (const g of all) {
-    if (used && used.has(g)) continue;
-    if (/-poster\.(jpe?g|png)$/i.test(g)) continue;
-    items.push({ still: g, shoot: (g.match(/\/([a-z0-9-]+?)-\d+\.jpg$/i) || [])[1] });
+/* Behind the scenes, from ../content/<wing>/bts.json when it exists: confirmed stats, facts, a dated timeline, the
+   lesson, and the iterations as a strip of pictures with captions and dates. No entry, no panel. */
+let BTS = {};
+function btsOf(p) {
+  const b = BTS[p.id]; if (!b || typeof b !== 'object') return null;
+  const stats = (Array.isArray(b.stats) ? b.stats : []).filter(x => x && x.confirmed === true && x.value != null && x.label);
+  const stack = (Array.isArray(b.stack) ? b.stack : []).filter(x => x && x.group && Array.isArray(x.items) && x.items.length);
+  const facts = (Array.isArray(b.facts) ? b.facts : []).filter(x => x && x.label && x.value != null && !(stack.length && /^stack$/i.test(x.label)));
+  const tl = (Array.isArray(b.timeline) ? b.timeline : []).filter(x => x && x.title);
+  const its = (Array.isArray(b.iterations) ? b.iterations : []).filter(x => x && typeof x.src === 'string' && x.src);
+  const lesson = typeof b.lesson === 'string' ? clean(b.lesson).trim() : '';
+  if (!stats.length && !facts.length && !tl.length && !its.length && !lesson && !stack.length) return null;
+  const s = panel('wkg-bts'), i = s._in;
+  // columns side by side on the run: the story (title, lesson, timeline), the numbers, the facts, the iterations
+  const col = (cls) => { const c = el('div', 'wkg-bcol ' + cls); i.appendChild(c); return c; };
+  const a = col('wkg-bca');
+  a.appendChild(el('h2', 'wkg-h2', 'Behind the scenes'));
+  if (lesson) a.appendChild(el('p', 'wkg-lede wkg-lesson', lesson));
+  if (stats.length) { const st = el('div', 'wkg-stats'); stats.forEach(x => { const d = el('div', 'wkg-stat'); d.append(el('b', '', clean(fmt(x.value) || x.value)), el('small', '', clean(x.label))); st.appendChild(d); }); col('wkg-bcb').appendChild(st); }
+  if (facts.length) { const g = el('div', 'wkg-facts'); g.style.setProperty('--fr', Math.min(3, Math.ceil(facts.length / 2))); facts.forEach(f => { const v = clean(f.value).replace(/\s*\(https?:\/\/[^)\s]+\)/g, ''), d = el('div', 'wkg-fact'); d.append(el('span', 'wkg-lab', clean(f.label)), el('b', '', v)); if (typeof f.url === 'string' && /^https:\/\//.test(f.url)) { const go = liveBtn(f.url, f.link_label || 'Visit'); go.classList.add('wkg-fgo'); d.appendChild(go); } g.appendChild(d); }); col('wkg-bcc').appendChild(g); }
+  // the stack as chips, grouped by job, each tool with its mark (simple-icons, saved under content/stack-icons)
+  if (stack.length) {
+    const c = col('wkg-bcs'); c.appendChild(el('span', 'wkg-lab', 'Built with'));
+    stack.forEach(g => {
+      const gr = el('div', 'wkg-sg'); gr.appendChild(el('span', 'wkg-sgl', clean(g.group)));
+      const ul = el('ul', 'wkg-chips');
+      g.items.forEach(t => {
+        if (!t || !t.name) return;
+        const li = el('li', 'wkg-chip');
+        if (t.icon && /^[a-z0-9]+$/.test(t.icon)) { const ic = el('i'); ic.setAttribute('aria-hidden', 'true'); const u = `url("${src('stack-icons/' + t.icon + '.svg')}")`; ic.style.webkitMaskImage = u; ic.style.maskImage = u; li.appendChild(ic); }
+        li.appendChild(el('span', '', clean(t.name))); ul.appendChild(li);
+      });
+      gr.appendChild(ul); c.appendChild(gr);
+    });
   }
+  s._rail = (tl.length || its.length) ? railOf(tl, its) : null;
+  return s;
+}
+/* the build as one rail you travel along: a line that draws itself, a stop per dated moment, and the versions hung off
+   the line at the day they were made. Dates read as "13 Jun", never 2026-06-13. */
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function railDate(s) {
+  s = clean(String(s || '')).replace(/\s*\(.*?\)\s*/g, ' ').trim();
+  const r = s.match(/^(\d{4})-(\d{2})-(\d{2})\s+to\s+(\d{4})-(\d{2})-(\d{2})$/);
+  if (r) return { d: `${+r[3]} to ${+r[6]}`, m: `${MON[+r[5] - 1]} ${r[4]}`, k: `${r[1]}-${r[2]}-${r[3]}` };
+  const a = s.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?$/);
+  if (a) return { d: a[3] ? String(+a[3]) : '', m: `${MON[+a[2] - 1]} ${a[1]}`, k: a[3] ? `${a[1]}-${a[2]}-${a[3]}` : `${a[1]}-${a[2]}` };
+  return { d: '', m: s, k: '' };
+}
+function railOf(tl, its) {
+  const stops = tl.map(x => ({ t: clean(x.title), dt: railDate(x.date) }));
+  for (const x of its) {
+    const dt = railDate(x.date), it = { pic: { still: x.src, caption: x.caption ? clean(x.caption) : '', bts: true }, t: x.caption ? clean(x.caption) : '', dt };
+    let at = stops.length;
+    if (dt.k) { at = 0; stops.forEach((q, n) => { if (q.dt.k && q.dt.k <= dt.k) at = n + 1; }); }
+    stops.splice(at, 0, it);
+  }
+  const s = panel('wkg-railp'), i = s._in;
+  i.appendChild(el('h2', 'wkg-h2', 'How it got built'));
+  const ol = el('ol', 'wkg-stops'); let lastM = '', tn = 0, prevTxt = false;
+  stops.forEach((q, n) => {
+    const li = el('li', 'wkg-stop' + (q.pic ? ' wkg-spic' : '')); li.style.setProperty('--i', n);
+    const top = el('div', 'wkg-sup'); li.appendChild(top);
+    if (q.pic) li._pic = q.pic;
+    li.appendChild(el('i', 'wkg-dot'));
+    const lo = el('div', 'wkg-slo'), dd = el('div', 'wkg-sdate');
+    if (q.dt.d) dd.appendChild(el('b', '', q.dt.d));
+    const mo = q.dt.m && q.dt.m !== lastM ? q.dt.m : (q.dt.d ? q.dt.m.split(' ')[0] : '');
+    if (mo) dd.appendChild(el('span', '', mo));
+    if (q.dt.m) lastM = q.dt.m;
+    if (dd.childNodes.length) lo.appendChild(dd);
+    if (q.t) lo.appendChild(el('p', 'wkg-stxt', q.t));
+    // text stops zigzag above and below the line; two in a row tuck into each other
+    if (!q.pic) { if (tn++ % 2) { li.classList.add('wkg-sab'); top.appendChild(lo); } else li.appendChild(lo); if (prevTxt) li.classList.add('wkg-stuck'); prevTxt = true; }
+    else { li.appendChild(lo); prevTxt = false; }
+    ol.appendChild(li);
+  });
+  i.appendChild(ol);
+  s._stops = ol;
+  return s;
+}
+/* every image and loop the project has, minus what the hero already shows */
+/* the curated pictures: ../content/<wing>/media-notes.json, { "<id>": [{ src, caption, focus, crop }] }. crop is an
+   aspect ratio to cut the picture to (website captures with empty margins), focus its object-position. An entry for
+   the hero's own src only sets how the hero is cut. No entry: the first four gallery pictures, no captions. */
+let NOTES = {};
+const notesOf = (p) => (Array.isArray(NOTES[p.id]) ? NOTES[p.id].filter(n => n && typeof n.src === 'string' && n.src) : null);
+const noteFor = (p, srcp) => { const ns = notesOf(p); return (ns && ns.find(n => n.src === srcp)) || null; };
+const noteItem = (n) => {
+  const it = /\.(mp4|webm|mov)$/i.test(n.src) ? { video: n.src, poster: n.poster || '' } : { still: n.src };
+  if (n.caption) it.caption = clean(n.caption);
+  if (typeof n.focus === 'string') it.focus = n.focus;
+  const c = parseFloat(n.crop); if (c > 0.3 && c < 4) { it.crop = c; it.ar = c; }
+  return it;
+};
+function mediaItems(p, used) {
+  if (isText(p)) return [];
+  const vids = videosOf(p), items = [], ns = notesOf(p);
+  const inParts = new Set(partsOf(p).flatMap(x => Array.isArray(x.gallery) ? x.gallery : []));
+  const shootOf = (g) => (g.match(/\/([a-z0-9-]+?)-\d+\.jpg$/i) || [])[1];
+  if (ns) {
+    for (const n of ns) { if (n.src === p.hero || inParts.has(n.src) || (used && used.has(n.src))) continue; const it = noteItem(n); it.shoot = it.still ? shootOf(it.still) : undefined; items.push(it); }
+  } else {
+    const all = [...(isVert(p) || vids.length ? [p.hero] : []), ...(p.gallery || [])].filter((g, i, a) => g && a.indexOf(g) === i && !inParts.has(g));
+    for (const g of all) {
+      if (items.length >= 4) break;
+      if (used && used.has(g)) continue;
+      if (/-poster\.(jpe?g|png)$/i.test(g)) continue;
+      items.push({ still: g, shoot: shootOf(g) });
+    }
+  }
+  if (ns && ns.some(n => /\.(mp4|webm|mov)$/i.test(n.src))) return items;
   for (const v of vids) if (!(used && used.has(v.video))) {
     const at = items.findIndex(x => x.shoot && x.shoot === v.shoot);
     const it = { video: v.video, poster: v.poster, shoot: v.shoot };
     if (at >= 0) items.splice(at + 1, 0, it); else items.push(it);
   }
-  if (!items.length) return null;
-  const s = el('section', 'wkg-sec wkg-g'); const seq = el('div', 'wkg-seq'); s.appendChild(seq);
-  s._items = items;
-  return s;
+  return items;
 }
-function frameEl(it, ar) {
-  const f = el('div', 'wkg-f'); f.style.aspectRatio = ar;
-  if (it.video) {
-    const v = el('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none'; v.poster = big(it.poster || ''); v.dataset.src = src(it.video); v.setAttribute('aria-hidden', 'true'); f.appendChild(v);
-  } else { const im = el('img'); im.alt = ''; im.decoding = 'async'; im.loading = 'lazy'; setImg(im, it.still, '(max-width:760px) 92vw, 62vw'); f.appendChild(im); }
-  return f;
-}
-async function layoutSeq(sec, p, page) {
-  const items = sec._items, seq = sec.firstChild;
-  // aspect ratios from the small thumbs, so rows can be chosen before the full images arrive
-  await Promise.all(items.map(it => new Promise(res => {
-    if (it.video && isVert(p)) { it.ar = 9 / 16; return res(); }
-    if (it.video) { it.ar = 16 / 10; return res(); }
-    const im = new Image(); const t = setTimeout(() => { it.ar = isVert(p) ? 9 / 16 : 16 / 10; res(); }, 2500);
-    im.onload = () => { clearTimeout(t); it.ar = im.naturalWidth / im.naturalHeight; res(); };
+/* aspect ratios from the small thumbs, so frames can be sized before the full pictures arrive */
+function ratios(items, vert) {
+  return Promise.all(items.map(it => new Promise(res => {
+    if (it.ar) return res();
+    if (it.video) { it.ar = vert ? 9 / 16 : 16 / 10; return res(); }
+    const im = new Image(); const t = setTimeout(() => { it.ar = vert ? 9 / 16 : 16 / 10; res(); }, 2500);
+    im.onload = () => { clearTimeout(t); it.ar = im.naturalWidth / im.naturalHeight || 1.6; res(); };
     im.onerror = () => { if (!im._fb) { im._fb = 1; im.src = src(it.still); } else { clearTimeout(t); it.ar = 16 / 10; res(); } };
     im.src = THUMBABLE.test(it.still) ? src(thumb(it.still, 640)) : src(it.still);
   })));
-  if (curPage !== page) return;
-  const q = items.slice(); let li = 0, pi = 0, flip = false, shoot = null;
+}
+function frameEl(it) {
+  const f = el('div', 'wkg-fr'), m = el('div', 'wkg-fm'); f._ar = it.ar || 1.6; f.appendChild(m);
+  f._src = it.video ? it.poster : it.still;
+  if (it.video) {
+    // the poster sits under the loop, and the loop fades in over it once it plays
+    if (it.poster) { const pi = el('img'); pi.alt = ''; pi.decoding = 'async'; pi.loading = 'lazy'; setImg(pi, it.poster, '(max-width:760px) 92vw, 70vw'); m.appendChild(pi); }
+    const v = el('video'); v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'none'; v.dataset.src = src(it.video); v.setAttribute('aria-hidden', 'true');
+    v.addEventListener('playing', () => v.classList.add('wkg-ld'), { once: true }); m.appendChild(v);
+  } else { const im = el('img'); im.alt = ''; im.decoding = 'async'; im.loading = 'lazy'; setImg(im, it.still, '(max-width:760px) 92vw, 70vw'); m.appendChild(im); }
+  if (it.focus) m.querySelectorAll('img,video').forEach(x => { x.style.objectPosition = it.focus; });
+  if (it.bts && (it.caption || it.date)) { const c = el('div', 'wkg-cap2'); if (it.date) c.appendChild(el('span', 'wkg-lab', clean(it.date))); if (it.caption) c.appendChild(el('span', '', clean(it.caption))); f._cap = c; f._capLen = (it.caption || '').length; }
+  return f;
+}
+/* media panels: a landscape frame alone; portraits two or three together (one shoot at a time on vertical work) */
+function mediaPanels(p, items) {
+  const out = [], q = items.slice(), vert = isVert(p), phone = innerWidth <= 760;
   const portrait = (x) => x.ar < 0.86;
-  const row = (cls, list) => { const r = el('div', 'wkg-r wkg-sub ' + cls); list.forEach(x => r.appendChild(frameEl(x, x.ar))); seq.appendChild(r); return r; };
+  let shoot = null;
+  let side = 0;
   while (q.length) {
     const a = q[0];
-    if (a.shoot && a.shoot !== shoot && isVert(p)) { shoot = a.shoot; seq.appendChild(el('p', 'wkg-shoot', pretty(a.shoot))); }
-    if (portrait(a)) {
-      let n = 0; while (n < q.length && n < 3 && portrait(q[n]) && (!isVert(p) || q[n].shoot === a.shoot)) n++;
-      if (n === 3 && pi % 2 === 0) row('wkg-r-trio', q.splice(0, 3));
-      else if (n >= 2) row('wkg-r-pst', q.splice(0, 2));
-      else { const r = row('wkg-r-offp', q.splice(0, 1)); if (flip) r.classList.add('wkg-rt'); flip = !flip; }
-      pi++;
-    } else {
-      const kind = ['full', 'pair', 'off'][li % 3];
-      if (kind === 'pair' && q[1] && !portrait(q[1])) row('wkg-r-pair', q.splice(0, 2));
-      else if (kind === 'off' || kind === 'pair') { const r = row('wkg-r-off', q.splice(0, 1)); if (flip) r.classList.add('wkg-rt'); flip = !flip; }
-      else row('wkg-r-full', q.splice(0, 1));
-      li++;
+    if (a.caption) {
+      const s = el('section', 'wkg-pn wkg-media wkg-cp' + (side++ % 2 ? ' wkg-cpr' : ''));
+      s.append(frameEl(q.shift()), el('p', 'wkg-mcap', a.caption));
+      out.push(s); continue;
     }
+    let n = 1;
+    if (portrait(a) && !phone) { while (n < q.length && n < 3 && portrait(q[n]) && (!vert || q[n].shoot === a.shoot)) n++; }
+    const group = q.splice(0, n);
+    const s = el('section', 'wkg-pn wkg-media');
+    if (vert && a.shoot && a.shoot !== shoot) { shoot = a.shoot; s.appendChild(el('p', 'wkg-shoot', pretty(a.shoot))); }
+    group.forEach(x => s.appendChild(frameEl(x)));
+    out.push(s);
   }
-  watchFrames(page);
+  return out;
 }
-function watchFrames(page) {
-  const frames = [...page.querySelectorAll('.wkg-f')];
-  const vis = page._vis || (page._vis = new Set());
-  const io = new IntersectionObserver((es) => es.forEach(e => {
-    const f = e.target, v = f.querySelector('video');
-    if (e.isIntersecting) { f.classList.add('wkg-in'); vis.add(f); if (v) { if (!v.src) { v.src = v.dataset.src; v.preload = 'auto'; } if (!RM.matches) v.play().catch(() => {}); } }
-    else { vis.delete(f); if (v) v.pause(); }
-  }), { root: page, rootMargin: '0px 0px -6% 0px' });
-  frames.forEach(f => io.observe(f));
-  page._io = io;
-  parallax(page);
+/* screens withheld (client data): where the pictures would be, a redacted file with a stamped seal, and the project
+   explained in plain steps instead. Data: bts.json "<id>".classified = { title, steps[], note }. */
+const SEAL_SVG = `<svg viewBox="0 0 240 240" aria-hidden="true"><defs><filter id="wkg-ink"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="3.2"/></filter><path id="wkg-ring" d="M120 120 m-86 0 a86 86 0 1 1 172 0 a86 86 0 1 1 -172 0"/></defs><g filter="url(#wkg-ink)" fill="none" stroke="currentColor"><circle cx="120" cy="120" r="112" stroke-width="7"/><circle cx="120" cy="120" r="100" stroke-width="2"/><circle cx="120" cy="120" r="68" stroke-width="2"/><g fill="currentColor" stroke="none"><text font-size="17" font-weight="700" letter-spacing="3.2"><textPath href="#wkg-ring" startOffset="0">CLIENT DATA ★ NOT FOR PUBLIC VIEW ★ CLIENT DATA ★</textPath></text><rect x="18" y="100" width="204" height="42" rx="3"/></g><text x="120" y="130" text-anchor="middle" font-size="27" font-weight="800" letter-spacing="2.5" fill="var(--wkg-sealbg)" stroke="none">CLASSIFIED</text><g fill="currentColor" stroke="none" font-weight="700" text-anchor="middle"><text x="120" y="88" font-size="15" letter-spacing="3">TOP</text><text x="120" y="168" font-size="15" letter-spacing="3">SECRET</text></g></g></svg>`;
+function classifiedOf(p) {
+  if (!p.screens_withheld) return null;
+  const c = (BTS[p.id] && BTS[p.id].classified) || {};
+  const steps = (Array.isArray(c.steps) ? c.steps : []).filter(x => typeof x === 'string' && x.trim());
+  const s = panel('wkg-cls'), i = s._in;
+  if (steps.length) {
+    const a = el('div', 'wkg-clt'); a.appendChild(el('h2', 'wkg-h2', clean(c.title || 'How it works')));
+    const ol = el('ol', 'wkg-cls-steps'); steps.forEach(t => ol.appendChild(el('li', '', clean(t)))); a.appendChild(ol); i.appendChild(a);
+  }
+  const fig = el('figure', 'wkg-file'), doc = el('div', 'wkg-doc');
+  doc.setAttribute('aria-hidden', 'true');
+  [[38, 1], [0, 0], [92, 0], [84, 0], [96, 0], [61, 0], [0, 0], [88, 0], [72, 0], [94, 0], [45, 0]].forEach(([w, h]) => { const r = el('i'); if (!w) r.className = 'wkg-gap'; else { r.style.width = w + '%'; if (h) r.className = 'wkg-hd'; } doc.appendChild(r); });
+  const seal = el('div', 'wkg-seal'); seal.innerHTML = SEAL_SVG; seal.setAttribute('role', 'img'); seal.setAttribute('aria-label', 'Classified: screens withheld');
+  doc.appendChild(seal); fig.appendChild(doc);
+  if (c.note) fig.appendChild(el('figcaption', 'wkg-mcap', clean(c.note)));
+  i.appendChild(fig);
+  return s;
 }
-function parallax(page) {
-  if (RM.matches || !page._vis) return;
-  const vh = page.clientHeight, list = [...page._vis];
-  const ys = list.map(f => { const r = f.getBoundingClientRect(); return (r.top + r.height / 2 - vh / 2) / vh; });
-  list.forEach((f, i) => { const m = f.firstChild; if (m) m.style.transform = `translate3d(0,${(-ys[i] * 4.5).toFixed(2)}%,0)`; });
-}
-function smooth(page) {
-  page.addEventListener('scroll', () => { if (!page._run) parallax(page); }, { passive: true });
-  if (!HOVER.matches || RM.matches) return;
-  let target = 0, cur = 0, last = 0;
-  const step = (now) => {
-    const dt = Math.min(50, now - last); last = now;
-    cur += (target - cur) * (1 - Math.pow(1 - 0.12, dt / 16.67));
-    if (Math.abs(target - cur) < 0.4) cur = target;
-    page.scrollTop = cur; parallax(page);
-    page._run = cur === target ? 0 : requestAnimationFrame(step);
-  };
-  page.addEventListener('wheel', (e) => {
-    if (e.ctrlKey) return;
-    e.preventDefault();
-    const d = e.deltaMode === 1 ? e.deltaY * 36 : e.deltaMode === 2 ? e.deltaY * page.clientHeight : e.deltaY;
-    if (!page._run) { cur = page.scrollTop; target = cur; }
-    target = clamp(target + d, 0, page.scrollHeight - page.clientHeight);
-    if (!page._run) { last = performance.now(); page._run = requestAnimationFrame(step); }
-  }, { passive: false });
+/* v1 against the final, one wipe per screen: both pictures in one frame, a handle between them that follows the
+   pointer (drag on touch, arrows on the keyboard). Data: bts.json "<id>".compare = [{ screen, v1:{src,date}, final:{src,date} }] */
+function compareOf(p) {
+  const b = BTS[p.id]; const cs = (b && Array.isArray(b.compare) ? b.compare : []).filter(c => c && c.v1 && c.final && c.v1.src && c.final.src);
+  if (!cs.length) return null;
+  const s = panel('wkg-cmp'), i = s._in;
+  const hd = el('div', 'wkg-cmph'); hd.append(el('h2', 'wkg-h2', 'v1 and final'), el('p', 'wkg-cmpq', HOVER.matches ? 'Move across a picture to compare' : 'Drag the handle to compare'));
+  i.appendChild(hd);
+  const row = el('div', 'wkg-bas'); i.appendChild(row);
+  s._ba = cs.map(c => {
+    const fig = el('figure', 'wkg-ba'), fr = el('div', 'wkg-bav');
+    const a = el('img'), v = el('img'); a.alt = `${clean(c.screen || '')}, final`; v.alt = `${clean(c.screen || '')}, v1`;
+    a.decoding = v.decoding = 'async'; a.loading = v.loading = 'lazy'; a.draggable = v.draggable = false;
+    a.src = src(c.final.src); v.src = src(c.v1.src);
+    const top = el('div', 'wkg-bv1'); top.appendChild(v);
+    const h = el('div', 'wkg-bah'); h.setAttribute('role', 'slider'); h.tabIndex = 0; h.setAttribute('aria-label', `Compare v1 and final: ${clean(c.screen || '')}`); h.setAttribute('aria-valuemin', '0'); h.setAttribute('aria-valuemax', '100');
+    h.innerHTML = '<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 3 12l6 6M15 6l6 6-6 6"/></svg></span>';
+    fr.append(a, top, h, el('b', 'wkg-btag wkg-btl', 'v1'), el('b', 'wkg-btag wkg-btr', 'Final'));
+    const cap = el('figcaption'); cap.append(el('span', 'wkg-bs', clean(c.screen || '')), el('span', 'wkg-bd', `${clean(c.v1.date || 'v1')}  →  ${clean(c.final.date || 'final')}`));
+    fig.append(fr, cap); row.appendChild(fig);
+    let pct = 50; const set = (x) => { pct = clamp(x, 0, 100); fr.style.setProperty('--p', pct + '%'); h.setAttribute('aria-valuenow', String(Math.round(pct))); };
+    set(50);
+    const at = (e) => { const r = fr.getBoundingClientRect(); set(((e.clientX - r.left) / r.width) * 100); };
+    let drag = false;
+    fr.addEventListener('pointerdown', (e) => { e.stopPropagation(); drag = true; fr.setPointerCapture(e.pointerId); at(e); fr.classList.add('wkg-bdr'); });
+    fr.addEventListener('pointermove', (e) => { if (drag || (HOVER.matches && e.pointerType === 'mouse')) at(e); });
+    const up = () => { drag = false; fr.classList.remove('wkg-bdr'); };
+    fr.addEventListener('pointerup', up); fr.addEventListener('pointercancel', up);
+    h.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); set(pct + (e.key === 'ArrowLeft' ? -5 : 5)); } });
+    fig._fr = fr; fig._set = set; fig._ar = 1.6; fig._src = c.final.src;
+    return fig;
+  });
+  // the first time the row comes into view, each wipe sweeps once so it reads as something to play with
+  if (!RM.matches && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((en) => { en.forEach(x => { if (!x.isIntersecting) return; io.unobserve(x.target); const f = x.target, o = { v: 88 }; gsap.to(o, { v: 50, duration: 1.5, ease: 'power3.inOut', delay: 0.25 + (s._ba.indexOf(f) * 0.15), onStart: () => f._set(88), onUpdate: () => f._set(o.v) }); }); }, { threshold: 0.5 });
+    s._ba.forEach(f => io.observe(f));
+  }
+  return s;
 }
 function nextOf(p) {
   const i = ALL.indexOf(p); const nx = ALL[(i + 1) % ALL.length];
-  const a = el('section', 'wkg-next'); a.setAttribute('role', 'link'); a.tabIndex = 0;
+  const a = el('section', 'wkg-pn wkg-next'); a.setAttribute('role', 'link'); a.tabIndex = 0;
   a.setAttribute('aria-label', `Next project: ${clean(nx.name)}`);
-  const g = el('div', 'wkg-nx wkg-g');
-  const t = el('div'); t.append(el('span', 'wkg-nl', 'Next project'), el('span', 'wkg-nt', clean(nx.name)), el('span', 'wkg-nk', clean(kindOf(nx))));
+  const t = el('div', 'wkg-nx'); t.append(el('span', 'wkg-nl', 'Next project'), el('span', 'wkg-nt', clean(nx.name)), el('span', 'wkg-nk', clean(cardKind(nx))));
+  const cue = el('span', 'wkg-ncue'); cue.setAttribute('aria-hidden', 'true');
+  cue.append(el('span', '', HOVER.matches ? 'Scroll to continue' : 'Swipe to continue'), el('i')); cue.lastChild.appendChild(el('b'));
+  t.appendChild(cue);
   const m = el('div', 'wkg-nm');
   if (isText(nx)) m.appendChild(plateEl(nx));
-  else { if (isVert(nx)) m.classList.add('wkg-v'); const im = el('img'); im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; setImg(im, nx.hero, '(max-width:760px) 92vw, 46vw'); m.appendChild(im); }
-  g.append(t, m); a.appendChild(g);
-  const open = () => go(nx.id, m, true);
+  else { const im = el('img'); im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; setImg(im, nx.hero, '(max-width:760px) 92vw, 46vw'); m.appendChild(im); }
+  a.append(t, m);
+  const open = () => { if (PG.dragged) return; go(nx.id, m, true); };
+  a._open = open; a._cue = cue;
   a.addEventListener('click', open);
   a.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  a.addEventListener('pointerenter', () => prefetch(nx));
   return a;
 }
 function buildPage(p) {
-  const page = el('div', 'wkg-page wkg-pre');
+  const page = el('div', 'wkg-page');
   page.setAttribute('role', 'dialog'); page.setAttribute('aria-modal', 'true'); page.setAttribute('aria-label', clean(p.name));
+  page.setAttribute('data-lenis-prevent', '');
   page.style.setProperty('--wkg-pg', WING[p.wing].ground); page.style.setProperty('--wkg-slot', WING[p.wing].slot);
-  if (isText(p)) page.classList.add('wkg-tx');
-  const back = el('button', 'wkg-back', 'Back'); back.type = 'button'; back.addEventListener('click', close);
+  if (isFramed(p)) page.classList.add('wkg-hfrp');
+  if (p.wing === 'software') page.classList.add('wkg-sw');   // screenshots: show every edge (logos sit in the corners)
+  if (isText(p)) { page.classList.add('wkg-tx'); paint(page, p); if (isDark(schemeOf(p).pc)) page.classList.add('wkg-gd'); }
+  if (VMODE) { page.classList.add('wkg-vm'); page._v = true; }
+  if (!RM.matches) page.classList.add('wkg-fx');
+  const bg = el('div', 'wkg-bg'); bg.append(el('i'), el('i'));
+  const sc = el('div', 'wkg-sc'), track = el('div', 'wkg-track');
   const hero = heroOf(p);
-  const body = el('div', 'wkg-body');
-  const seq = seqOf(p, hero._used);
-  for (const s of [introOf(p), aboutOf(p), factsOf(p), seq, creditsOf(p)]) if (s) body.appendChild(s);
-  body.appendChild(nextOf(p));
-  page.append(back, hero, body);
-  page._hero = hero; page._seq = seq; page._p = p;
+  track.appendChild(hero);
+  // the hero's line breaks follow its column: split again whenever the lede's width changes (fonts, the picture's ratio)
+  const ld = hero.querySelector('.wkg-hlede');
+  if (ld && window.ResizeObserver) new ResizeObserver(([e]) => { const w = e.contentRect.width; if (w && ld._lines && Math.abs(w - (ld._sw || 0)) > 1) splitLines([ld], !ld._shown && page.classList.contains('wkg-fx')); }).observe(ld);
+  track.appendChild(introOf(p));
+  const bf = briefOf(p); if (bf) track.appendChild(bf);
+  const chs = channelsOf(p); chs.forEach(s => track.appendChild(s));
+  const ab = aboutOf(p); if (ab) track.appendChild(ab);
+  const cl = classifiedOf(p); if (cl) track.appendChild(cl);
+  const fa = factsOf(p); if (fa) track.appendChild(fa);
+  const cmp = compareOf(p); if (cmp) track.appendChild(cmp);
+  const bts = btsOf(p); if (bts) { track.appendChild(bts); if (bts._rail) track.appendChild(bts._rail); }
+  const cr = creditsOf(p);
+  const nx = nextOf(p);
+  if (cr) track.appendChild(cr);
+  { const end = cr || bts || fa || ab; const go = end && launchEl(p); if (go) end._in.appendChild(go); }
+  track.appendChild(nx);
+  sc.appendChild(track);
+  const back = backEl(p);
+  const prog = el('div', 'wkg-prog'); prog.appendChild(el('i')); prog.setAttribute('aria-hidden', 'true');
+  page.append(bg, sc, back._wrap, prog);
+  Object.assign(page, { _p: p, _hero: hero, _sc: sc, _track: track, _back: back, _bg: [...bg.children], _prog: prog.firstChild, _progW: prog,
+    _hx: { t: 0, x: 0, max: 0, vel: 0, native: false, light: false, frames: [], rvq: [], stops: [], heroZ: 1 } });
+  if (cmp) { const its = cmp._ba.map(f => ({ still: f._src })); ratios(its, false).then(() => { cmp._ba.forEach((f, n) => { f._ar = its[n].ar || 1.6; f._fr.style.aspectRatio = String(f._ar); }); if (page.isConnected) layoutPage(page); }); }
+  if (bts && bts._rail) { const lis = [...bts._rail._stops.children].filter(li => li._pic), pics = lis.map(li => li._pic); if (pics.length) ratios(pics, false).then(() => { lis.forEach(li => { const f = frameEl({ ...li._pic, caption: '', bts: false }); li.firstChild.appendChild(f); }); if (page.isConnected) layoutPage(page); }); }
+  // media and channel images: sized once their ratios are known, then put in before the credits
+  const items = mediaItems(p, hero._used);
+  const chItems = chs.flatMap(s => s._items || []);
+  page._media = ratios([...items, ...chItems], isVert(p)).then(() => {
+    for (const s of chs) if (s._items) s._items.forEach(it => s.appendChild(frameEl(it)));
+    const ps = mediaPanels(p, items);
+    ps.forEach(s => track.insertBefore(s, bts || cr || nx));   // the work first, then behind the scenes
+    if (page.isConnected) layoutPage(page);
+  });
   return page;
 }
+/* the back control: a pill after Lusion's (arrow swap on hover) that also opens a sheet of every project. On a fine
+   pointer the sheet opens on hover (after a short intent delay) and the hovered project's name is read out; on touch a
+   Projects pill beside it opens the same sheet from the bottom, names under the pictures. */
+function backEl(p) {
+  const wrap = el('div', 'wkg-bk');
+  const back = el('button', 'wkg-back'); back.type = 'button'; back.setAttribute('aria-label', 'Back to the work');
+  const icon = (c) => `<svg class="wkg-bi ${c}" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 12.243 3.757 8m0 0L8 3.757M3.757 8h8.486"/></svg>`;
+  back.innerHTML = `<span class="wkg-bm">${icon('wkg-bi1')}<span class="wkg-bt"><span>Back</span></span>${icon('wkg-bi2')}</span>`;
+  back.addEventListener('click', () => { shut(true); close(); });
+  wrap.appendChild(back);
+  let allb = null;
+  if (!HOVER.matches) {
+    allb = el('button', 'wkg-allb'); allb.type = 'button'; allb.setAttribute('aria-expanded', 'false'); allb.setAttribute('aria-label', 'All projects');
+    allb.innerHTML = '<span class="wkg-bm"><span class="wkg-bt"><span>Projects</span></span></span>';
+    allb.addEventListener('click', () => (wrap.classList.contains('wkg-sho') ? shut(true) : openSheet()));
+    wrap.appendChild(allb);
+  }
+  const sh = el('nav', 'wkg-sh'); sh.setAttribute('aria-label', 'All projects');
+  wrap.appendChild(sh);
+  let built = false, tOpen = 0, tShut = 0, rd = null;
+  const say = (text) => {
+    if (!rd || rd.textContent === text) return;
+    rd.textContent = text;
+    if (!RM.matches) gsap.fromTo(rd, { yPercent: 70, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1, duration: 0.45, ease: 'expo.out', overwrite: true });
+  };
+  function build() {
+    if (built) return; built = true;
+    const head = el('div', 'wkg-shn'), r = el('span', 'wkg-shr'); rd = el('span', '', clean(p.name)); r.appendChild(rd);
+    head.append(r, el('small', '', `${ALL.length} projects`));
+    const g = el('div', 'wkg-shg'); g.style.setProperty('--cols', Math.min(8, Math.ceil(ALL.length / 2)));
+    ALL.forEach((q, i) => {
+      const b = el('button', 'wkg-th' + (q === p ? ' wkg-cur' : '')); b.type = 'button'; b.style.setProperty('--i', i);
+      b.setAttribute('aria-label', clean(q.name) + (q === p ? ', you are here' : ''));
+      if (q === p) b.setAttribute('aria-current', 'page');
+      const m = el('span', 'wkg-thm');
+      if (isText(q)) m.appendChild(plateEl(q));
+      else { const im = el('img'); im.alt = ''; im.decoding = 'async'; setImg(im, q.hero, '160px'); m.appendChild(im); }
+      b.append(m, el('span', 'wkg-thn', clean(q.name)));
+      b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') { say(clean(q.name)); prefetch(q); } });
+      b.addEventListener('focus', () => say(clean(q.name)));
+      b.addEventListener('click', () => {
+        if (q === p) { shut(true); return; }
+        shut(false); go(q.id, m, true);
+      });
+      g.appendChild(b);
+    });
+    g.addEventListener('pointerleave', () => say(clean(p.name)));
+    sh.append(head, g);
+  }
+  function openSheet() {
+    clearTimeout(tShut); if (busy) return;
+    build(); wrap.classList.add('wkg-sho'); if (allb) allb.setAttribute('aria-expanded', 'true');
+  }
+  function shut(now) {
+    clearTimeout(tOpen); clearTimeout(tShut);
+    const go2 = () => { wrap.classList.remove('wkg-sho'); if (allb) allb.setAttribute('aria-expanded', 'false'); say(clean(p.name)); };
+    if (now) go2(); else tShut = setTimeout(go2, 60);
+  }
+  if (HOVER.matches) {
+    wrap.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'mouse') return; clearTimeout(tShut); tOpen = setTimeout(openSheet, 140); });
+    wrap.addEventListener('pointerleave', () => { clearTimeout(tOpen); tShut = setTimeout(() => shut(true), 240); });
+    wrap.addEventListener('focusin', (e) => { if (e.target !== back || back.matches(':focus-visible')) openSheet(); });
+    wrap.addEventListener('focusout', (e) => { if (!wrap.contains(e.relatedTarget)) shut(true); });
+  } else addEventListener('pointerdown', (e) => { if (wrap.classList.contains('wkg-sho') && !wrap.contains(e.target)) shut(true); }, { passive: true });
+  wrap.addEventListener('keydown', (e) => { if (e.key === 'Escape' && wrap.classList.contains('wkg-sho')) { e.stopPropagation(); shut(true); back.focus(); } });
+  const bm = back.firstChild;
+  const qx = gsap.quickTo(bm, 'x', { duration: 0.6, ease: 'power3.out' }), qy = gsap.quickTo(bm, 'y', { duration: 0.6, ease: 'power3.out' });
+  back.addEventListener('pointermove', (e) => { if (!HOVER.matches || RM.matches) return; const r = back.getBoundingClientRect(); qx((e.clientX - r.left - r.width / 2) * 0.12); qy((e.clientY - r.top - r.height / 2) * 0.22); });
+  back.addEventListener('pointerleave', () => { qx(0); qy(0); });
+  if (!RM.matches) gsap.set(allb ? [bm, allb.firstChild] : bm, { autoAlpha: 0 });
+  back._wrap = wrap; back._allb = allb; back._shut = shut;
+  return back;
+}
+/* prebuild on hover: the page and its pictures are ready before the click, so the click only starts tweens */
+/* the prebuilt page waits in the DOM, hidden and already laid out; its hero picture is decoded in an element the
+   flyer then uses, so the click costs no build, no layout and no decode */
+let pre = null;
+function prefetch(p) {
+  if (!p || openId === p.id || (pre && pre.p === p)) return;
+  if (pre && pre.page && pre.page !== curPage) pre.page.remove();
+  const page = buildPage(p);
+  const it = pre = { p, page, img: null };
+  if (!isText(p)) { const im = new Image(); im.decoding = 'async'; im.src = big(p.hero); (im.decode ? im.decode() : Promise.resolve()).then(() => { it.img = im; }, () => {}); }
+  const lay = () => { if (pre !== it || page === curPage) return; ROOT.appendChild(page); layoutPage(page); page._laid = innerWidth + 'x' + innerHeight; };
+  if (window.requestIdleCallback) requestIdleCallback(lay, { timeout: 300 }); else setTimeout(lay, 60);
+}
+function takePage(p) {
+  if (pre && pre.p === p && pre.page) { const pg = pre.page; return pg; }
+  if (pre && pre.page && pre.page !== curPage) pre.page.remove();
+  pre = null;
+  return buildPage(p);
+}
+function takeImg(p) { const im = pre && pre.p === p && pre.img; return im || null; }
 
-/* ---------- the flight: a slot grows into the hero, and back ---------- */
+/* the run's layout. Horizontal: every frame takes the height left between the top and the bottom lines.
+   Vertical (?inside=v): rows across the width. Then text is split into line masks and every reveal, frame, ground
+   stop and the next project's preview is measured once (offsets only), so the engine never reads layout per frame. */
+const posIn = (n, track, v) => { let a = 0; while (n && n !== track) { a += v ? n.offsetTop : n.offsetLeft; n = n.offsetParent; } return a; };
+function sizeRow(frames, avail, maxH, gap) {
+  const sum = frames.reduce((a, f) => a + f._ar, 0) || 1;
+  const h = Math.min(maxH, (avail - gap * (frames.length - 1)) / sum);
+  frames.forEach(f => { f.style.height = Math.floor(h) + 'px'; f.style.width = Math.floor(h * f._ar) + 'px'; });
+}
+const LINES_SEL = '.wkg-lede,.wkg-cols p,.wkg-chl p,.wkg-chq,.wkg-mcap';
+const WORDS_SEL = '.wkg-h2,.wkg-chl h3,.wkg-nt';
+const FADE_SEL = '.wkg-cap2>span,.wkg-bf small,.wkg-bf h3,.wkg-bf li,.wkg-lab,.wkg-info dd,.wkg-stat small,.wkg-chn,.wkg-shoot,.wkg-links a,.wkg-fact:not(.wkg-num) b,.wkg-credits dd,.wkg-tl li>span:last-child,.wkg-nl,.wkg-nk,.wkg-soon';
+const NUMS_SEL = '.wkg-stat b,.wkg-fact.wkg-num b';
+const CLIP0 = 'inset(100% 0% 0% 0% round 14px)', CLIP1 = 'inset(0% 0% 0% 0% round 14px)';
+function layoutPage(page) {
+  const hx = page._hx, track = page._track, sc = page._sc, V = !!page._v;
+  const phone = innerWidth <= 760, fx = page.classList.contains('wkg-fx');
+  hx.native = !HOVER.matches || phone;
+  hx.light = hx.native;                     // touch and phones: reveals yes, no heavy parallax, no skew
+  sc.classList.toggle('wkg-native', hx.native);
+  const media = track.querySelector('.wkg-media,.wkg-ch') || track.querySelector('.wkg-pn:not(.wkg-hero)');
+  const first = track.querySelector('.wkg-pn:not(.wkg-hero)');
+  const pcs = getComputedStyle(media || track.firstChild);
+  const top = parseFloat(pcs.paddingTop) || 100, bot = parseFloat(pcs.paddingBottom) || 90;
+  const gap = parseFloat(pcs.columnGap) || 24, gut = parseFloat(pcs.paddingLeft) || 18;
+  const room = innerHeight - top - bot, maxW = innerWidth - 36;
+  if (V) {
+    const avail = innerWidth - 2 * gut, maxH = innerHeight * (phone ? 0.72 : 0.86);
+    for (const s of track.querySelectorAll('.wkg-media,.wkg-ch')) { const fr = [...s.querySelectorAll(':scope>.wkg-fr')]; if (fr.length) sizeRow(fr, s.classList.contains('wkg-cp') && !phone ? avail * 0.6 : avail, s.classList.contains('wkg-cp') ? maxH * 0.8 : maxH, gap); }
+  } else {
+    for (const s of track.querySelectorAll('.wkg-media.wkg-cp')) {
+      // a medium picture with its note beside it (under it on a phone)
+      const f = s.querySelector('.wkg-fr');
+      if (phone) { const hh = Math.min(room * 0.58, maxW / f._ar); f.style.height = Math.floor(hh) + 'px'; f.style.width = Math.floor(maxW) + 'px'; continue; }
+      const hh = Math.min(room * 0.74, innerWidth * 0.56 / f._ar); f.style.height = Math.floor(hh) + 'px'; f.style.width = Math.floor(hh * f._ar) + 'px';
+    }
+    for (const s of track.querySelectorAll('.wkg-media:not(.wkg-cp)')) {
+      const fr = [...s.querySelectorAll('.wkg-fr')], lab = s.querySelector('.wkg-shoot') || (isVert(page._p) ? 1 : 0);
+      let h = room - (lab ? 34 : 0);
+      // phones: the frame fills the panel's height, cropped to cover, never a thin strip
+      if (phone) { const f = fr[0]; f.style.height = Math.floor(h) + 'px'; f.style.width = Math.floor(Math.min(maxW, h * f._ar)) + 'px'; continue; }
+      const sum = fr.reduce((a, f) => a + f._ar, 0); h = Math.min(h, (innerWidth * 0.86 - gap * (fr.length - 1)) / sum);
+      fr.forEach(f => { f.style.height = Math.floor(h) + 'px'; f.style.width = Math.floor(h * f._ar) + 'px'; });
+    }
+    for (const s of track.querySelectorAll('.wkg-ch')) {
+      const fr = [...s.querySelectorAll(':scope>.wkg-fr')];
+      fr.forEach(f => { const hh = phone ? room * 0.5 : Math.min(room * 0.72, innerWidth * 0.6 / f._ar); f.style.height = Math.floor(hh) + 'px'; f.style.width = Math.floor(phone ? maxW : hh * f._ar) + 'px'; });
+    }
+  }
+  // the wipes: one height for the row, wide shots capped so three still fit the run
+  for (const r of track.querySelectorAll('.wkg-bas')) {
+    const hh = phone || V ? 0 : clamp(room - 150, 220, 640);
+    r.querySelectorAll('.wkg-ba').forEach(f => { if (phone || V) { f.style.width = ''; f.firstChild.style.height = ''; return; } const w = Math.min(innerWidth * 0.62, hh * (f._ar || 1.6)); f.style.width = Math.floor(w) + 'px'; f.firstChild.style.height = Math.floor(w / (f._ar || 1.6)) + 'px'; });
+  }
+  // the rail: pictures above the line share one height (room minus the line and the text below it)
+  for (const s of track.querySelectorAll('.wkg-stops')) {
+    const fr = [...s.querySelectorAll('.wkg-sup>.wkg-fr')];
+    const hh = phone || V ? 0 : clamp(room - 260, 150, 380);
+    s.style.setProperty('--sup', (phone || V ? 0 : fr.length || s.querySelector('.wkg-spic') ? hh : Math.min(hh, 220)) + 'px');
+    fr.forEach(f => {
+      if (phone || V) { f.style.width = '100%'; f.style.height = ''; f.style.aspectRatio = String(f._ar); return; }
+      const w = Math.min(innerWidth * 0.42, hh * f._ar); f.style.height = Math.floor(w / f._ar) + 'px'; f.style.width = Math.floor(w) + 'px';
+      f.closest('.wkg-stop').style.width = Math.max(300, Math.floor(w)) + 'px';
+    });
+  }
+  for (const s of track.querySelectorAll('.wkg-its')) {
+    // two rows of picture plus caption fit the run's height; a caption keeps a readable measure (it may be wider than a
+    // narrow picture) and at most about four lines, growing sideways instead of down
+    const fr = [...s.querySelectorAll('.wkg-fr')], capH = 128;
+    const hh = phone ? 220 : clamp((room - 2 * capH - 26) / 2, 110, 260);
+    fr.forEach(f => {
+      const w = Math.min(phone ? maxW : innerWidth * 0.5, hh * f._ar);
+      f.style.height = Math.floor(w / f._ar) + 'px'; f.style.width = Math.floor(w) + 'px';
+      const fig = f.parentNode, need = Math.min(520, Math.max(300, (f._capLen || 0) * 7.6 / 3.6));
+      fig.style.width = phone ? '' : Math.floor(Math.max(w, need)) + 'px';
+    });
+  }
+  // the writeup grows sideways a column at a time, never down (horizontal run only)
+  for (const c of track.querySelectorAll('.wkg-cols')) {
+    c.style.height = ''; c.style.width = '';
+    if (phone || V) continue;
+    const h2 = c.previousElementSibling, h = room - (h2 ? h2.offsetHeight + 28 : 0);
+    const cw = parseFloat(getComputedStyle(c).columnWidth) || 380;
+    c.style.width = cw + 'px'; c.style.height = Math.max(200, h) + 'px';
+    if (c.scrollWidth > cw + 2) c.style.width = c.scrollWidth + 'px';
+    if (c.scrollHeight <= h) { c.style.height = ''; }
+  }
+  prepText(page, fx);
+  fitNums(track);
+  hx.max = hx.native ? Math.max(0, V ? sc.scrollHeight - sc.clientHeight : sc.scrollWidth - sc.clientWidth)
+    : Math.max(0, V ? track.offsetHeight - innerHeight : track.scrollWidth - innerWidth);
+  const hero = page._hero;
+  hx.heroW = V ? hero.offsetHeight : hero.offsetWidth;
+  hx.framed = hero.classList.contains('wkg-hfr');
+  hx.sw = page.classList.contains('wkg-sw');
+  hx.heroZ = RM.matches || hx.light || !hero._s || (hx.framed && hx.sw) ? 1 : 1.08;
+  hx.heroDark = !hx.framed && (!hero.classList.contains('wkg-txt') || isDark(schemeOf(page._p).pc));
+  if (hx.framed) { const hm = hero._t; hx.hf = { x: hero.offsetLeft + hm.offsetLeft, y: hero.offsetTop + hm.offsetTop, w: hm.offsetWidth, h: hm.offsetHeight }; }
+  hx.heroEnd = false;
+  // frames: centre on the run, place in their row (for depth), settle scale
+  hx.frames = [...track.querySelectorAll('.wkg-fr')].map(f => {
+    const o = f._fr || (f._fr = { f, m: f.firstChild, s: fx && !f._shown ? 1.14 : 1 });
+    const sib = [...f.parentNode.children].filter(x => x.classList.contains('wkg-fr'));
+    o.k = sib.length > 1 ? sib.indexOf(f) : 0;
+    o.c = posIn(f, track, V) + (V ? f.offsetHeight : f.offsetWidth) / 2;
+    o.strip = !!f.parentNode.closest('.wkg-media,.wkg-ch'); o.tf = null; o.bo = -1;
+    if (fx && !f._shown) f.style.clipPath = CLIP0;
+    return o;
+  });
+  // the reveals, in run order
+  const items = [];
+  const add = (n, type, extra) => { if (n && !n._shown) items.push({ n, type, pos: posIn(n, track, V), ...extra }); };
+  for (const pn of track.querySelectorAll('.wkg-pn:not(.wkg-hero)')) {
+    pn.querySelectorAll(LINES_SEL).forEach(n => add(n, 'lines'));
+    pn.querySelectorAll(WORDS_SEL).forEach(n => add(n, 'words'));
+    pn.querySelectorAll(FADE_SEL).forEach(n => add(n, 'fade'));
+    pn.querySelectorAll(NUMS_SEL).forEach(n => add(n, 'num'));
+    const r = pn.querySelector('.wkg-info,.wkg-facts,.wkg-credits dl,.wkg-doc,.wkg-stops'); if (r && !pn._ruled) add(r, 'rule', { pn });
+    pn.querySelectorAll('.wkg-fr').forEach(n => add(n, 'frame'));
+  }
+  items.sort((a, b) => a.pos - b.pos);
+  hx.rvq = items;
+  // ground colours: text on the wing's ground, the pictures on paper; blended as the run moves, never cut
+  const G = page.classList.contains('wkg-tx') ? schemeOf(page._p).pc : WING[page._p.wing].ground;
+  const stops = [];
+  for (const pn of track.children) {
+    if (pn.classList.contains('wkg-next')) break;
+    const col = pn.classList.contains('wkg-media') && !page.classList.contains('wkg-tx') ? PAPER : G;
+    if (!stops.length || stops[stops.length - 1].col !== col) stops.push({ pos: posIn(pn, track, V), col });
+  }
+  hx.stops = stops; hx.gj = -1;
+  hx.tp = V ? [] : [...track.children].filter(pn => !pn.matches('.wkg-hero,.wkg-media,.wkg-next,.wkg-ch') && !pn.querySelector('.wkg-fr,img')).map(pn => ({ el: pn, pos: posIn(pn, track, false), w: pn.offsetWidth, o: -1 }));
+  hx.pgap = parseFloat(getComputedStyle(first || track.firstChild).paddingLeft) || 48;
+  const nx = track.querySelector('.wkg-next');
+  hx.nx = nx ? { pos: posIn(nx, track, V), m: nx.querySelector('.wkg-nm'), q: -1 } : null;
+  hx.t = Math.min(hx.t, hx.max); hx.x = Math.min(hx.x, hx.max);
+  page._dirty = true;
+  watchMedia(page);
+}
+const isDark = (c) => c === NAVY || c === INK || c === COBALT;
+/* text into line masks: words in (one write), their lines read (one read), lines out (one write) */
+function splitLines(nodes, fx) {
+  nodes.forEach(n => {
+    if (n._src == null) n._src = n.textContent;
+    n.textContent = '';
+    const ws = n._src.split(/\s+/).filter(Boolean);
+    // a word never breaks while it is measured (a hyphen inside one, multi-sensory, would put it on two rows at once)
+    n._ws = ws.map((w, i) => { const sp = el('span', '', w); sp.style.whiteSpace = 'nowrap'; n.appendChild(sp); if (i < ws.length - 1) n.appendChild(document.createTextNode(' ')); return sp; });
+  });
+  const tops = nodes.map(n => n._ws.map(w => w.offsetTop));
+  nodes.forEach(n => { n._sw = n.clientWidth; });
+  nodes.forEach((n, k) => {
+    const rows = []; let last = null;
+    n._ws.forEach((w, i) => { const t = tops[k][i]; if (last === null || Math.abs(t - last) > 3) { rows.push([]); last = t; } rows[rows.length - 1].push(w.textContent); });
+    n.textContent = '';
+    n._lines = rows.map(r => { const m = el('span', 'wkg-mk'), i = el('span', '', r.join(' ')); m.appendChild(i); n.appendChild(m); return i; });
+    n._ws = null;
+    if (fx && !n._shown) gsap.set(n._lines, { yPercent: 115 });
+  });
+}
+function prepText(page, fx) {
+  const tr = page._track;
+  const nodes = [...tr.querySelectorAll('.wkg-pn:not(.wkg-hero) :is(' + LINES_SEL + ')'), ...page._hero.querySelectorAll('.wkg-hlede')];
+  splitLines(nodes, fx);
+  for (const pn of tr.querySelectorAll('.wkg-pn:not(.wkg-hero)')) {
+    pn.querySelectorAll(WORDS_SEL).forEach(n => { if (!n._risen) { n._risen = true; rise(n, n.textContent); if (fx && !n._shown) gsap.set(n.querySelectorAll('.wkg-ln>span'), { yPercent: 115 }); } });
+    pn.querySelectorAll(FADE_SEL + ',' + NUMS_SEL).forEach(n => { if (!n._prep) { n._prep = true; if (fx && !n._shown) gsap.set(n, { autoAlpha: 0, y: 18 }); } });
+    pn.querySelectorAll('.wkg-fact,.wkg-credits dl>div').forEach((d, i) => d.style.setProperty('--rd', (i * 0.07).toFixed(2) + 's'));
+  }
+}
+/* big numbers never wrap: each is shrunk to fit its column if it would overflow */
+function fitNums(track) {
+  const ns = [...track.querySelectorAll('.wkg-fact.wkg-num b,.wkg-stat b,.wkg-tf b')];
+  ns.forEach(b => { b.style.fontSize = ''; });
+  const m = ns.map(b => [b.scrollWidth, b.clientWidth, parseFloat(getComputedStyle(b).fontSize)]);
+  ns.forEach((b, i) => { const [sw, cw, fs] = m[i]; if (cw > 0 && sw > cw + 1) b.style.fontSize = Math.floor(fs * cw / sw) + 'px'; });
+}
+const NUMV = /^(\d{1,3}(?:,\d{3})+|\d+)(\.\d+)?([KMB]?\+?)$/;
+function countUp(n, delay) {
+  const tn = n.firstChild; if (!tn || tn.nodeType !== 3) return;
+  const t = tn.nodeValue, m = t.match(NUMV); if (!m || t === '000') return;
+  const comma = m[1].includes(','), dp = m[2] ? m[2].length - 1 : 0, target = parseFloat(m[1].replace(/,/g, '') + (m[2] || ''));
+  const o = { v: 0 }, put = (v) => { tn.nodeValue = (comma ? v.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp }) : v.toFixed(dp)) + m[3]; };
+  put(0);
+  gsap.to(o, { v: target, duration: 1.5, ease: 'power3.out', delay, onUpdate: () => put(o.v), onComplete: () => { tn.nodeValue = t; } });
+}
+function fire(page, it, delay) {
+  const n = it.n;
+  // a paragraph whose lines no longer fit its box (they were measured before something changed) is split again first,
+  // so a line is never cut at the mask's edge
+  if (it.type === 'lines' && n._lines && n._lines.some(l => l.scrollWidth > n.clientWidth + 1)) splitLines([n], page.classList.contains('wkg-fx'));
+  n._shown = true;
+  if (!page.classList.contains('wkg-fx')) { if (it.type === 'rule') it.pn.classList.add('wkg-in'); return; }
+  const E = 'expo.out';
+  if (it.type === 'lines') gsap.to(n._lines, { yPercent: 0, duration: 1.1, ease: E, stagger: 0.08, delay });
+  else if (it.type === 'words') gsap.to(n.querySelectorAll('.wkg-ln>span'), { yPercent: 0, duration: 1.1, ease: E, stagger: 0.05, delay });
+  else if (it.type === 'fade') gsap.to(n, { autoAlpha: 1, y: 0, duration: 0.9, ease: E, delay, clearProps: 'transform' });
+  else if (it.type === 'num') { gsap.to(n, { autoAlpha: 1, y: 0, duration: 0.9, ease: E, delay, clearProps: 'transform' }); countUp(n, delay); }
+  else if (it.type === 'rule') { it.pn._ruled = true; it.pn.classList.add('wkg-in'); }
+  else if (it.type === 'frame') {
+    gsap.fromTo(n, { clipPath: CLIP0 }, { clipPath: CLIP1, duration: 1.2, ease: E, delay, onComplete: () => { n.style.clipPath = ''; frameFluid(page, n); } });
+    if (n._fr) gsap.to(n._fr, { s: 1, duration: 1.7, ease: E, delay });
+    page._fxUntil = Math.max(page._fxUntil || 0, performance.now() + (delay + 1.8) * 1000);
+  }
+}
+/* a frame goes to the fluid once it is fully shown (its GL copy ignores DOM opacity and clip tweens) */
+function frameFluid(page, f) {
+  if (!FLUID || page !== curPage || f._fl) return; f._fl = true;
+  const m = f.querySelector('.wkg-fm>img') || f.querySelector('.wkg-fm>video');
+  if (m) fluidAttach(m, f);
+}
+function heroFluid(page) {
+  if (!FLUID || page !== curPage || page._hero._fl) return;
+  const h = page._hero, box = h._t; if (!box || h.classList.contains('wkg-txt')) return;
+  if (box.classList.contains('wkg-tri')) { box.querySelectorAll(':scope>div').forEach(d => { const m = d.querySelector('video') || d.querySelector('img'); if (m) fluidAttach(m, d); }); }
+  else { const pick = box.querySelector('video.wkg-ld') || box.querySelector('.wkg-hmi>img:not(.wkg-hi2)'); /* the 1280 copy: a full size original is a long texture upload */ if (pick) fluidAttach(pick, box); }
+  h._fl = true;
+}
+function watchMedia(page) {
+  if (page._io) page._io.disconnect();
+  const io = new IntersectionObserver((es) => es.forEach(e => {
+    const v = e.target.querySelector('video'); if (!v) return;
+    if (e.isIntersecting) { const go = () => { if (!v.src && v.dataset.src) { v.src = v.dataset.src; v.preload = 'auto'; } if (!RM.matches && page === curPage && v.isConnected) v.play().catch(() => {}); }; if (!v.src && window.requestIdleCallback) requestIdleCallback(go, { timeout: 400 }); else go(); }
+    else v.pause();
+  }), { rootMargin: '25% 25% 25% 25%' });
+  page._track.querySelectorAll('.wkg-fr, .wkg-hm').forEach(f => io.observe(f));
+  page._io = io;
+}
+
+/* the run's engine, on the one GSAP ticker Lenis also runs on: a smoothed follow on the wheel (the Lusion constant),
+   native on touch. Per frame it only writes transforms and opacities from numbers measured at layout. */
+const PG = { dragged: false };
+const ease3 = (q) => 1 - Math.pow(1 - q, 3);
+function ground(page, x, VIEW) {
+  const hx = page._hx, st = hx.stops; if (!st.length) return null;
+  let j = 0, t = 0;
+  for (let i = 1; i < st.length; i++) { const ti = clamp((x + VIEW * 0.8 - st[i].pos) / (VIEW * 0.5), 0, 1); if (ti > 0) { j = i; t = ti; } else break; }
+  const a = t < 1 && j ? st[j - 1].col : st[j].col, b = st[j].col, op = t < 1 && j ? t : 0;
+  const [la, lb] = page._bg;
+  if (hx.ga !== a) { hx.ga = a; la.style.background = a; }
+  if (hx.gb !== b) { hx.gb = b; lb.style.background = b; }
+  const o = op.toFixed(3); if (hx.go !== o) { hx.go = o; lb.style.opacity = o; }
+  return op > 0.5 ? b : a;
+}
+function pageTick(time, dtMs) {
+  const page = curPage; if (!page || !page._live) return;
+  const hx = page._hx, V = !!page._v, dt = Math.min(0.05, (dtMs || 16.7) / 1000), VIEW = V ? innerHeight : innerWidth;
+  const prevX = hx.x;
+  if (hx.native) hx.x = V ? page._sc.scrollTop : page._sc.scrollLeft;
+  else {
+    // Lusion's follow, measured: 0.18 of the gap per 60 Hz frame (19% at one frame, 70% at 100 ms, 99% at 400 ms)
+    hx.x = RM.matches ? hx.t : hx.t + (hx.x - hx.t) * Math.pow(1 - FOLLOW, dt * 60);
+    if (Math.abs(hx.t - hx.x) < 0.1) hx.x = hx.t;
+    if (hx.x !== prevX || page._dirty) page._track.style.transform = V ? `translate3d(0,${(-hx.x).toFixed(2)}px,0)` : `translate3d(${(-hx.x).toFixed(2)}px,0,0)`;
+  }
+  hx.vel += ((hx.x - prevX) / dt - hx.vel) * (1 - Math.exp(-dt * 10));
+  if (Math.abs(hx.vel) < 4 && hx.x === prevX) hx.vel = 0;
+  const now = performance.now();
+  if (hx.native && hx.x !== prevX) hx.lastIn = now;
+  endHold(page, hx, now, dt);
+  if (hx.x === prevX && !page._dirty && hx.vel === 0 && !hx.skOn && now > (page._fxUntil || 0)) return;
+  page._dirty = false;
+  const x = hx.x;
+  page._prog.style.transform = `scaleX(${hx.max ? (x / hx.max).toFixed(4) : 0})`;
+  const col = ground(page, x, VIEW);
+  const onHero = x < hx.heroW * 0.55;
+  const dark = onHero ? hx.heroDark : isDark(col || (page.classList.contains('wkg-tx') ? schemeOf(page._p).pc : WING[page._p.wing].ground));
+  if (dark !== page._dark) { page._dark = dark; page.classList.toggle('wkg-dark', dark); document.documentElement.dataset.ground = dark ? 'dark' : 'light'; }
+  // the reveals: everything that has come within 88% of the view, in run order, slightly staggered
+  if (hx.rvq.length) {
+    const edge = x >= hx.max - 1 ? Infinity : x + VIEW * 0.88; let k = 0;   // at the end everything left comes in
+    while (hx.rvq.length && hx.rvq[0].pos < edge) fire(page, hx.rvq.shift(), Math.min(k++ * 0.06, 0.42));
+  }
+  // settle: after the wheel stops, a text panel cut by the left edge slides fully in (or fully out, if mostly gone)
+  if (!hx.native && !V && hx.tp.length && now - (hx.lastIn || 0) > 260 && !hx.settled && Math.abs(hx.t - hx.x) < 1.5 && hx.t < hx.max - 1) {   // never off the end: the end holds
+    hx.settled = true;
+    for (const t of hx.tp) { const l = t.pos + hx.pgap - x; if (l < -2 && l > -(t.w - hx.pgap) * 0.35) { hx.t = clamp(t.pos, 0, hx.max); break; } }
+  }
+  if (RM.matches) return;
+  const light = hx.light, h = page._hero;
+  // text leaving on the left fades with its position, as on Lusion's pages
+  if (!light) for (const t of hx.tp) { const l = t.pos + hx.pgap - x; const o = l >= 0 ? 1 : clamp(1 + l / (t.w * 0.75), 0, 1); const r = o.toFixed(3); if (r !== t.o) { t.o = r; t.el.style.opacity = r; } }
+  // the hero: the picture settles from 1.08 to 1 over the first screen and trails the page
+  if (!light && h._t && !hx.heroEnd) {
+    const q = clamp(x / hx.heroW, 0, 1), sc = (1.08 - 0.08 * q).toFixed(4), tr = (x * 0.3).toFixed(2);
+    const tv = V ? `translate3d(0,${tr}px,0)` : `translate3d(${tr}px,0,0)`;
+    if (h._s === h._t) h._t.style.transform = `${tv} scale(${sc})`;
+    else {
+      // framed: the frame rides with the page, the picture drifts inside it (never past its edge) and settles
+      const d = hx.sw ? 0 : (q * 1.5).toFixed(3), s2 = hx.sw ? 1 : (1.08 - 0.05 * q).toFixed(4);
+      h._s.style.transform = (V ? `translate3d(0,${d}%,0)` : `translate3d(${d}%,0,0)`) + ` scale(${s2})`;
+    }
+    hx.heroEnd = q >= 1;
+  } else if (hx.heroEnd && x < hx.heroW) hx.heroEnd = false;
+  // speed: frames shear and compress a touch while the run moves fast, and settle flat when it stops
+  const sk = light ? 0 : clamp(hx.vel * 0.0006, -2.5, 2.5), cm = light ? 0 : Math.min(0.02, Math.abs(hx.vel) * 0.000005);
+  const skW = sk !== 0 || hx.skOn; hx.skOn = sk !== 0;
+  // the strip's focus: the frame nearest the middle of the view is sharp; every other one sits softer and smaller
+  let foc = null, fd = Infinity;
+  if (!light) for (const fr of hx.frames) { if (!fr.strip) continue; const a = Math.abs(fr.c - x - VIEW / 2); if (a < fd) { fd = a; foc = fr; } }
+  const kf = 1 - Math.exp(-dt / 0.16);
+  for (const fr of hx.frames) {
+    const d = (fr.c - x - VIEW / 2) / VIEW;
+    if (d < -1.4 || d > 1.4) continue;
+    const par = light || hx.sw ? 0 : (-d * 4).toFixed(3);
+    fr.m.style.transform = V ? `translate3d(0,${par}%,0) scale(${fr.s.toFixed(4)})` : `translate3d(${par}%,0,0) scale(${fr.s.toFixed(4)})`;
+    // the strip, after Lusion's Synthetic Human page: the frame in focus is sharp and full size, its neighbours sit a
+    // little smaller under a pre-blurred copy of themselves (opacity only, no live blur filter while scrolling)
+    let fs = 1;
+    if (!light && fr.strip) {
+      const tgt = fr === foc ? 0 : clamp(0.6 + Math.abs(d) * 0.8, 0.6, 1);
+      fr.ov = fr.ov == null ? tgt : fr.ov + (tgt - fr.ov) * kf;
+      if (Math.abs(fr.ov - tgt) < 0.004) fr.ov = tgt; else page._dirty = true;
+      const off = fr.ov;
+      fs = 1 - 0.06 * off;
+      if (!fr.blr && off > 0) blurOf(fr);
+      if (fr.blr) { const bo = (off * 0.92).toFixed(2); if (bo !== fr.bo) { fr.bo = bo; fr.blr.style.opacity = bo; } }
+    }
+    if (!light && (skW || fr.k || fr.strip)) {
+      const dep = fr.k ? (d * (fr.k % 2 ? 24 : -16)).toFixed(2) : 0;
+      const tf = V ? `translate3d(0,${dep}px,0) skewY(${(-sk).toFixed(3)}deg) scale(${fs.toFixed(4)},${(fs * (1 - cm)).toFixed(4)})`
+        : `translate3d(0,${dep}px,0) skewX(${(-sk).toFixed(3)}deg) scale(${(fs * (1 - cm)).toFixed(4)},${fs.toFixed(4)})`;
+      if (tf !== fr.tf) { fr.tf = tf; fr.f.style.transform = tf; }
+    }
+  }
+  // the next project grows as the end comes in
+  if (hx.nx && hx.nx.m) {
+    const q = clamp((x + VIEW - hx.nx.pos) / VIEW, 0, 1);
+    if (q !== hx.nx.q) { hx.nx.q = q; hx.nx.m.style.transform = `scale(${(0.78 + 0.22 * ease3(q)).toFixed(4)})`; }
+  }
+}
+gsap.ticker.add(pageTick);
+/* a pre-blurred copy of a frame's picture: the 640 thumb drawn to 24 px across, then up to 120 px with smoothing (and a
+   2 px canvas blur where supported), shown stretched over the picture inside its drifting layer. Made once per frame. */
+function blurOf(fr) {
+  if (fr.blrP || !fr.f._src) return; fr.blrP = true;
+  const path = fr.f._src, im = new Image(); im.decoding = 'async';
+  im.onload = () => {
+    const box = fr.m, bw = box.offsetWidth || 1, bh = box.offsetHeight || 1, ar = bw / bh;
+    const W = 120, H = Math.max(2, Math.round(W / ar)), w0 = 24, h0 = Math.max(2, Math.round(w0 / ar));
+    const t = document.createElement('canvas'); t.width = w0; t.height = h0;
+    const g0 = t.getContext('2d'), iar = im.naturalWidth / im.naturalHeight || ar;
+    let sw = im.naturalWidth, sh = im.naturalHeight, sx = 0, sy = 0;
+    if (iar > ar) { sw = sh * ar; sx = (im.naturalWidth - sw) / 2; } else { sh = sw / ar; sy = (im.naturalHeight - sh) * 0.4; }
+    g0.imageSmoothingQuality = 'high'; g0.drawImage(im, sx, sy, sw, sh, 0, 0, w0, h0);
+    const c = el('canvas', 'wkg-blr'); c.width = W; c.height = H; c.setAttribute('aria-hidden', 'true');
+    const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; if ('filter' in g) g.filter = 'blur(2px)';
+    g.drawImage(t, -2, -2, W + 4, H + 4);
+    box.appendChild(c); fr.blr = c; fr.bo = -1;
+    if (curPage) curPage._dirty = true;
+  };
+  im.onerror = () => {};
+  im.src = THUMBABLE.test(path) ? src(thumb(path, 640)) : src(path);
+}
+/* the end hold: nothing advances on the momentum that reached the end. Only once the run has rested there does the
+   cue fade in; then a further push (wheel, swipe or key) past NEXT_PUSH, or a click, goes on into the next project */
+const NEXT_PUSH = 240, REST_MS = 380;
+function endHold(page, hx, now, dt) {
+  const pr = hx.pr || (hx.pr = { on: false, acc: 0, last: 0, at: 0 });
+  const atEnd = hx.max > 0 && hx.x >= hx.max - 1.5 && (hx.native || hx.t >= hx.max - 0.5) && !busy;
+  if (!atEnd) { if (pr.on || pr.acc) { pr.on = false; setPush(page, pr, 0); page.classList.remove('wkg-nxon'); } return; }
+  if (!pr.on && now - (hx.lastIn || 0) > REST_MS) { pr.on = true; pr.at = now; setPush(page, pr, 0); page.classList.add('wkg-nxon'); }
+  if (pr.on && pr.acc > 0 && now - pr.last > 450) setPush(page, pr, Math.max(0, pr.acc - dt * 900));
+}
+function setPush(page, pr, v) { pr.acc = v; const nx = page._track.querySelector('.wkg-next'); if (nx && nx._cue) nx._cue.style.setProperty('--acc', Math.min(1, v / NEXT_PUSH).toFixed(3)); }
+/* a forward push at the end: true when it was taken (the run itself does not move) */
+function pushOn(page, d) {
+  const hx = page._hx, pr = hx.pr; if (!pr || !pr.on || busy) return false;
+  if (d <= 0) { setPush(page, pr, 0); return false; }
+  const now = performance.now(); if (now - pr.at < 220) return true;   // the cue has to be seen first
+  pr.last = now; setPush(page, pr, pr.acc + d);
+  if (pr.acc >= NEXT_PUSH) { pr.on = false; const nx = page._track.querySelector('.wkg-next'); if (nx && nx._open) nx._open(); }
+  return true;
+}
+function pageInput() {
+  addEventListener('wheel', (e) => {
+    const page = curPage; if (!page || !openId || !page.contains(e.target)) return;
+    const hx = page._hx, V = !!page._v;
+    if (hx.native) {
+      if (V) return;
+      // a mouse wheel on a narrow window: vertical turns sideways, unless the panel under it scrolls down itself
+      const pn = e.target.closest('.wkg-pn');
+      if (pn && pn.scrollHeight > pn.clientHeight + 2) return;
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); if (!pushOn(page, e.deltaY)) page._sc.scrollLeft += e.deltaY; }
+      return;
+    }
+    e.preventDefault();
+    if (e.ctrlKey) return;
+    const k = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? (V ? innerHeight : innerWidth) : 1;
+    const d = (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * k;
+    if (hx.t >= hx.max - 0.5 && pushOn(page, d)) return;
+    hx.t = clamp(hx.t + d, 0, hx.max); hx.lastIn = performance.now(); hx.settled = false;
+  }, { passive: false });
+  let down = false, sx = 0, st = 0;
+  addEventListener('pointerdown', (e) => { const page = curPage; if (!page || page._v || e.pointerType !== 'mouse' || e.button !== 0 || page._hx.native || !page.contains(e.target) || e.target.closest('a,button,video')) return; down = true; sx = e.clientX; st = page._hx.t; PG.dragged = false; });
+  addEventListener('pointermove', (e) => { if (!down || !curPage) return; const dx = e.clientX - sx; if (Math.abs(dx) > 6) { PG.dragged = true; curPage._sc.classList.add('wkg-drag'); } if (PG.dragged) { curPage._hx.t = clamp(st - dx * 1.4, 0, curPage._hx.max); curPage._hx.lastIn = performance.now(); curPage._hx.settled = false; } });
+  addEventListener('pointerup', () => { if (!down) return; down = false; if (curPage) curPage._sc.classList.remove('wkg-drag'); setTimeout(() => { PG.dragged = false; }, 0); });
+  addEventListener('keydown', (e) => {
+    const page = curPage; if (!page || !openId) return;
+    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    const hx = page._hx, V = !!page._v;
+    const fwd = e.key === 'ArrowRight' || e.key === 'PageDown' || (V && e.key === 'ArrowDown') || (e.key === ' ' && !e.target.closest('button,a,[role=link]'));
+    const bk = e.key === 'ArrowLeft' || e.key === 'PageUp' || (V && e.key === 'ArrowUp');
+    if (!fwd && !bk && e.key !== 'Home' && e.key !== 'End') return;
+    e.preventDefault();
+    if (fwd && hx.pr && hx.pr.on) { pushOn(page, NEXT_PUSH); return; }
+    const step = (V ? innerHeight : innerWidth) * 0.8;
+    let t = e.key === 'Home' ? 0 : e.key === 'End' ? hx.max : clamp(hx.t + (fwd ? step : -step), 0, hx.max);
+    hx.lastIn = performance.now() + 400; hx.settled = false;
+    if (hx.native) { hx.t = t; page._sc.scrollTo({ [V ? 'top' : 'left']: t, behavior: RM.matches ? 'auto' : 'smooth' }); } else hx.t = t;
+  });
+  addEventListener('resize', () => { if (curPage) { layoutPage(curPage); curPage._dirty = true; } });
+  // touch at the end: a fresh swipe onward (left, or up) past the push carries on; it never counts the momentum
+  let tx = 0, ty = 0, tl = 0;
+  addEventListener('touchstart', (e) => { if (!curPage || !e.touches[0]) return; tx = e.touches[0].clientX; ty = e.touches[0].clientY; tl = 0; }, { passive: true });
+  addEventListener('touchmove', (e) => {
+    const page = curPage; if (!page || !e.touches[0] || !page._hx.pr || !page._hx.pr.on) return;
+    const d = Math.max(tx - e.touches[0].clientX, ty - e.touches[0].clientY) * 2.2;
+    if (d > tl) { pushOn(page, d - tl); tl = d; }
+  }, { passive: true });
+}
+
+/* ---------- the flight: a full-screen layer, clipped to the card and growing to the screen (GPU friendly: clip and transform) ---------- */
 function flyer(fromEl, p) {
-  const f = el('div', 'wkg-fly');
-  if (isText(p)) { f.appendChild(plateEl(p)); f.style.background = schemeOf(p).pc; }
-  else { const im = el('img'); im.alt = ''; const ci = fromEl.querySelector('img'); im.src = (ci && ci.currentSrc) || big(p.hero); f.appendChild(im); }
+  const f = el('div', 'wkg-fly'), inner = el('div', 'wkg-fli');
+  if (isText(p)) { f.style.background = 'transparent'; inner.style.background = schemeOf(p).pc; inner.appendChild(plateEl(p)); }
+  else {
+    let im = takeImg(p);
+    if (!im) { im = el('img'); im.decoding = 'async'; const ci = fromEl && fromEl.querySelector('img'); im.src = (ci && ci.currentSrc) || big(p.hero); }
+    im.alt = ''; inner.appendChild(im);
+  }
+  f.appendChild(inner); f._in = inner;
   return f;
 }
+const lerp = (a, b, t) => a + (b - a) * t;
+const rectOf = (r) => ({ x: r.left, y: r.top, w: r.width, h: r.height });
+const SCREEN = () => ({ x: 0, y: 0, w: innerWidth, h: innerHeight });
+/* put the flyer at a rect: the clip shows exactly the rect, the picture inside is scaled to cover it, as the card shows it */
+function flyAt(f, r, rad, zoom) {
+  const W = innerWidth, H = innerHeight;
+  f.style.clipPath = `inset(${r.y.toFixed(2)}px ${(W - r.x - r.w).toFixed(2)}px ${(H - r.y - r.h).toFixed(2)}px ${r.x.toFixed(2)}px round ${rad.toFixed(2)}px)`;
+  const s = Math.max(r.w / W, r.h / H) * zoom;
+  f._in.style.transform = `translate3d(${(r.x + r.w / 2 - W / 2).toFixed(2)}px,${(r.y + r.h / 2 - H / 2).toFixed(2)}px,0) scale(${s.toFixed(5)})`;
+}
+function flight(f, a, b, ra, rb, za, zb, dur, ease) {
+  const st = { t: 0 };
+  flyAt(f, a, ra, za);
+  const tw = gsap.to(st, { t: 1, duration: dur, ease, onUpdate: () => {
+    const t = st.t;
+    flyAt(f, { x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t), w: lerp(a.w, b.w, t), h: lerp(a.h, b.h, t) }, lerp(ra, rb, t), lerp(za, zb, t));
+  } });
+  return track(tw);
+}
 /* a plate's ground carries the flight; its type fades out leaving the card and fades in arriving back */
-function plateFade(f, a, b) {
+function plateType(f, out) {
   const pl = f.querySelector('.wkg-pl'); if (!pl) return;
   pl.style.background = 'transparent';
-  track(pl.animate(a > b ? [{ opacity: 1 }, { opacity: 0, offset: .28 }, { opacity: 0 }] : [{ opacity: 0 }, { opacity: 0, offset: .62 }, { opacity: 1 }], { duration: a > b ? FLY_MS : 860, easing: 'linear', fill: 'forwards' }));
+  if (out) gsap.to(pl.children, { autoAlpha: 0, duration: 0.25, ease: 'power2.out' });
+  else gsap.fromTo(pl.children, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.35, delay: T.zoom * 0.6, ease: 'power2.out' });
 }
-const box = (r) => ({ left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px' });
-function track(a) { holds.push(a); a.finished.catch(() => {}).then(() => { const i = holds.indexOf(a); if (i >= 0) holds.splice(i, 1); }); return a; }
+function track(a) { holds.push(a); const done = () => { const i = holds.indexOf(a); if (i >= 0) holds.splice(i, 1); }; a.eventCallback('onComplete', done); return a; }
+const until = (tw) => new Promise(r => { if (!tw) return r(); const prev = tw.eventCallback('onComplete'); tw.eventCallback('onComplete', () => { if (prev) prev(); r(); }); });
+const onScreen = (r) => r.bottom > 0 && r.top < innerHeight && r.right > 0 && r.left < innerWidth && r.width > 0;
 
-/* pages never cross-fade over the list: navy over pink at half opacity reads violet. They wipe with a clip instead. */
-const inset = (r) => `inset(${Math.max(0, r.top)}px ${Math.max(0, innerWidth - r.right)}px ${Math.max(0, innerHeight - r.bottom)}px ${Math.max(0, r.left)}px)`;
-const FULL = 'inset(0px 0px 0px 0px)';
-const isFull = (r) => r.left <= 1 && r.top <= 1 && r.right >= innerWidth - 1 && r.bottom >= innerHeight - 1;
+function lock(on) {
+  document.documentElement.classList.toggle('wkg-lock', on);
+  if (KP.lenis) on ? KP.lenis.stop() : KP.lenis.start();
+}
+function pageIn(page) {
+  page._live = true; page._dirty = true; page._dark = null;
+  page._fxUntil = performance.now() + 2500;
+  page.classList.add('wkg-show');
+  if (!RM.matches) page._hero.querySelectorAll('video').forEach(v => v.play().catch(() => {}));
+  const h = page._hero, words = h._title ? [...h._title.querySelectorAll('.wkg-ln>span')] : [];
+  const bm = page._back.firstChild, bt = page._back.querySelector('.wkg-bt>span');
+  const allb = page._back._allb, am = allb && allb.firstChild;
+  gsap.set(allb ? [page._back, allb] : page._back, { opacity: 1 });
+  if (RM.matches) { setTimeout(() => heroFluid(page), 0); gsap.set(page._progW, { opacity: 1 }); gsap.set(am ? [bm, am] : bm, { autoAlpha: 1 }); if (h._hi) h._hi(); return; }
+  // the title rises line by line out of its masks, then the info under it, then the rest
+  const tops = words.map(w => w.parentNode.offsetTop), rows = [...new Set(tops)].sort((a, b) => a - b);
+  words.forEach((w, i) => gsap.fromTo(w, { yPercent: 115 }, { yPercent: 0, duration: 1.05, ease: 'expo.out', delay: 0.05 + rows.indexOf(tops[i]) * 0.08 }));
+  const after = 0.12 + rows.length * 0.08;
+  const lede = h.querySelector('.wkg-hlede');
+  if (lede && lede._src != null) splitLines([lede], true);   // measured again now: the hero's columns are final only once it shows
+  if (lede && lede._lines) { lede._shown = true; gsap.fromTo(lede._lines, { yPercent: 115 }, { yPercent: 0, duration: 1.05, ease: 'expo.out', stagger: 0.08, delay: after + 0.08 }); }
+  const rest = [h._meta, h.querySelector('.wkg-hcols dl'), h.querySelector('.wkg-tm'), h.querySelector('.wkg-tlogo'), h.querySelector('.wkg-tq'), h.querySelector('.wkg-tf')].filter(Boolean);
+  if (rest.length) gsap.fromTo(rest, { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', delay: after, stagger: 0.07 });
+  gsap.fromTo(am ? [bm, am] : bm, { autoAlpha: 0, yPercent: -40 }, { autoAlpha: 1, yPercent: 0, duration: 0.9, ease: 'expo.out', delay: 0.3, stagger: 0.06 });
+  gsap.fromTo(bt, { yPercent: 115 }, { yPercent: 0, duration: 0.9, ease: 'expo.out', delay: 0.4 });
+  gsap.to(page._progW, { opacity: 1, duration: 0.8, ease: 'expo.out', delay: 0.4 });
+  if (h._hi) setTimeout(h._hi, 500);
+  setTimeout(() => heroFluid(page), 1400);
+}
+/* before the zoom out: the page's content reverses out quickly (0.4 s), the back control first */
+function contentOut(page) {
+  if (RM.matches) return Promise.resolve();
+  const h = page._hero, hx = page._hx;
+  page._back._shut(true);
+  gsap.to(page._back._allb ? [page._back.firstChild, page._back._allb.firstChild] : page._back.firstChild, { autoAlpha: 0, yPercent: -40, duration: 0.28, ease: 'power2.in' });
+  gsap.to(page._progW, { opacity: 0, duration: 0.3, ease: 'power1.out' });
+  if (h._title) gsap.to(h._title.querySelectorAll('.wkg-ln>span'), { yPercent: 115, duration: 0.38, ease: 'power3.in', stagger: 0.015 });
+  const rest = [h._meta, h.querySelector('.wkg-hcols'), h.querySelector('.wkg-hlede'), h.querySelector('.wkg-tm'), h.querySelector('.wkg-tlogo'), h.querySelector('.wkg-tg')].filter(Boolean);
+  gsap.to(rest, { autoAlpha: 0, y: 12, duration: 0.3, ease: 'power2.in' });
+  const others = [...page._track.children].filter(x => x !== h);
+  gsap.to(others, { autoAlpha: 0, duration: 0.34, ease: 'power2.in' });
+  if (hx.x > hx.heroW * 0.5) gsap.to(h, { autoAlpha: 0, duration: 0.34, ease: 'power2.in' });
+  return new Promise(r => setTimeout(r, 400));
+}
+const heroHome = (page) => (page._hx.framed && page._hx.hf ? { ...page._hx.hf } : SCREEN());
 async function show(id, fromEl) {
   const p = byId.get(id); if (!p) return;
   if (openId === id && curPage) return;
   const prev = curPage;
+  const sy = prev ? prev._sy : scrollY;
   openId = id; busy = true;
-  const page = buildPage(p); curPage = page;
-  const flying = fromEl && !RM.matches && fromEl.isConnected;
-  page.style.visibility = 'hidden';
-  ROOT.appendChild(page);
-  document.documentElement.classList.add('wkg-lock');
-  smooth(page);
+  const page = takePage(p); curPage = page; page._sy = sy;
+  if (!page.isConnected) ROOT.appendChild(page);
+  if (pre && pre.page === page) pre = null;
+  lock(true);
+  if (page._laid !== innerWidth + 'x' + innerHeight) layoutPage(page);
+  const fr = fromEl && fromEl.isConnected ? fromEl.getBoundingClientRect() : null;
+  const flying = !RM.matches && fr && onScreen(fr);
   if (flying) {
-    const from = fromEl.getBoundingClientRect();
-    const target = page._hero._primary.getBoundingClientRect();
     const f = flyer(fromEl, p);
-    const rad = getComputedStyle(fromEl).borderRadius;
-    Object.assign(f.style, box(from), { borderRadius: rad });
     ROOT.appendChild(f);
-    if (gl && !prev) gl.alpha(id, 0, true);
-    fromEl.style.visibility = 'hidden';
-    const tx = isText(p);
-    const trad = getComputedStyle(page._hero._primary).borderRadius || '0px';
-    const a1 = track(f.animate([{ ...box(from), borderRadius: rad }, { ...box(target), borderRadius: trad }], { duration: FLY_MS, easing: MOVE, fill: 'forwards' }));
-    const img = f.querySelector('img');
-    if (img) track(img.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)', offset: .45 }, { transform: 'scale(1)' }], { duration: FLY_MS, easing: MOVE, fill: 'forwards' }));
-    if (tx) plateFade(f, 1, 0);
-    await a1.finished.catch(() => {});
+    const rad = parseFloat(getComputedStyle(fromEl).borderTopLeftRadius) || 0;
+    const z0 = gl && !prev ? 1 + 0.07 * gl.hover(id) : 1;
+    flyAt(f, rectOf(fr), rad, z0);
+    if (!prev) {
+      if (gl) { gl.alpha(id, 0); gl.others(id, 0, 0.12); }
+      fromEl.style.visibility = 'hidden';
+      gsap.to(ui.w, { autoAlpha: 0, duration: 0.4, ease: 'power2.out' });
+    } else fromEl.style.visibility = 'hidden';
+    if (isText(p)) plateType(f, true);
+    const hx = page._hx;
+    await until(flight(f, rectOf(fr), heroHome(page), rad, hx.framed ? 20 : 0, z0, hx.heroZ, T.zoom, 'power3.inOut'));
     if (curPage !== page) { f.remove(); return; }
-    page.style.visibility = '';
-    page.classList.remove('wkg-pre');
-    requestAnimationFrame(() => { f.remove(); fromEl.style.visibility = ''; });
-    if (!isFull(target)) await track(page.animate([{ clipPath: inset(target) }, { clipPath: FULL }], { duration: 760, easing: MOVE })).finished.catch(() => {});
+    // the page is under the flyer now, the same picture at the same place; the flyer dissolves into it
+    if (prev) fluidDetach(prev);
+    fluidHome(page); fluidGate();
+    pageIn(page);
+    if (gl) gl.pause(true);
+    if (prev) { prev._live = false; prev.remove(); prev._io && prev._io.disconnect(); }
+    fromEl.style.visibility = '';
+    gsap.to(f, { autoAlpha: 0, duration: T.fade, ease: 'power1.out', onComplete: () => f.remove() });
   } else {
-    page.style.visibility = '';
-    page.classList.remove('wkg-pre');
-    if (!RM.matches) await track(page.animate([{ clipPath: 'inset(100% 0px 0px 0px)' }, { clipPath: FULL }], { duration: 820, easing: MOVE })).finished.catch(() => {});
+    if (prev) { prev._live = false; }
+    if (gl) gl.pause(true);
+    page.classList.add('wkg-show');
+    if (!RM.matches) await until(track(gsap.fromTo(page, { yPercent: 100 }, { yPercent: 0, duration: 0.9, ease: 'expo.out', clearProps: 'transform' })));
+    else await until(gsap.fromTo(page, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25 }));
+    if (prev) { fluidDetach(prev); prev.remove(); prev._io && prev._io.disconnect(); }
+    if (ui.w) gsap.set(ui.w, { autoAlpha: 0 });
+    fluidHome(page); fluidGate();
+    pageIn(page);
   }
-  if (prev) { prev.remove(); prev._io && prev._io.disconnect(); }
-  page.classList.add('wkg-ready');
-  page.querySelector('.wkg-back').focus({ preventScroll: true });
-  if (page._seq) setTimeout(() => layoutSeq(page._seq, p, page), RM.matches ? 0 : 450);
+  page._back.focus({ preventScroll: true, focusVisible: false });
   busy = false; flush();
 }
 async function hide() {
   if (!openId || !curPage) return;
-  const id = openId, page = curPage; openId = null; curPage = null; busy = true;
+  const id = openId, page = curPage; busy = true;
+  fluidDetach(page); fluidHome(null);
   page.querySelectorAll('video').forEach(v => v.pause());
+  // the list stays where it was left (a phone can lose the document's scroll while the page is open)
+  if (page._sy != null && Math.abs(scrollY - page._sy) > 2) scrollTo(0, page._sy);
   const card = ui.cards && ui.cards.find(c => c.dataset.id === id);
   const slot = card && card.querySelector('.wkg-m');
-  document.documentElement.classList.remove('wkg-lock');
+  const p = byId.get(id);
+  if (slot) { const r = slot.getBoundingClientRect(); if (!onScreen(r)) scrollTo(0, scrollY + r.top - (innerHeight - r.height) / 2); }
   const sr = slot && slot.getBoundingClientRect();
-  const canFly = !RM.matches && slot && page.scrollTop < innerHeight * 0.35 && sr.bottom > 0 && sr.top < innerHeight;
+  const canFly = !RM.matches && sr && onScreen(sr);
+  if (gl) gl.pause(false);
   if (canFly) {
-    const p = byId.get(id), prim = page._hero._primary;
-    const from = prim.getBoundingClientRect();
-    if (!isFull(from)) await track(page.animate([{ clipPath: FULL }, { clipPath: inset(from) }], { duration: 320, easing: MOVE, fill: 'forwards' })).finished.catch(() => {});
-    const f = flyer(prim, p);
-    Object.assign(f.style, box(from));
+    // no rewind: the content goes, the hero picture is cut back in where it was, then it zooms into its card
+    await contentOut(page);
+    const hx = page._hx, home = heroHome(page), rH = hx.framed ? 20 : 0;
+    const f = flyer(slot, p);
+    const pl = f.querySelector('.wkg-pl'); if (pl) { pl.style.background = 'transparent'; gsap.set(pl.children, { autoAlpha: 0 }); }
     ROOT.appendChild(f);
+    flyAt(f, home, rH, hx.heroZ);
+    if (gl) { gl.alpha(id, 0); gl.others(id, 0); }
+    await until(gsap.fromTo(f, { autoAlpha: 0 }, { autoAlpha: 1, duration: hx.x > 2 ? 0.26 : 0.18, ease: 'power1.out' }));
+    page._live = false; page.remove(); page._io && page._io.disconnect();
+    openId = null; curPage = null; delete document.documentElement.dataset.ground; fluidGate();
+    lock(false);
+    // back to where the list was left, unless the card coming back is not in view there (after carrying on through Next
+    // project it can be elsewhere): then the card comes to the middle of the screen. One target, one native scroll.
+    { let y = page._sy != null ? page._sy : scrollY; const r = slot.getBoundingClientRect(), top = r.top + scrollY - y;
+      if (top < 0 || top + r.height > innerHeight) y = y + top - (innerHeight - r.height) / 2;
+      if (Math.abs(scrollY - y) > 2) scrollTo(0, y); }
     slot.style.visibility = 'hidden';
-    page.style.visibility = 'hidden';
-    const rad = getComputedStyle(slot).borderRadius;
-    const frad = getComputedStyle(prim).borderRadius || '0px';
-    const a1 = track(f.animate([{ ...box(from), borderRadius: frad }, { ...box(sr), borderRadius: rad }], { duration: 860, easing: MOVE, fill: 'forwards' }));
-    if (isText(p)) plateFade(f, 0, 1);
-    await a1.finished.catch(() => {});
-    page.remove();
-    if (gl) gl.restore();
+    const sr2 = slot.getBoundingClientRect();
+    const rad = parseFloat(getComputedStyle(slot).borderTopLeftRadius) || 0;
+    if (isText(p)) plateType(f, false);
+    const tw = flight(f, home, rectOf(sr2), rH, rad, hx.heroZ, 1, T.zoom, 'power3.inOut');
+    gsap.to(ui.w, { autoAlpha: 1, duration: 0.6, ease: 'power2.out', delay: T.zoom * 0.45 });
+    if (gl) setTimeout(() => gl.others(id, 1, 0.14), T.zoom * 450);
+    await until(tw);
+    if (gl) gl.alpha(id, 1);
     slot.style.visibility = '';
-    requestAnimationFrame(() => f.remove());
+    requestAnimationFrame(() => requestAnimationFrame(() => f.remove()));
   } else {
-    if (!RM.matches) await track(page.animate([{ clipPath: FULL }, { clipPath: 'inset(0px 0px 100% 0px)' }], { duration: 700, easing: MOVE, fill: 'forwards' })).finished.catch(() => {});
-    page.remove();
-    if (gl) gl.restore();
+    if (!RM.matches) await until(track(gsap.to(page, { yPercent: 100, duration: 0.7, ease: 'power3.inOut' })));
+    page._live = false; page.remove(); page._io && page._io.disconnect();
+    openId = null; curPage = null; delete document.documentElement.dataset.ground; fluidGate();
+    lock(false);
+    if (page._sy != null && Math.abs(scrollY - page._sy) > 2) scrollTo(0, page._sy);
+    gsap.set(ui.w, { autoAlpha: 1 });
+    if (gl) { gl.others('', 1, 0.0001); }
   }
-  page._io && page._io.disconnect();
-  if (gl) gl.resume();
+  if (gl) gl.measure();
   busy = false;
   if (card) card.focus({ preventScroll: true });
   flush();
@@ -1008,7 +2456,6 @@ async function hide() {
 let queued = null;                       // the last click made during a flight, run when it lands
 function flush() { if (!queued) return; const q = queued; queued = null; requestAnimationFrame(q); }
 function go(id, fromEl, inPlace) {
-  // a click made mid-flight replaces the page it lands on, so Back still returns to the list
   if (busy) { queued = () => go(id, fromEl && fromEl.isConnected ? fromEl : null, true); return; }
   const h = '#work/' + id;
   if (location.hash !== h) {
@@ -1024,7 +2471,10 @@ function close() {
   else { history.replaceState(null, '', location.pathname + location.search + '#work'); hide(); }
 }
 function route() {
+  const c = readCat(); if (c !== cat) setCat(c, true);
   const m = location.hash.match(/^#work\/([\w-]+)$/);
+  if (m && ALIAS[m[1]]) { history.replaceState(history.state, '', location.pathname + location.search + '#work/' + ALIAS[m[1]]); return route(); }
+  if (m && !byId.has(m[1])) history.replaceState(null, '', location.pathname + location.search + '#work');   // hidden or unknown: the list
   if (m && byId.has(m[1])) show(m[1]); else hide();
 }
 
@@ -1033,10 +2483,18 @@ async function init() {
   if (!ROOT) return;
   const style = el('style'); style.id = 'wkg-style'; style.textContent = CSS; document.head.appendChild(style);
   if (!document.getElementById('wkg-fonts')) { const lk = el('link'); lk.id = 'wkg-fonts'; lk.rel = 'stylesheet'; lk.href = FONTS; document.head.appendChild(lk); }
+  let fontsP = Promise.resolve();
   try {
-    const [sw, md, br] = await Promise.all([load('software/manifest.json'), load('media/manifest.json'), load('media/brands.json').catch(() => ({}))]);
-    DATA.software = spread(sw.filter(p => !HIDE.has(p.id)));
-    DATA.media = spread(md.filter(p => !HIDE.has(p.id)));
+    const quiet = (path) => fetch(BASE + path).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
+    const [sw, md, br, bs, bm] = await Promise.all([load('software/manifest.json'), load('media/manifest.json'), load('media/brands.json').catch(() => ({})), quiet('software/bts.json'), quiet('media/bts.json')]);
+    BTS = { ...(bs && typeof bs === 'object' ? bs : {}), ...(bm && typeof bm === 'object' ? bm : {}) };
+    const [ns, nm] = await Promise.all([quiet('software/media-notes.json'), quiet('media/media-notes.json')]);
+    NOTES = { ...(ns && typeof ns === 'object' ? ns : {}), ...(nm && typeof nm === 'object' ? nm : {}) };
+    const [bs2, bm2] = await Promise.all([quiet('software/briefs.json'), quiet('media/briefs.json')]);
+    BRIEFS = { ...(bs2 && typeof bs2 === 'object' ? bs2 : {}), ...(bm2 && typeof bm2 === 'object' ? bm2 : {}) };
+    SW = sw.filter(p => !HIDE.has(p.id) && !ALIAS[p.id] && p.hidden !== true);
+    DATA.software = arrange(SW);
+    DATA.media = spread(md.filter(p => !HIDE.has(p.id) && p.hidden !== true));
     BRANDS = (br && Array.isArray(br.brands) ? br.brands : []).map(clean).map(s => s.trim()).filter(Boolean);
   } catch (err) {
     console.warn(err);
@@ -1045,19 +2503,34 @@ async function init() {
   }
   ALL = [...DATA.software, ...DATA.media];
   byId = new Map(ALL.map(p => [p.id, p]));
+  cat = readCat();
+  // the text face at the weights used here, before anything is measured or drawn (no swap mid reveal)
+  if (document.fonts) fontsP = Promise.race([Promise.all(['400 20px', '500 20px', '500 120px', '600 20px'].map(s => document.fonts.load(`${s} ${FF}`))), new Promise(r => setTimeout(r, 2500))]);
+  // the listing's smooth wheel (Lenis, set up in index.html) gets the same curve, from #work down only: above #work
+  // Lenis passes the native wheel through, so the landing and the numbers are untouched. Lenis damps with
+  // 1 - exp(-lerp * 60 * dt), so lerp = -ln(1 - FOLLOW) gives FOLLOW per frame.
+  if (KP.lenis && KP.lenis.options) KP.lenis.options.lerp = -Math.log(1 - FOLLOW);
   buildListing();
-  setTab(tab, true);
+  await fontsP;
   gl = await initGL();
-  if (gl) gl.setCards(DATA[tab], ui.cards); else ui.w.classList.remove('wkg-glon');
+  if (!gl) ui.w.classList.remove('wkg-glon');
+  await initFluid();
+  setTab(tab, true);
+  headIn();
+  pageInput();
   addEventListener('popstate', route);
   addEventListener('hashchange', route);
-  addEventListener('keydown', (e) => { if (e.key === 'Escape' && openId) close(); });
+  // anything that changes the page height (the numbers booting, fonts, a tab) moves the triggers
+  if (window.ResizeObserver) { let lh = 0, t = 0; new ResizeObserver(() => { const h = document.documentElement.scrollHeight; if (Math.abs(h - lh) > 2) { lh = h; clearTimeout(t); t = setTimeout(() => ScrollTrigger.refresh(), 120); } }).observe(document.body); }
   route();
   window.__wkg = {
-    go, close, show, hide, get openId() { return openId; }, get gl() { return !!gl; },
-    pin: (v) => gl && gl.pin(v), point: (x, y) => gl && gl.point(x, y),
-    hold(t) { holds.forEach(a => { a.pause(); a.currentTime = t * FLY_MS; }); },
+    go, close, show, hide, get openId() { return openId; }, get gl() { return !!gl; }, setCat, get cat() { return cat; },
+    point: (x, y) => gl && gl.point(x, y),
+    hold(t) { holds.forEach(a => { a.pause(); a.progress(t); }); },
     release() { holds.forEach(a => a.play()); },
+    get busy() { return busy; },
+    get page() { return curPage && curPage._hx; },
+    get fluid() { return FLUID; },
   };
 }
 

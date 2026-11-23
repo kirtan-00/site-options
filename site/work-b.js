@@ -11,7 +11,7 @@ const PHONE = matchMedia('(max-width: 760px)');
 /* Order is editorial: it decides the packing below. */
 const ORDER = ['spectra', 'zepto', 'clapper', 'sorted', 'crav-social', 'deepdive', 'vibe-raas-led',
   'fitkit', 'cravache', 'palladium', 'deepdive-blog', 'vibe-raas-tickets', 'dvc', 'sportified', 'fourside-studios'];
-const LEAVE_OUT = new Set(['gujarat-titans']);
+const LEAVE_OUT = new Set([]);
 const TEXT_ONLY = new Set(['clapper', 'fitkit', 'fourside-studios', 'palladium', 'dvc']);
 /* Flat tiles for the text-only projects: palette colour and the ink on it. */
 const FLAT = {

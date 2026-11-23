@@ -1,0 +1,137 @@
+{
+ "spectra": [
+  {
+   "src": "software/spectra/live-02.jpg",
+   "caption": "Cortex, the first room after the entrance. It is not a photo or a video: the room is drawn live in the browser, and scrolling walks you down the corridor to its door."
+  },
+  {
+   "src": "software/spectra/live-03.jpg",
+   "caption": "Chronicle. Every room has its own world, its own colours and its own door, so the site is a walk through the museum, one room at a time."
+  },
+  {
+   "src": "software/spectra/live-06.jpg",
+   "caption": "Laurel. The bar at the bottom stays put in every room, so sound, the menu and Book now are always one tap away."
+  },
+  {
+   "src": "software/spectra/live-09.jpg",
+   "caption": "Lume, one of the eight rooms. The room's name, Step inside and the bottom bar sit in the same place everywhere, so only the world around you changes."
+  },
+  {
+   "src": "software/spectra/live-11.jpg",
+   "caption": "The last room opens on the tickets. Book now, the hours and the directions are right there once you have walked through all eight."
+  }
+ ],
+ "shivasva": [
+  {
+   "src": "software/shivasva/live-02.jpg",
+   "caption": "A section of the home page. The design is the client's; the backend, CMS and deployment behind it are mine."
+  },
+  {
+   "src": "software/shivasva/live-03.jpg",
+   "caption": "Projects like Shivdhara Swarnim come out of the admin CMS. The client adds and edits their own projects, without calling me."
+  },
+  {
+   "src": "software/shivasva/live-04.jpg",
+   "caption": "Brahmdhara Residency, another project. Each one is run from the same CMS, with its own pictures, address and details."
+  },
+  {
+   "src": "software/shivasva/live-05.jpg",
+   "caption": "The contact form. You pick what the enquiry is about, and it goes to the client's email and into a Google Sheet."
+  }
+ ],
+ "sorted": [
+  {
+   "src": "software/sorted/client-pick.jpg",
+   "caption": "Client pick on a product shoot: 300 picked from 3,424 photos across 56 products. Every product gets its own row, so picking for a client is a scroll, not a folder hunt."
+  },
+  {
+   "src": "software/sorted/products.jpg",
+   "caption": "The products view. Every shot of the same product is grouped together, with how many photos and angles it has."
+  },
+  {
+   "src": "software/sorted/numbers.jpg",
+   "crop": 1.3,
+   "focus": "50% 0%",
+   "caption": "Every number on the site was measured on one machine, a 2020 MacBook Air with the base M1. 3,677 photos off one camera were searchable in 10 minutes 42 seconds."
+  },
+  {
+   "src": "software/sorted/drive.jpg",
+   "crop": 1.3,
+   "focus": "50% 0%",
+   "caption": "From the shoot disk to the client's Drive the same night. Pick a person or a category, paste the client's Drive folder link, and it uploads straight from the SSD."
+  },
+  {
+   "src": "software/sorted/live-03.jpg",
+   "caption": "Between the disk and the delivery there are five steps: plug in, index, search, people, export. The disk is only read, never written to, and nothing leaves the Mac until you export."
+  }
+ ],
+ "sparks": [],
+ "cravache": [
+  {
+   "src": "software/cravache/live.jpg",
+   "caption": "A brief lands on the desk, from a khaman house this time, with its fee, its patience and what it will cost you in sleep. You run the whole agency from screens like this one."
+  }
+ ],
+ "deepdive": [
+  {
+   "src": "software/deepdive/live-02.jpg",
+   "crop": 1.05
+  },
+  {
+   "src": "software/deepdive/live-01.jpg",
+   "crop": 1.05,
+   "caption": "The Instagram page, followed by 150K+ marketers, founders and operators. The posts are found, written, designed and published by one server on a fixed schedule."
+  },
+  {
+   "src": "software/deepdive-blog/live-02.jpg",
+   "focus": "0% 0%",
+   "caption": "The blog opens on a rolling preview of the Instagram page, so a reader can go from the long reads to the reels in one click."
+  },
+  {
+   "src": "software/deepdive-blog/live-03.jpg",
+   "focus": "0% 0%",
+   "caption": "One long read a day on why an ad worked. It is written and published without me touching it."
+  },
+  {
+   "src": "software/deepdive-blog/live-04.jpg",
+   "focus": "0% 0%",
+   "caption": "Older posts stack up underneath, each with its own picture, date and read time."
+  }
+ ],
+ "sportified": [
+  {
+   "src": "software/sportified/live-01.jpg",
+   "crop": 1.05
+  }
+ ],
+ "vibe-raas-led": [
+  {
+   "src": "software/vibe-raas-led/led-06.jpg",
+   "caption": "One of the eight visuals. It is drawn live, not a video on loop, and it moves with the music because the software listens to the mixer."
+  },
+  {
+   "src": "software/vibe-raas-led/led-10.jpg",
+   "caption": "The patterns are drawn from Gujarati textile and folk motifs and built by hand, eight visuals in four colourways."
+  },
+  {
+   "src": "software/vibe-raas-led/led-02.jpg",
+   "caption": "A wide wall layout. One laptop drives all three walls, the 50 ft stage screen and the two side screens, and it works with no internet."
+  },
+  {
+   "src": "software/vibe-raas-led/led-12.jpg",
+   "focus": "50% 0%",
+   "caption": "The control app on a phone. Pick the screens, the visual and the colours; the BPM comes off the mixer."
+  }
+ ],
+ "vibe-raas-tickets": [
+  {
+   "src": "software/vibe-raas-tickets/pass-01.jpg",
+   "caption": "A pass as the buyer gets it: the night, the venue, how many passes, and a QR code to show at the gate."
+  },
+  {
+   "src": "software/vibe-raas-tickets/pass-02.jpg",
+   "caption": "A smaller order, with food. The seller typed the sale into Telegram the way they would say it, and this came back."
+  }
+ ],
+ "retain-plus": []
+}
