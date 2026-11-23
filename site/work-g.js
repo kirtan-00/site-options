@@ -51,7 +51,7 @@ const VMODE = new URLSearchParams(location.search).get('inside') === 'v';
 const SPRING = 'cubic-bezier(.2,.8,.2,1)';
 const HOVER = matchMedia('(hover: hover) and (pointer: fine)');
 const HIDE = new Set([]);
-const TEXT_ONLY = new Set(['clapper', 'fitkit', 'fourside-studios', 'palladium', 'dvc']);
+const TEXT_ONLY = new Set(['fitkit', 'fourside-studios', 'palladium', 'dvc']);
 
 const INK = '#0c0d0f', PAPER = '#f1f2f0', BLUE = '#c9d8f7', PINK = '#f2a7b6', SKY = '#7d9bf0', COBALT = '#1c3bb0', NAVY = '#0f2545';
 /* the line beside the Software heading (swap freely) */

@@ -519,10 +519,10 @@
     ],
     "link": "https://clapper.in",
     "logo": "software/clapper/logo.png",
-    "hero": null,
+    "hero": "software/clapper/landing-hero.jpg",
     "gallery": [],
     "video": null,
-    "screens_withheld": true,
+    "screens_withheld": false,
     "category": "webapp"
   },
   {

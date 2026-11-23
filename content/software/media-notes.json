@@ -127,5 +127,12 @@
    "caption": "A smaller order, with food. The seller typed the sale into Telegram the way they would say it, and this came back."
   }
  ],
- "retain-plus": []
+ "retain-plus": [],
+ "clapper": [
+  {
+   "src": "software/clapper/landing.mp4",
+   "poster": "software/clapper/landing-poster.jpg",
+   "caption": "The landing page at clapper.in, scrolled top to bottom: the hero, the shot log writing itself, how it works, and the free guides for whoever holds the phone on set."
+  }
+ ]
 }
