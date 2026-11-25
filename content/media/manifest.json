@@ -1,9 +1,53 @@
 [
   {
+    "id": "gujarat-titans",
+    "name": "Gujarat Titans",
+    "wing": "media",
+    "one_line": "Creative producer for Gujarat Titans across two IPL seasons. On set, my job was to make every script more engaging and more visual, and to get the shoot done on time.",
+    "facts": [
+      {
+        "label": "Role",
+        "value": "Creative producer"
+      },
+      {
+        "label": "On set",
+        "value": "Scripts, visuals, people, locations, schedule"
+      },
+      {
+        "label": "Seasons",
+        "value": "2"
+      },
+      {
+        "label": "Junior Titans",
+        "value": "5 cities in 1 month, 2 days each"
+      },
+      {
+        "label": "Tour films",
+        "value": "4 documentaries, 5 city videos, 5 vox pops"
+      },
+      {
+        "label": "Tour crew",
+        "value": "1 drone operator, 1 iPhone shooter, 3 videographers"
+      }
+    ],
+    "writeup": [
+      "Two IPL seasons as creative producer on Gujarat Titans. On set, I had one job: make each script more engaging and better on screen, then make sure the shoot happened on time, with the right people in the right location.",
+      "Junior Titans went to 5 cities in 1 month: Surendranagar, Morbi, Amreli, Ahmedabad and Anand, 2 days in each. Every city got a vox pop and a city video to hype the event. Four got a documentary: Tangaliya weaving in Surendranagar, the tile factories of Morbi, the lok gayak of Amreli and Amul in Anand.",
+      "The crew was 1 drone operator, 1 iPhone shooter and 3 videographers. I was the producer and the iPhone shooter, ran production with Ohm, our production head, and gave the concepts for the city videos."
+    ],
+    "link": null,
+    "logo": "media/gujarat-titans/logo.png",
+    "logo_ink": null,
+    "hero": null,
+    "gallery": [],
+    "video": null,
+    "orientation": null
+  },
+  {
     "id": "zepto",
     "name": "Zepto",
     "wing": "media",
-    "one_line": "A ten-minute delivery brand can't wait ten days for a reel. Every month I turn their briefs into reels at their speed, and sometimes I'm the one in them.",
+    "one_line": "A ten-minute delivery brand can't wait ten days for a reel. I pitch concepts, shoot, edit and handle the client, with a team or on my own.",
     "facts": [
       {
         "label": "Role",
@@ -14,12 +58,16 @@
         "value": "Monthly reels"
       },
       {
+        "label": "Production",
+        "value": "With a team or solo"
+      },
+      {
         "label": "Concepts",
         "value": "Mostly theirs, sometimes mine"
       },
       {
         "label": "Hands on",
-        "value": "Shoot, edit, timeline"
+        "value": "Concepts, shoot, edit, client communication"
       },
       {
         "label": "In frame",
@@ -27,7 +75,7 @@
       }
     ],
     "writeup": [
-      "Zepto delivers groceries in ten minutes, so the content can't take ten days. I'm the creative producer on their monthly reels: budget, timeline, crew and every call with their team.",
+      "Zepto delivers groceries in ten minutes, so the content can't take ten days. I produce their monthly reels and handle the client communication, then get each one made with a team or by myself. I shoot and edit them too.",
       "Most months they send the concept. Some months the concept is mine. Either way it comes back shot, cut and ready to post while the joke is still fresh. I'm also in frame, as a creator on Zepto's own page."
     ],
     "link": null,
@@ -92,7 +140,7 @@
     "id": "crav-social",
     "name": "Crav Social",
     "wing": "media",
-    "one_line": "A page I ran end to end: the idea, the camera, the cut. Over 50 million views while it was mine.",
+    "one_line": "A page I ran end to end: the idea, the camera, the cut.",
     "facts": [
       {
         "label": "Role",
@@ -103,17 +151,13 @@
         "value": "Just me"
       },
       {
-        "label": "Views",
-        "value": "50M+ while I ran it"
-      },
-      {
         "label": "Status",
         "value": "No longer run by me"
       }
     ],
     "writeup": [
       "While I ran Crav Social, every post started as my idea, went through my camera and came out of my edit. No team, no hand-offs.",
-      "It crossed 50 million views in that stretch. I've handed it on since."
+      "I've handed it on since."
     ],
     "link": null,
     "logo": "media/crav-social/logo.png",

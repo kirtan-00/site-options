@@ -2,12 +2,55 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kirtan Purohit</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- TEMPORARY TEST LINK: remove this noindex line at the real launch -->
+<meta name="robots" content="noindex, follow">
+<script>
+/* A deep link (#work/<id>, #media, #media/<x>) opened cold: the landing stays hidden until the route lands, so the hero never
+   flashes first and the page never seems to jump to the wrong place. On #media the reels data starts loading now. Released
+   when a page is open or #work is on screen, on any hash change, or after 8 s whatever happens. */
+(function () {
+  var h = location.hash, d = document.documentElement;
+  if (!/^#(work\/|media(\/|$))/.test(h)) return;
+  d.classList.add('kp-deep');
+  if (/^#media/.test(h)) { var l = document.createElement('link'); l.rel = 'preload'; l.as = 'fetch'; l.href = '../content/media/reels.json'; l.crossOrigin = 'anonymous'; document.head.appendChild(l); }
+  var t0 = Date.now(), off = function () { d.classList.remove('kp-deep'); removeEventListener('hashchange', off); };
+  addEventListener('hashchange', off);
+  (function check() {
+    if (!d.classList.contains('kp-deep')) return;
+    var w = window.__wkg, work = document.getElementById('work');
+    if ((w && w.openId) || (work && work.getBoundingClientRect().top < innerHeight * 0.5) || Date.now() - t0 > 8000) { off(); return; }
+    setTimeout(check, 50);
+  })();
+})();
+</script>
+<title>Kirtan Purohit | Creative Producer and Developer, Ahmedabad</title>
+<meta name="description" content="Kirtan Purohit is a creative producer and developer in Ahmedabad. Reels, DVCs and documentaries for Gujarat Titans, Zepto and Palladium, plus his own software.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kirtan Purohit, creative producer and developer in Ahmedabad">
+<meta property="og:description" content="Reels, DVCs and documentaries for Gujarat Titans, Zepto and Palladium, plus software he builds himself.">
+<meta property="og:site_name" content="Kirtan Purohit">
+<meta property="og:locale" content="en_IN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kirtan Purohit, creative producer and developer in Ahmedabad">
+<meta name="twitter:description" content="Reels, DVCs and documentaries for Gujarat Titans, Zepto and Palladium, plus software he builds himself.">
+<!-- og:url and the image paths are relative until the domain is chosen. Scrapers (WhatsApp, LinkedIn, X) need absolute URLs: swap in https://<domain>/... then. -->
+<meta property="og:url" content="https://kirtan-00.github.io/site-options/site/">
+<meta property="og:image" content="https://kirtan-00.github.io/site-options/site/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Kirtan Purohit">
+<meta name="twitter:image" content="https://kirtan-00.github.io/site-options/site/og.jpg">
+<meta name="theme-color" content="#f2a7b6">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<!-- real favicon files (search engines need a file they can fetch). favicon.ico must also sit at the host root at publish. The data URI line stays as a fallback. -->
+<link rel="icon" href="favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="96x96" href="favicon.png">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230c0d0f'/%3E%3Cpath d='M7 6h7v8l6-8h8l-8 10 8 10h-8l-6-8v8H7z' fill='%23f1f2f0'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Schibsted+Grotesk:wght@900&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=block" rel="stylesheet">
+<link id="wkg-fonts" href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Schibsted+Grotesk:wght@400..900&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
 <style>
 /* one motion language: arrive (.2,.8,.2,1), move (.7,0,.2,1), leave (.6,0,.85,.3) */
 :root{--ink:#0c0d0f;--paper:#f1f2f0;--blue:#c9d8f7;--pink:#f2a7b6;--fg:#0c0d0f;--inv:#c9d8f7;--g:32px;
@@ -19,17 +62,38 @@ body{-webkit-font-smoothing:antialiased}
 
 /* the landing: a tall spacer. The wall itself is a fixed layer under #after, driven by scroll */
 #hero{position:relative;height:190vh}
-#stage{position:fixed;left:0;top:0;width:100%;height:100vh;height:100svh;overflow:hidden;z-index:0;background:var(--blue)}
+/* Fixed full-screen layers use the LARGE viewport (lvh). With svh, iOS Safari left a band of page background under the
+   stage once its toolbar collapsed (the visible area grows to lvh, the stage did not). Anything anchored to the bottom adds
+   (100lvh - 100dvh), so it rides just above the toolbar while it shows and drops back when it hides. */
+#stage{position:fixed;left:0;top:0;width:100%;height:100vh;height:100lvh;overflow:hidden;z-index:0;background:var(--blue)}
 #stage.kp-gone{visibility:hidden}
+html.kp-deep #stage{visibility:hidden}   /* a deep link: see the script at the top of <head> */
 #wall{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:pan-y}
 .rm-face{position:absolute;left:0;top:0;width:100%;height:100%;display:block;pointer-events:none}
 .kp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+/* the skip link: off screen until it takes keyboard focus */
+.kp-skip{position:fixed;left:16px;top:12px;z-index:30;padding:12px 18px;border-radius:999px;background:var(--ink);color:var(--paper);font:800 17px/1 "Bricolage Grotesque",system-ui,sans-serif;text-decoration:none;transform:translateY(-200%)}
+.kp-skip:focus-visible{transform:none;outline:2px solid var(--ink);outline-offset:3px}
 
 /* the scroll prompt: an ink pill, bottom centre, with a wheel whose dot rolls down. It fades as the wall starts to turn */
-#scrollcue{position:absolute;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));z-index:2;pointer-events:none;
+#scrollcue{position:absolute;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));bottom:calc(28px + env(safe-area-inset-bottom) + 100lvh - 100dvh);z-index:2;pointer-events:none;
   opacity:0;transform:translate(-50%,12px);transition:opacity .48s var(--arrive),transform .48s var(--arrive)}
 body.kp-in #scrollcue{opacity:1;transform:translate(-50%,0)}
 body.kp-in.kp-going #scrollcue{opacity:0;transition-duration:.24s;transition-timing-function:var(--leave)}
+/* the one line that says what he does. Bottom left, level with the cue; above the cue on a phone */
+#kpline{position:absolute;left:32px;left:max(32px,env(safe-area-inset-left));bottom:calc(34px + env(safe-area-inset-bottom));bottom:calc(34px + env(safe-area-inset-bottom) + 100lvh - 100dvh);z-index:2;margin:0;max-width:calc(50% - 150px);pointer-events:none;
+  font:800 clamp(18px,1.55vw,24px)/1.25 "Bricolage Grotesque",system-ui,sans-serif;letter-spacing:-.01em;color:var(--ink);text-wrap:balance;
+  opacity:0;transform:translateY(10px);transition:opacity .6s var(--arrive) .15s,transform .7s var(--arrive) .15s}
+#kpline span{white-space:nowrap}
+body.kp-in #kpline{opacity:1;transform:none}
+body.kp-in.kp-going #kpline{opacity:0;transition-duration:.24s;transition-delay:0s;transition-timing-function:var(--leave)}
+@media (max-width:700px){#kpline{left:18px;right:18px;left:max(18px,env(safe-area-inset-left));right:max(18px,env(safe-area-inset-right));max-width:none;text-align:center;bottom:calc(104px + env(safe-area-inset-bottom));bottom:calc(104px + env(safe-area-inset-bottom) + 100lvh - 100dvh);font-size:19px}}
+@media (prefers-reduced-motion: reduce){#kpline{transition:none;transform:none}}
+/* 25 Nov: he asked for this line to go. Kept in the page for screen readers and search, not shown. */
+#kpline{position:absolute!important;left:0!important;right:auto!important;bottom:0!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;opacity:0!important;pointer-events:none!important}
+/* SEO: the static content block in #work (who he is, clients, projects). Not shown while the app runs: work-g.js clears #work
+   and builds the listing there. With JS off, the noscript style near the end of <head> shows it. */
+.kp-static{display:none}
 #kpcue{display:flex;align-items:center;gap:12px;background:var(--ink);color:var(--paper);border:0;border-radius:999px;
   padding:16px 26px 16px 20px;font:800 21px/1 "Bricolage Grotesque",system-ui,sans-serif;cursor:pointer;pointer-events:auto;
   transition:transform .3s var(--arrive)}
@@ -38,6 +102,24 @@ body.kp-in.kp-going #scrollcue{opacity:0;transition-duration:.24s;transition-tim
 #kpcue .w{position:relative;display:block;width:16px;height:24px;border:2px solid currentColor;border-radius:8px}
 #kpcue .w::after{content:"";position:absolute;left:50%;top:4px;width:4px;height:6px;margin-left:-2px;border-radius:2px;background:var(--pink);
   animation:kp-roll 1.4s var(--move) infinite}
+body.past #kpcue .w::after,#kpcue.kp-off .w::after{animation:none}   /* the cue stops once it has faded */
+/* the way past the landing: a quiet ground-coloured pill, bottom right, level with the Scroll cue and fading with it.
+   Bottom-anchored like the cue, so it rides above the Safari toolbar (100lvh - 100dvh) */
+#skipcue{position:absolute;right:clamp(18px,4vw,64px);right:max(clamp(18px,4vw,64px),env(safe-area-inset-right));bottom:calc(36px + env(safe-area-inset-bottom));bottom:calc(36px + env(safe-area-inset-bottom) + 100lvh - 100dvh);z-index:2;pointer-events:none;
+  opacity:0;transform:translateY(12px);transition:opacity .48s var(--arrive),transform .48s var(--arrive)}
+body.kp-in #skipcue{opacity:1;transform:none}
+body.kp-in.kp-going #skipcue{opacity:0;transition-duration:.24s;transition-timing-function:var(--leave)}
+#kpskip{display:flex;align-items:center;gap:8px;min-height:44px;margin:0;padding:0 16px 1px;border:0;border-radius:999px;background:var(--blue);color:var(--ink);
+  font:800 17px/1 "Bricolage Grotesque",system-ui,sans-serif;white-space:nowrap;cursor:pointer;pointer-events:auto;-webkit-tap-highlight-color:transparent}
+#kpskip svg{display:block;width:12px;height:12px;flex:none;transition:transform .3s var(--arrive)}
+@media (hover:hover){#kpskip:hover svg{transform:translateY(3px)}}
+#kpskip:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+#kpskip.kp-off{pointer-events:none;visibility:hidden}
+#work:focus{outline:none}
+@media (max-width:700px){#skipcue{right:18px;right:max(18px,env(safe-area-inset-right));bottom:calc(29px + env(safe-area-inset-bottom));bottom:calc(29px + env(safe-area-inset-bottom) + 100lvh - 100dvh)}#kpskip{font-size:16px;padding:0 12px 1px;gap:6px}}
+/* a phone has no room beside the cue: the skip sits above it, centred */
+@media (max-width:520px){#skipcue{right:auto;left:50%;transform:translate(-50%,12px);bottom:calc(88px + env(safe-area-inset-bottom));bottom:calc(88px + env(safe-area-inset-bottom) + 100lvh - 100dvh)}body.kp-in #skipcue{transform:translate(-50%,0)}}
+@media (prefers-reduced-motion: reduce){#skipcue,#kpskip svg{transition:none}}
 @keyframes kp-roll{0%{transform:translateY(0);opacity:0}15%{opacity:1}60%{transform:translateY(9px);opacity:1}80%,100%{transform:translateY(9px);opacity:0}}
 
 #after{position:relative;z-index:1}
@@ -45,7 +127,7 @@ body.kp-in.kp-going #scrollcue{opacity:0;transition-duration:.24s;transition-tim
 /* Contact: three versions to compare, picked by ?contact=1|2|3 (default 1). All of it lives in #contact (z-index 10, above the
    project page at 9). Closed, every version sits top right (or bottom right on a phone for 3), clear of the project page Back
    button at top left. Every class is ct- (shared) or c1-, c2-, c3- (one version). */
-#contact{position:fixed;top:14px;right:22px;z-index:10;--navy:#0f2545;--sky:#7d9bf0}
+#contact{position:fixed;top:14px;right:clamp(18px,4vw,64px);right:max(clamp(18px,4vw,64px),env(safe-area-inset-right));z-index:10;--navy:#0f2545;--sky:#7d9bf0}
 .ct-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 #contact :is(button,a){-webkit-tap-highlight-color:transparent}
 #contact button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left}
@@ -68,6 +150,8 @@ body.kp-in.kp-going #scrollcue{opacity:0;transition-duration:.24s;transition-tim
 .ct-hint{display:grid;color:var(--pink);opacity:.55;transition:opacity .32s var(--arrive)}
 .ct-hint>span{grid-area:1/1;white-space:nowrap;transition:opacity .24s var(--arrive),transform .34s var(--arrive)}
 .ct-hint .b{opacity:0;transform:translate3d(0,.5em,0)}
+.ct-tp{display:none}@media (hover:none){.ct-ck{display:none}.ct-tp{display:inline}}
+@media (pointer:coarse){.ct-mail{position:relative}.ct-mail::before{content:"";position:absolute;inset:-12px 0}}
 .ct-mailwrap.copied .ct-hint{opacity:1}
 .ct-mailwrap.copied .ct-hint .a{opacity:0;transform:translate3d(0,-.5em,0)}
 .ct-mailwrap.copied .ct-hint .b{opacity:1;transform:none}
@@ -116,6 +200,16 @@ a.ct-row:active .ct-l{transform:translate3d(4px,0,0)}
 .ct-ic-day .a,.ct-ic-sun .a{animation:ct-spin 2.4s linear infinite}
 .ct-ic-workout .a{animation:ct-lift 1.6s cubic-bezier(.65,0,.35,1) infinite}
 .ct-ic-chai .a{animation:ct-steam 2.2s cubic-bezier(.33,0,.4,1) infinite}.ct-ic-chai .a+.a{animation-delay:-1.1s}
+@keyframes ct-twinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.82)}}
+@keyframes ct-bob{from{transform:translateY(5%)}to{transform:translateY(-7%)}}
+.ct-mo-tilt .a{animation:ct-tilt 1.2s cubic-bezier(.45,0,.55,1) infinite alternate}
+.ct-mo-spin .a{animation:ct-spin 2.4s linear infinite}
+.ct-mo-lift .a{animation:ct-lift 1.6s cubic-bezier(.65,0,.35,1) infinite}
+.ct-mo-steam .a{animation:ct-steam 2.2s cubic-bezier(.33,0,.4,1) infinite}.ct-mo-steam .a+.a{animation-delay:-1.1s}
+.ct-mo-twinkle .a{animation:ct-twinkle 1.8s cubic-bezier(.45,0,.55,1) infinite}
+.ct-mo-bob .a{animation:ct-bob 1.3s cubic-bezier(.45,0,.55,1) infinite alternate}
+.ct-time .ct-note{margin-top:14px;font-size:clamp(17px,1.45vw,22px);font-weight:600;line-height:1.3;letter-spacing:0;color:var(--blue)}
+@media (max-height:640px){#contact .ct-time{font-size:23px;padding-top:16px}#contact .ct-time .ct-note{margin-top:8px;font-size:15px}}
 @media (prefers-reduced-motion: reduce){.ct-ic .a{animation:none!important;opacity:1!important;transform:none!important}.ct-ic::after{transition:none}}
 /* the panel content follows the panel in, a beat apart */
 .ct-panel .ct-in{opacity:0;transform:translate3d(28px,0,0);transition:opacity .2s var(--leave),transform .2s var(--leave)}
@@ -131,8 +225,24 @@ a.ct-row:active .ct-l{transform:translate3d(4px,0,0)}
 .ct-u:focus-visible{outline:0!important}
 
 /* ---------- 1: the bare word ---------- */
-.c1-word{display:block;padding:12px 2px!important;font:800 20px/1 "Bricolage Grotesque",system-ui,sans-serif!important;color:var(--ink)!important;transition:color .24s var(--arrive)}
-#contact.dark .c1-word{color:var(--pink)!important}
+.c1-word{display:block;padding:12px 2px!important;font:800 20px/1 "Bricolage Grotesque",system-ui,sans-serif!important;color:var(--ink)!important;isolation:isolate;
+  transition:color .24s var(--arrive),opacity .2s linear,visibility 0s}
+/* the plate: the colour of the ground the word is over (set from data-g, see the script), so on plain ground it cannot be seen
+   and over a card, a picture or type it keeps the letters clear. No sampling: the ground comes from which section is under it */
+.c1-word::before{content:"";position:absolute;inset:3px -12px;z-index:-1;border-radius:999px;background-color:var(--ct-plate);transition:background-color .24s var(--arrive)}
+#contact{--ct-plate:rgba(201,216,247,0)}
+#contact[data-g="n0"],#contact[data-g="wall"]{--ct-plate:var(--blue)}
+#contact[data-g="n1"]{--ct-plate:var(--pink)}
+#contact[data-g="n2"]{--ct-plate:var(--navy)}
+#contact[data-g="work"]{--ct-plate:var(--kp-work,var(--blue))}
+#contact[data-g="board"]{--ct-plate:#f2f4f5}
+html[data-ground] #contact{--ct-plate:var(--kp-ground,rgba(201,216,247,0))}
+html.mr-lock #contact{--ct-plate:var(--navy)}
+#contact.ct-on{--ct-plate:rgba(15,37,69,0)}
+#contact[data-g="n2"] .c1-word,html[data-ground="dark"] #contact .c1-word{color:var(--pink)!important}
+html[data-ground="light"] #contact .c1-word{color:var(--ink)!important}
+#contact.ct-away .c1-word{opacity:0;visibility:hidden;pointer-events:none;transition:color .24s var(--arrive),opacity .2s linear,visibility 0s linear .2s}
+.c1-word.ct-u:focus-visible{outline:2px solid currentColor!important;outline-offset:1px;border-radius:999px}
 .c1-word:active{transform:scale(.96)}
 
 /* ---------- 2: the slat strip ---------- */
@@ -185,10 +295,12 @@ a.ct-row:active .ct-l{transform:translate3d(4px,0,0)}
 #contact.ct-on .c3-card .ct-in{opacity:1;transform:none;transition:opacity .36s var(--arrive),transform .44s var(--arrive);transition-delay:calc(90ms + var(--i,0) * 40ms)}
 
 @media (max-width:700px){
-  #contact{top:14px;right:16px}
+  #contact{top:14px;right:18px;right:max(18px,env(safe-area-inset-right))}
+  /* the pink tunnel chapter: its ink strokes cross the bare word, so on a phone the word sits on a paper pill there */
+  #contact[data-g="n1"]{--ct-plate:var(--paper)}
   #contact.v2{top:18px;right:18px}
-  .ct-panel{width:100%;padding:92px 18px calc(32px + env(safe-area-inset-bottom))}
-  .ct-close{right:16px}
+  .ct-panel{width:100%;padding:92px max(18px,env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left))}
+  .ct-close{right:16px;right:max(16px,env(safe-area-inset-right))}
   .ct-mail{font-size:40px!important}
   .ct-body{gap:32px}
   .ct-row{min-height:64px}
@@ -216,6 +328,16 @@ a.ct-row:active .ct-l{transform:translate3d(4px,0,0)}
    Over [data-cursor] the ring fills and grows to hold a short word; on press it gives a little. */
 html.has-cursor,html.has-cursor *{cursor:none!important}
 html.has-cursor :is(input,textarea,select,[contenteditable="true"]){cursor:text!important}
+/* the stretchy cursor (2026-11-24, after the arrow): an ink dot with a paper keyline, so it reads on pink, blue, ink and white.
+   Moving, it stretches into a comet along the way it travels, its head kept on the pointer; still, it eases back round */
+#ka{position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;pointer-events:none;will-change:transform}
+#ka[hidden]{display:none}
+#ka .kz{position:absolute;left:-6px;top:-6px;width:12px;height:12px;border-radius:50%;background:var(--ink);box-shadow:0 0 0 1.5px var(--paper);transform-origin:50% 50%;will-change:transform;transition:opacity .15s var(--arrive)}
+#ka.off .kz,#ka.off b{opacity:0}
+#ka b{position:absolute;left:0;top:0;display:grid;place-items:center;min-width:76px;height:76px;padding:0 16px .08em;box-sizing:border-box;border-radius:999px;background:var(--pink);color:var(--ink);font:700 16px/1 "Bricolage Grotesque",system-ui,sans-serif;white-space:nowrap;
+  opacity:0;transform:translate(-50%,-50%) scale(.2);transition:opacity .18s var(--arrive),transform .42s cubic-bezier(.2,1.3,.3,1)}
+#ka.lab b{opacity:1;transform:translate(-50%,-50%) scale(var(--kp,1))}
+#ka.lab .kz{opacity:0}
 #kc{position:fixed;left:0;top:0;width:0;height:0;z-index:2147483000;pointer-events:none;--kf:var(--ink);--kb:var(--paper)}
 #kc[hidden]{display:none}
 #kc.dark{--kf:var(--paper);--kb:var(--ink)}
@@ -236,27 +358,86 @@ html.has-cursor :is(input,textarea,select,[contenteditable="true"]){cursor:text!
 #kc.down.lab .kr i{transform:scale(2)}
 #kc.off .kd i,#kc.off .kr i,#kc.off .kr b{opacity:0}
 #kc.off .kr i{transform:scale(.4)}
-@media (max-width:700px){:root{--g:18px}#scrollcue{bottom:calc(24px + env(safe-area-inset-bottom))}#kpcue{font-size:18px;padding:13px 22px 13px 16px}}
+@media (max-width:700px){:root{--g:18px}#scrollcue{bottom:calc(24px + env(safe-area-inset-bottom));bottom:calc(24px + env(safe-area-inset-bottom) + 100lvh - 100dvh)}#kpcue{font-size:18px;padding:13px 22px 13px 16px}}
 @media (prefers-reduced-motion: reduce){#kpcue .w::after{animation:none;transform:translateY(4px)}#kpcue{transition:none}}
 </style>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","gsap":"https://cdn.jsdelivr.net/npm/gsap@3.12.5/index.js","gsap/ScrollTrigger":"https://cdn.jsdelivr.net/npm/gsap@3.12.5/ScrollTrigger.js","lenis":"https://cdn.jsdelivr.net/npm/lenis@1.1.13/dist/lenis.mjs"}}
 </script>
+<!-- JS off: no canvas, no app. Show the heading and the static block in #work as a plain readable page. -->
+<noscript><style>
+#hero{height:auto;max-width:760px;margin:0 auto;padding:56px 24px 0}
+#stage{display:none}
+#hero h1.kp-sr{position:static;width:auto;height:auto;overflow:visible;clip:auto;clip-path:none;white-space:normal;font:800 clamp(30px,6vw,52px)/1.08 "Bricolage Grotesque",system-ui,sans-serif;letter-spacing:-.02em;text-wrap:balance}
+.kp-static{display:block;max-width:760px;margin:0 auto;padding:20px 24px 80px;font:500 18px/1.55 "Bricolage Grotesque",system-ui,sans-serif}
+.kp-static h2{font:800 24px/1.2 "Bricolage Grotesque",system-ui,sans-serif;letter-spacing:-.01em;margin:36px 0 10px}
+.kp-static p{margin:0 0 12px}
+.kp-static ul{margin:0;padding-left:1.15em}
+.kp-static li{margin:0 0 8px}
+.kp-static a{color:inherit;text-decoration-thickness:2px;text-underline-offset:3px}
+</style></noscript>
+<!-- Structured data. TEMPORARY TEST LINK: the URLs below and og:url, og:image, twitter:image point at the github.io test address. Swap in the real domain at launch.
+     Left out until Kirtan decides: worksFor, LinkedIn, GitHub. No totals here: the headline numbers are not settled. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "@id": "https://kirtan-00.github.io/site-options/site/#kirtan",
+  "name": "Kirtan Purohit",
+  "url": "https://kirtan-00.github.io/site-options/site/",
+  "image": "https://kirtan-00.github.io/site-options/site/og.jpg",
+  "jobTitle": "Creative producer and developer",
+  "description": "Creative producer and developer in Ahmedabad. Makes reels, digital video commercials and documentaries for brands, and builds software.",
+  "email": "mailto:purohit.krick@gmail.com",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "Ahmedabad",
+    "addressRegion": "Gujarat",
+    "addressCountry": "IN"
+  },
+  "knowsAbout": [
+    "Creative production",
+    "Reels",
+    "Digital video commercials",
+    "Documentary film",
+    "Web development",
+    "Software development"
+  ],
+  "sameAs": [
+    "https://www.instagram.com/kirtanheypurohit/"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "https://kirtan-00.github.io/site-options/site/#site",
+  "url": "https://kirtan-00.github.io/site-options/site/",
+  "name": "Kirtan Purohit",
+  "inLanguage": "en-IN",
+  "author": { "@id": "https://kirtan-00.github.io/site-options/site/#kirtan" }
+}
+</script>
 </head>
 <body>
+<a class="kp-skip" href="#work">Skip to the work</a>
 <section id="hero" aria-label="Kirtan Purohit">
+  <h1 class="kp-sr">Kirtan Purohit, creative producer and developer in Ahmedabad</h1>
   <div id="stage">
-    <h1 class="kp-sr">Kirtan Purohit, creative producer and developer</h1>
     <canvas id="wall" aria-hidden="true"></canvas>
+    <p id="kpline">Films and software, <span>made in Ahmedabad.</span></p>
     <div id="scrollcue"><button id="kpcue" type="button" aria-label="Scroll down"><span class="w" aria-hidden="true"></span>Scroll</button></div>
+    <div id="skipcue"><button id="kpskip" type="button">Skip to work<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v9M2 6.5l4 4 4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
   </div>
 </section>
 <div id="contact"></div>
+<script src="contact-symbols.js"></script>
 <script>
 /* Contact. One set of details, shared by all three versions. Fill these in and every version picks them up.
    whatsapp: the number with country code, digits only is fine ('919800000000'). instagram and linkedin: a handle or a full URL.
    Empty values show as a disabled row that says "to come"; nothing here is ever made up. */
-const CONTACT = { email: '', whatsapp: '', instagram: 'kirtanheypurohit', linkedin: '' };
+const CONTACT = { email: 'purohit.krick@gmail.com', whatsapp: '', instagram: 'kirtanheypurohit', linkedin: '' };
 
 (() => {
   const root = document.getElementById('contact');
@@ -330,7 +511,7 @@ const CONTACT = { email: '', whatsapp: '', instagram: 'kirtanheypurohit', linked
   };
   const row = (k, i) => {
     const v = val(k), st = ` style="--i:${i}"`;
-    if (!v) return `<li class="ct-in"${st}><span class="ct-row ct-off" aria-disabled="true"><span class="ct-l">${NAME[k]}</span><span class="ct-v">to come</span></span></li>`;
+    if (!v) return '';   /* an empty channel is simply not listed */
     return `<li class="ct-in"${st}><a class="ct-row" href="${esc(HREF[k](v))}" target="_blank" rel="noopener"><span class="ct-l">${NAME[k]}</span><span class="ct-v">${esc(SHOW[k](v))}</span></a></li>`;
   };
   /* Ahmedabad time and what it is there. Preview any moment with ?kpnow=2026-11-23T17:10 (read as Ahmedabad time) or
@@ -361,27 +542,32 @@ const CONTACT = { email: '', whatsapp: '', instagram: 'kirtanheypurohit', linked
   function status(d) {
     const p = Object.fromEntries(parts.formatToParts(d).map(x => [x.type, x.value])), h = +p.hour;
     const t = `<span class="t">${ist.format(d).replace(/\s?([ap])\.?m\.?$/i, (m, x) => '\u00a0' + x.toLowerCase() + 'm')}</span>`;
-    if (p.weekday === 'Sun') return `<span>It's <span class="tw">${t}${icon('sun')}</span> on a Sunday in Ahmedabad.</span> <span class="m">Sunday mode.</span> <span class="m">I might reply even faster on Sundays.</span>`;
+    /* sun, chai or tonight's real moon, from contact-symbols.js. The old symbols stay as the fallback */
+    const mo = window.KP_SYMBOL ? window.KP_SYMBOL(d, h, +p.minute) : null;
+    const sym = k => mo ? `<span class="ct-ic ct-mo-${mo.motion}" role="img" aria-label="${esc(mo.label)}" data-tip="${esc(mo.label)}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${mo.svg}</svg></span>` : icon(k);
+    if (p.weekday === 'Sun') return `<span>It's <span class="tw">${t}${sym('sun')}</span> on a Sunday in Ahmedabad.</span> <span class="m">Sunday mode.</span> <span class="m">I might reply even faster on Sundays.</span>`;
     const m = h === 10 ? 'workout' : h === 17 ? 'chai' : h >= 8 && h < 22 ? 'day' : 'night';
-    return `<span>It's <span class="tw">${t}${icon(m)}</span> in Ahmedabad.</span>`;
+    return `<span>It's <span class="tw">${t}${sym(m)}</span> in Ahmedabad.</span>${mo ? `<span class="ct-note">${esc(mo.line)}</span>` : ''}`;
   }
+  /* a phone (no hover): a tap on the address opens Mail and copies it as well. A desktop click only copies, as before */
+  const TOUCH = matchMedia('(hover: none)').matches;
   function buildPanel() {
     const e = val('email');
     const mail = e
       ? `<div class="ct-mailwrap ct-in" style="--i:0">
-           <p class="ct-head" aria-hidden="true"><span>Email</span><span class="ct-hint"><span class="a">Click to copy</span><span class="b">Copied</span></span></p>
-           <button class="ct-mail" type="button" aria-label="Copy the email address ${esc(e)}">${esc(e)}</button>
+           <p class="ct-head" aria-hidden="true"><span>Email</span><span class="ct-hint"><span class="a"><span class="ct-ck">Click to copy</span><span class="ct-tp">Tap to write</span></span><span class="b">${TOUCH ? 'Copied too' : 'Copied'}</span></span></p>
+           <button class="ct-mail" type="button" aria-label="${TOUCH ? 'Write to ' + esc(e) + ', the address is copied too' : 'Copy the email address ' + esc(e)}">${esc(e)}</button>
          </div>`
-      : `<span class="ct-mail ct-off ct-in" aria-disabled="true" style="--i:0">Email<small>to come</small></span>`;
+      : '';
     root.insertAdjacentHTML('beforeend', `<div class="ct-scrim" aria-hidden="true"></div>
-      <aside class="ct-panel" id="ct-panel" role="dialog" aria-modal="true" aria-label="Contact Kirtan" aria-hidden="true">
+      <div class="ct-panel" id="ct-panel" role="dialog" aria-modal="true" aria-label="Contact Kirtan" aria-hidden="true">
         <button class="ct-close ct-u" type="button">Close</button>
         <div class="ct-body">${mail}
           <ul class="ct-links">${row('whatsapp', 1)}${row('instagram', 2)}${row('linkedin', 3)}</ul>
         </div>
         <p class="ct-time ct-in" style="--i:4"></p>
         <p class="ct-sr" aria-live="polite"></p>
-      </aside>`);
+      </div>`);
     box = root.querySelector('.ct-panel'); timeEl = box.querySelector('.ct-time');
     box.querySelector('.ct-close').addEventListener('click', () => close());
     root.querySelector('.ct-scrim').addEventListener('click', () => close());
@@ -389,7 +575,9 @@ const CONTACT = { email: '', whatsapp: '', instagram: 'kirtanheypurohit', linked
     if (mailBtn) {
       let t = 0; const wrap = mailBtn.parentNode;
       mailBtn.addEventListener('click', async () => {
-        if (!(await copy(e))) return;
+        const copied = copy(e);   // started inside the tap, so the clipboard allows it
+        if (TOUCH) { const a = document.createElement('a'); a.href = 'mailto:' + e; a.click(); }
+        if (!(await copied)) return;
         wrap.classList.add('copied'); box.querySelector('.ct-sr').textContent = 'Email copied';
         clearTimeout(t); t = setTimeout(() => { wrap.classList.remove('copied'); box.querySelector('.ct-sr').textContent = ''; }, 1600);
       });
@@ -403,7 +591,7 @@ const CONTACT = { email: '', whatsapp: '', instagram: 'kirtanheypurohit', linked
       const cs = getComputedStyle(box), room = box.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), w = g.measureText(e).width;
       mailBtn.style.setProperty('font-size', (w > room ? Math.max(18, Math.floor(cap * room / w * 0.98)) : cap) + 'px', 'important');
     };
-    onOpen = () => { clearTimeout(timeT); tick(); fit(); };
+    onOpen = () => { clearTimeout(timeT); tick(); fit(); if (window.KP_SYMBOL) window.KP_SYMBOL.sweep(timeEl); };
     onClose = () => clearTimeout(timeT);
     addEventListener('resize', () => isOpen() && fit());
   }
@@ -414,48 +602,42 @@ const CONTACT = { email: '', whatsapp: '', instagram: 'kirtanheypurohit', linked
     trigger = root.querySelector('.c1-word');
     buildPanel();
     trigger.addEventListener('click', () => isOpen() ? close() : open());
-    /* what is under the word: one elementsFromPoint, on scroll (one per frame at most), on resize and every 600ms as a backstop
-       for things that move on their own (the project page flying in, its own scroll). The landing and the numbers are WebGL, so
-       those are read from the scroll position: the landing faces are light blue or light pink (both light), and the numbers
-       turn navy at the end of their second hand-off (HO[1] in numbers.js, 3.07 to 3.42 screens in), when the corner fills. */
-    const lum = c => { const m = c.match(/[\d.]+/g); if (!m) return -1; const [r, g, b, a = 1] = m.map(Number); return a < 0.5 ? -1 : (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255; };
-    /* a photo or film under the word: read the patch of it under the word from a 16 by 16 copy (object-fit is ignored, close enough) */
-    const pc = document.createElement('canvas'); pc.width = pc.height = 16; const px = pc.getContext('2d', { willReadFrequently: true });
-    function media(n, r) {
-      try {
-        const b = n.getBoundingClientRect(); if (!b.width || !b.height) return false;
-        px.clearRect(0, 0, 16, 16); px.drawImage(n, 0, 0, 16, 16);
-        const x0 = Math.max(0, Math.floor((r.left - b.left) / b.width * 16)), x1 = Math.min(16, Math.ceil((r.right - b.left) / b.width * 16));
-        const y0 = Math.max(0, Math.floor((r.top - b.top) / b.height * 16)), y1 = Math.min(16, Math.ceil((r.bottom - b.top) / b.height * 16));
-        if (x1 <= x0 || y1 <= y0) return false;
-        const d = px.getImageData(x0, y0, x1 - x0, y1 - y0).data; let s = 0, k = 0;
-        for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 128) continue; s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; k++; }
-        return k ? s / k / 255 < 0.5 : false;
-      } catch (e) { return true; }
+    /* what is under the word, with nothing sampled. One IntersectionObserver watches a one pixel line across the screen at
+       the word's height: whichever section crosses that line is the ground (data-g on #contact), and the stylesheet gives the
+       word a plate of that ground's colour, so cards, pictures and type that pass under it never touch the letters. On plain
+       ground the plate is the ground and cannot be seen. The numbers are WebGL, so two marks inside #numbers say where its
+       corner turns pink and then navy (HO in numbers.js). An open project page, client run or the player names its own
+       ground on <html> (data-ground, --kp-ground), and work-g.js keeps --kp-work at the listing's colour. */
+    const ORDER = ['board', 'wall', 'work', 'n2', 'n1', 'n0'], on = new Set(), MARKS = [1.04, 3.34];
+    const phone = matchMedia('(max-width: 700px)');
+    let io = null, marks = [], wallBtn = null;
+    function paint() {
+      const g = ORDER.find(k => on.has(k)) || 'stage';
+      if (root.dataset.g !== g) root.dataset.g = g;
+      /* a phone with the wall open: the word steps out while the board (the pad and its buttons) is under it */
+      root.classList.toggle('ct-away', g === 'board' && phone.matches && !!wallBtn && wallBtn.getAttribute('aria-expanded') === 'true');
     }
-    function dark() {
-      const g = document.documentElement.dataset.ground;   /* an open project page says which ground it is on */
-      if (g) return g === 'dark';
-      const r = trigger.getBoundingClientRect();
-      for (const n of document.elementsFromPoint(r.left + r.width / 2, r.top + r.height / 2)) {
-        if (root.contains(n)) continue;
-        if (n.closest('#stage')) return false;
-        if (n.closest('#numbers')) return -document.getElementById('numbers').getBoundingClientRect().top / innerHeight > 3.36;
-        if (n.tagName === 'IMG' || n.tagName === 'VIDEO') return media(n, r);
-        if (n.tagName === 'CANVAS') continue;
-        const L = lum(getComputedStyle(n).backgroundColor);
-        if (L >= 0) return L < 0.4;
-      }
-      return false;
+    function watch() {
+      if (io) io.disconnect();
+      on.clear();
+      const num = document.getElementById('numbers'), work = document.getElementById('work'), wall = document.getElementById('signwall');
+      const r = trigger.getBoundingClientRect(), y = Math.round(r.top + r.height / 2), vh = document.documentElement.clientHeight;
+      const H = (num && num.firstElementChild && num.firstElementChild.clientHeight) || innerHeight;
+      if (num && !(marks.length && marks[0].isConnected)) marks = MARKS.map((t, i) => { const m = document.createElement('i'); m.setAttribute('aria-hidden', 'true'); m.style.cssText = 'position:absolute;left:0;bottom:0;width:1px;pointer-events:none;visibility:hidden'; m._g = 'n' + (i + 1); m._t = t; num.appendChild(m); return m; });
+      marks.forEach(m => { m.style.top = Math.round(m._t * H + y) + 'px'; });
+      io = new IntersectionObserver(es => { for (const e of es) { if (e.isIntersecting) on.add(e.target._g); else on.delete(e.target._g); } paint(); },
+        { rootMargin: `-${y}px 0px -${Math.max(0, vh - y - 1)}px 0px` });
+      const board = wall && wall.querySelector('.sw-board');
+      [[num, 'n0'], [work, 'work'], [wall, 'wall'], [board, 'board']].forEach(([n, g]) => { if (n) { n._g = g; io.observe(n); } });
+      marks.forEach(m => io.observe(m));
+      if (!wallBtn && (wallBtn = document.getElementById('sw-toggle'))) new MutationObserver(paint).observe(wallBtn, { attributes: true, attributeFilter: ['aria-expanded'] });
+      paint();
     }
-    let raf = 0;
-    const read = () => { raf = 0; root.classList.toggle('dark', dark()); };
-    const ask = () => { if (!raf) raf = requestAnimationFrame(read); };
-    addEventListener('scroll', ask, { passive: true, capture: true });
-    addEventListener('resize', ask); addEventListener('hashchange', () => setTimeout(ask, 60));
-    setInterval(() => { if (!document.hidden) ask(); }, 600);
-    new MutationObserver(ask).observe(document.documentElement, { attributes: true, attributeFilter: ['data-ground'] });
-    ask();
+    let wt = 0;
+    const rewatch = () => { clearTimeout(wt); wt = setTimeout(watch, 150); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch); else watch();
+    addEventListener('load', watch); addEventListener('resize', rewatch);
+    if (phone.addEventListener) phone.addEventListener('change', paint);
   }
 
   /* ---------- 2: the slat strip ---------- */
@@ -563,7 +745,7 @@ dispatchEvent(new Event('kp:final'));
 const $ = id => document.getElementById(id);
 
 const DISPLAY = '"Schibsted Grotesk"';
-const DPR = Math.min(devicePixelRatio || 1, 2);
+const DPR = Math.min(devicePixelRatio || 1, innerWidth <= 760 ? 1.5 : 2);   // phones: 1.5 is sharp enough and a third of the fill
 const stageEl = $('stage'), heroEl = $('hero'), canvas = $('wall');
 
 /* ---------- scroll plan, in screens from the top ---------- */
@@ -589,7 +771,7 @@ function makeCanvas(W, H) { const c = document.createElement('canvas'); c.width 
 
 /* the name: each line set to the full measure, flush both sides. On a phone the type is drawn taller than it is wide (SY) so it fills the screen */
 function nameLayout(W, H) {
-  const phone = W < 700, G = phone ? 18 : 32, SY = phone ? 1.85 : 1;
+  const phone = W < 700, G = phone ? 18 : 32, SY = 1; /* natural proportions on phone too: he called the tall draw 'stretched' (25 Nov) */
   const g = document.createElement('canvas').getContext('2d');
   const fit = word => { g.font = `900 100px ${DISPLAY}`; const m = g.measureText(word); return { size: (W - 2 * G) / (m.actualBoundingBoxRight + m.actualBoundingBoxLeft) * 100, word }; };
   const a = fit('KIRTAN'), b = fit('PUROHIT');
@@ -620,7 +802,7 @@ function drawFront(W, H) {
 
 /* the role, in his own words, set big in cobalt on light pink. It sits across the same band as the name,
    so a wave over either face lays strips of one into the other. */
-const ROLE = { wide: ['Creative Producer', 'Developer'], phone: ['Creative Producer', 'Developer'] };
+const ROLE = { wide: ['Creative Producer', 'Developer'], phone: ['Creative', 'Producer', 'Developer'] };
 const LINE2 = 'Films on set. Software on screen.';
 function drawBack(W, H) {
   const [c, g] = makeCanvas(W, H);
@@ -631,7 +813,7 @@ function drawBack(W, H) {
   const wid = l => { const m = g.measureText(l); return m.actualBoundingBoxRight + m.actualBoundingBoxLeft; };
   const asc = g.measureText('d').actualBoundingBoxAscent / 100, desc = g.measureText('p').actualBoundingBoxDescent / 100;
   /* on a phone the role is drawn tall, like the name, so both faces carry the same weight */
-  const STEP = 0.96, SY = phone ? 1.85 : 1;
+  const STEP = 0.96, SY = 1;
   let size = (W - 2 * G) / Math.max(...lines.map(wid)) * 100;
   const blockOf = s => s * SY * (asc + (lines.length - 1) * STEP + desc);
   const room = H - (phone ? 230 : 190);
@@ -645,7 +827,7 @@ function drawBack(W, H) {
 
   /* the second line, small, bottom right, clear of the Scroll prompt */
   g.font = `800 ${phone ? 14 : 16}px "Bricolage Grotesque", system-ui, sans-serif`; g.fillStyle = C.ink; g.textAlign = 'right';
-  g.fillText(LINE2, W - G, H - (phone ? 26 : 30));
+  /* second line dropped: one hero line is enough */
   g.textAlign = 'left';
   return c;
 }
@@ -787,8 +969,99 @@ let gone = false, sm = null;
 const cue = $('kpcue');
 /* clicking the prompt scrolls to the end of the turn, so the wall plays its full cascade */
 cue.addEventListener('click', () => scrollTo({ top: Math.round((FLIP[1] + 0.06) * H), behavior: RM ? 'auto' : 'smooth' }));
+
+/* ---------- the glide: the page scrolls itself from the role face to the projects, and the same driver runs Skip to work ----------
+   Once the visitor has scrolled to the role face and then left the page alone for 1.2 s, it carries on by itself through
+   the numbers and stops with #work at the top. It runs once per page load at most: any wheel, touch, key or press (or a
+   scrollbar drag, seen as the scroll no longer matching what was last written) stops it for the rest of the visit, where it is.
+   It writes the scroll position every frame (through Lenis where Lenis runs), so it is the same on iPhone Safari and on desktop,
+   and everything scroll-driven plays as if scrolled by hand. Its speed depends on where it is: slow while each number is at
+   rest (the odometer needs its 1.7 to 2.3 s roll), quicker through the hand-offs. About 13 s for the whole run. */
+const skip = $('kpskip'), workEl = $('work'), numEl = $('numbers');
+const AUTO = { idle: 1200, on: false, done: false, input: false, scrolled: false, raf: 0, timer: 0, y: 0, y0: 0, t: 0, d: 1, last: 0, kind: '' };
+const DEEP = /^#(work|media)(\/|$)/.test(location.hash);          /* arrived by a link into the work: never start */
+const ROLEZ = [0.5, 1.2];                                            /* the role face is the one showing */
+/* speed in screens per second against the numbers' own scroll plan (0 is the moment #numbers pins; see TL and HO in numbers.js) */
+const PACE = [[-2.2, 1.2], [-0.55, 1.2], [-0.25, 0.3], [0.84, 0.3], [1.12, 1.15], [2.5, 1.15], [2.8, 0.34], [3.07, 0.34], [3.35, 1.15], [4.3, 1.15], [4.6, 0.4], [5.05, 0.4], [5.35, 1.15], [9, 1.15]];
+function pace(n) {
+  for (let i = 1; i < PACE.length; i++) if (n < PACE[i][0]) {
+    const a = PACE[i - 1], b = PACE[i], k = clamp((n - a[0]) / (b[0] - a[0]));
+    return a[1] + (b[1] - a[1]) * k * k * (3 - 2 * k);
+  }
+  return 1;
+}
+const topOf = el => el.getBoundingClientRect().top + scrollY;
+const autoBlocked = () => document.hidden || /^#(work|media)\//.test(location.hash) || !!document.querySelector('#contact.ct-on')
+  || /(^|\s)(wkg-lock|mr-lock)(\s|$)/.test(document.documentElement.className);
+function writeY(y) {
+  const l = window.KP && window.KP.lenis;
+  if (l) l.scrollTo(y, { immediate: true, force: true }); else scrollTo({ left: 0, top: y, behavior: 'instant' });
+}
+function stopGlide() {                                              /* also the end of it: nothing starts again in this visit */
+  clearTimeout(AUTO.timer); AUTO.timer = 0; cancelAnimationFrame(AUTO.raf); AUTO.raf = 0;
+  AUTO.on = false; AUTO.done = true;
+}
+function glide(tm) {
+  AUTO.raf = 0; if (!AUTO.on) return;
+  /* the page is somewhere other than where it was put: the visitor has it (a scrollbar drag fires no pointer event) */
+  if (autoBlocked() || Math.abs(scrollY - AUTO.y) > 3) { stopGlide(); return; }
+  const dt = Math.min(0.05, Math.max(0, (tm - AUTO.last) / 1000)); AUTO.last = tm; AUTO.t += dt;
+  const end = Math.round(topOf(workEl)), rem = end - AUTO.y;
+  if (AUTO.kind === 'skip') {
+    const k = clamp(AUTO.t / AUTO.d), e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    AUTO.y = AUTO.y0 + (end - AUTO.y0) * e;
+    if (k >= 1) { writeY(end); stopGlide(); workEl.setAttribute('tabindex', '-1'); workEl.focus({ preventScroll: true }); return; }
+  } else {
+    if (rem <= 0.5) { writeY(end); stopGlide(); return; }
+    const k = clamp(AUTO.t / 0.9), n = (AUTO.y - topOf(numEl)) / H;
+    const v = Math.min(pace(n) * k * k * (3 - 2 * k) * H, rem * 4.5 + 0.02 * H);   /* eases in, and eases onto #work */
+    AUTO.y = Math.min(end, AUTO.y + v * dt);
+  }
+  writeY(AUTO.y);
+  AUTO.raf = requestAnimationFrame(glide);
+}
+function startGlide(kind) {
+  clearTimeout(AUTO.timer); AUTO.timer = 0; cancelAnimationFrame(AUTO.raf);
+  const end = Math.round(topOf(workEl));
+  AUTO.kind = kind; AUTO.y = AUTO.y0 = scrollY; AUTO.t = 0; AUTO.last = performance.now();
+  AUTO.d = clamp(0.8 + Math.abs(end - scrollY) / H * 0.1, 0.9, 1.7);
+  AUTO.on = true; AUTO.done = true;
+  AUTO.raf = requestAnimationFrame(glide);
+}
+function armGlide() {
+  clearTimeout(AUTO.timer); AUTO.timer = 0;
+  if (AUTO.done || AUTO.on || RM || DEEP || !AUTO.scrolled) return;
+  const s = scrollY / H; if (s < ROLEZ[0] || s > ROLEZ[1]) return;
+  AUTO.timer = setTimeout(() => {
+    AUTO.timer = 0;
+    const z = scrollY / H;
+    if (AUTO.done || autoBlocked() || z < ROLEZ[0] || z > ROLEZ[1]) return;   /* the next input arms it again */
+    startGlide('auto');
+  }, AUTO.idle);
+}
+/* before a run every input restarts the 1.2 s wait; during a run anything but a pointer move takes the page back */
+function autoPoke(e) {
+  if (AUTO.on) { if (e.type !== 'pointermove') stopGlide(); return; }
+  if (AUTO.done) return;
+  if (e.type !== 'pointermove') AUTO.input = true;
+  armGlide();
+}
+for (const ev of ['wheel', 'touchstart', 'pointerdown', 'mousedown', 'keydown', 'pointermove']) addEventListener(ev, autoPoke, { passive: true, capture: true });
+addEventListener('scroll', () => {
+  if (AUTO.on || AUTO.done) return;
+  if (AUTO.input && scrollY / H > 0.02) AUTO.scrolled = true;   /* a restored scroll position is not the visitor scrolling */
+  armGlide();
+}, { passive: true });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { if (AUTO.on) stopGlide(); else clearTimeout(AUTO.timer); } else armGlide(); });
+/* Skip to work: straight to the projects, quickly; at once under reduced motion. It also ends the idle glide for good */
+skip.addEventListener('click', () => {
+  if (RM) { stopGlide(); writeY(Math.round(topOf(workEl))); workEl.setAttribute('tabindex', '-1'); workEl.focus({ preventScroll: true }); return; }
+  startGlide('skip');
+});
+window.KP.auto = { get on() { return AUTO.on; }, get done() { return AUTO.done; }, get kind() { return AUTO.kind; }, stop: stopGlide };
 function onScroll() {
   const s = scrollY / H;
+  if (parked && !RM && s < FADE[1] + 0.05) { parked = false; last = now(); requestAnimationFrame(step); }
   if (s > 0.02) P.woke = true;
   const p = rng(s, HAND[0], HAND[1]);
   /* no push: by the hand-off the wall is flat light blue, the same ground #numbers rises on */
@@ -801,6 +1074,7 @@ function onScroll() {
   /* the prompt fades out over the first stretch of the turn */
   const cf = 1 - rng(s, 0.03, 0.16);
   cue.style.opacity = cf.toFixed(3); cue.classList.toggle('kp-off', cf < 0.2);
+  skip.style.opacity = cf.toFixed(3); skip.classList.toggle('kp-off', cf < 0.2);
   /* the page ground under the stage follows the face, so a collapsing phone toolbar never shows a blue band under the pink */
   document.body.style.backgroundColor = s > midA && s < midB ? C.pink : '';
 }
@@ -815,8 +1089,9 @@ const SP = { k: 120, z: 0.52 };
 const now = () => performance.now() / 1000;
 let last = now(), t0 = now(), frames = 0, settled = false, dirty = true, drawnSm = -1;
 
+/* the loop parks once the wall has dissolved and wakes when the page scrolls back up to it */
+let parked = false;
 function step() {
-  requestAnimationFrame(step);
   const t = now(), dt = Math.min(1 / 30, t - last); last = t;
   const s = scrollY / H;
   if (sm === null) sm = s;
@@ -825,8 +1100,9 @@ function step() {
   if (Math.abs(s - sm) < 1e-4) sm = s;
   /* once the wall is all light blue the slats dissolve into the flat blue stage behind them: same colour, no step */
   const fade = rng(sm, FADE[0], FADE[1]);
-  canvas.style.opacity = fade > 0 ? (1 - fade).toFixed(3) : '';
-  if (gone || fade >= 1) { settled = true; dirty = true; return; }
+  const op = fade > 0 ? (1 - fade).toFixed(3) : ''; if (canvas.style.opacity !== op) canvas.style.opacity = op;
+  if (gone || fade >= 1) { settled = true; dirty = true; parked = true; return; }
+  requestAnimationFrame(step);
 
   const u = rng(sm, FLIP[0], FLIP[1]), u2 = rng(sm, FLIP2[0], FLIP2[1]);
   const R = W < 700 ? W * 0.17 : Math.max(110, W * 0.085);
@@ -884,11 +1160,103 @@ window.SLATS.ready = true;
   <!-- numbers.js fills this: the motion-graphics numbers chapter -->
   <section id="numbers" aria-label="Numbers"></section>
   <!-- work.js fills this: all projects plus the project pages -->
-  <section id="work" aria-label="Work"></section>
+  <section id="work" aria-label="Work">
+    <!-- SEO: static content for crawlers and for JS off. Hidden by .kp-static{display:none}; work-g.js clears #work on boot and
+         builds the app here; the noscript style in <head> shows it when JS is off. Same facts as the app, no totals.
+         Keep in step with content/software/manifest.json and the client list in media-reels.js. -->
+    <div class="kp-static">
+      <h2>About</h2>
+      <p>Kirtan Purohit is a creative producer and developer based in Ahmedabad. He makes reels, digital video commercials and documentaries for brands, and builds the software around that work himself.</p>
+      <p>He was creative producer for Gujarat Titans across two IPL seasons, and produces Zepto's monthly reels: concepts, shoot, edit and client communication, with a team or solo. He shot Palladium's festive films, including a Christmas CGI film for Palladium Mumbai.</p>
+
+      <h2>Media: clients</h2>
+      <ul>
+        <li><a href="#media/gujarat-titans">Gujarat Titans</a>: creative producer, two IPL seasons.</li>
+        <li><a href="#media/zepto">Zepto</a>: monthly reels.</li>
+        <li><a href="#media/palladium">Palladium</a>: festive films.</li>
+        <li><a href="#media/shivalik">Shivalik</a>, <a href="#media/abh-developers">ABH Developers</a>, <a href="#media/kaavyaratna">Kaavyaratna</a>, <a href="#media/sahaj-group">Sahaj Group</a>: digital video commercials.</li>
+        <li><a href="#media/crav-social">Crav Social</a>: a page he ran end to end, concept, shoot and edit.</li>
+        <li>Also: Stellar Skoda, Landmark Volkswagen, Lofy, Oliver Brown, Puffizza, United Farmers Creamery, PYC Navratri, MMV, Qutone Ceramics, SJ Sangath, UltraPop, CREDAI Shelter.</li>
+      </ul>
+
+      <h2>Software</h2>
+      <ul>
+        <li><a href="#work/spectra">Spectra Museum</a>: the website for Spectra, a multi-sensory museum in Ahmedabad. You walk through all eight rooms.</li>
+        <li><a href="#work/sorted">sorted</a>: a Mac app that sorts a whole shoot on your laptop, offline.</li>
+        <li><a href="#work/sparks">Sparks</a>: a free browser app for DOPs and gaffers to plan lighting on a photo of the location.</li>
+        <li><a href="#work/clapper">Clapper</a>: a shot logger for the phone in your pocket on set.</li>
+        <li><a href="#work/deepdive">Deepdive Marketing</a>: a marketing page that runs itself.</li>
+        <li><a href="#work/sportified">The Sportified</a>: a World Cup that posted itself.</li>
+        <li><a href="#work/credai-nashik">Shelter Property Expo 2026</a>: the website for CREDAI Nashik's property expo, with a ground plan you can explore stall by stall.</li>
+        <li><a href="#work/shivasva">Shivasva Lifespace</a>: a real-estate developer's website, with the backend, CMS and enquiry emails.</li>
+        <li><a href="#work/vibe-raas-led">Vibe Raas LED</a>, <a href="#work/vibe-raas-tickets">Vibe Raas Tickets</a>, <a href="#work/page-22">Page 22</a>, <a href="#work/cravache">CravAche</a>, <a href="#work/retain-plus">Retain+</a>, <a href="#work/fitkit">Fitkit Pro</a>, <a href="#work/fourside-studios">Fourside Studios</a>.</li>
+      </ul>
+
+      <h2>Contact</h2>
+      <p>Email <a href="mailto:purohit.krick@gmail.com">purohit.krick@gmail.com</a> or Instagram <a href="https://www.instagram.com/kirtanheypurohit/">@kirtanheypurohit</a>.</p>
+    </div>
+  </section>
+  <!-- clapper-footer.js fills this: the sign-off, a clapper visitors can clap -->
+  <footer id="signwall"></footer>
 </main>
 <div id="kc" aria-hidden="true" hidden><div class="kr"><i></i><b></b></div><div class="kd"><i></i></div></div>
+<div id="ka" aria-hidden="true" hidden><i class="kz"></i><b></b></div>
 <script>
-/* the cursor. One rAF loop that sleeps when nothing moves; it only ever writes transforms. */
+/* the stretchy cursor. Position is written on the event so it never lags; the stretch runs on a loop that sleeps when settled.
+   Speed sets the length, the travel sets the angle, links and buttons grow it a little, a press gives a little. */
+(() => {
+  const fine = matchMedia('(hover: hover) and (pointer: fine)'), calm = matchMedia('(prefers-reduced-motion: reduce)');
+  const root = document.documentElement, ka = document.getElementById('ka'), dot = ka.querySelector('.kz'), word = ka.querySelector('b');
+  let x = 0, y = 0, vx = 0, vy = 0, lt = 0, sp = 0, ang = 0, grow = 1, growNow = 1, press = 1, pressNow = 1, raf = 0, seen = false;
+  const on = () => fine.matches && !calm.matches;
+  function apply() { root.classList.toggle('has-cursor', on()); ka.hidden = !on() || !seen; }
+  function read(el) {
+    const field = el && el.closest && el.closest('input,textarea,select,[contenteditable="true"]');
+    const lab = el && el.closest && el.closest('[data-cursor]');
+    /* a word from data-cursor, or by rule: videos say Play, photo posts say View. Software project cards carry no word: they get
+       the same grown dot as the Media rows and client cards, one cursor across both wings */
+    const hit = !lab && el && el.closest && el.closest('.mr-gt,.mr-card,.mr-box');
+    const text = lab ? lab.getAttribute('data-cursor').trim() : hit ? (hit.matches('.mr-box,.mr-post') ? 'View' : 'Play') : '';
+    if (text) word.textContent = text;
+    ka.classList.toggle('lab', !!text && !field);
+    ka.classList.toggle('off', !!field);
+    grow = !text && el && el.closest && el.closest('a[href],button:not(:disabled),[role="button"],label,summary,select') ? 1.7 : 1;
+  }
+  function frame() {
+    raf = 0;
+    const target = Math.hypot(vx, vy);
+    sp += (target - sp) * .28;                     // eased speed, px per second
+    if (target > 60) { let d = Math.atan2(vy, vx) - ang; d = Math.atan2(Math.sin(d), Math.cos(d)); ang += d * .35; }
+    vx *= .78; vy *= .78;                          // no new move: the speed runs out and the dot comes back round
+    growNow += (grow - growNow) * .2; pressNow += (press - pressNow) * .3;
+    const st = Math.min(sp / 700, 1.9), sx = 1 + st, sy = 1 / Math.sqrt(sx), k = growNow * pressNow;
+    // scale about the centre, then slide back by the added half length so the head stays on the pointer
+    dot.style.transform = `rotate(${ang.toFixed(4)}rad) translateX(${(-st * 6 * k).toFixed(2)}px) scale(${(sx * k).toFixed(3)},${(sy * k).toFixed(3)})`;
+    ka.style.setProperty('--kp', pressNow.toFixed(3));
+    if (sp > 3 || target > 3 || Math.abs(grow - growNow) > .002 || Math.abs(press - pressNow) > .002) raf = requestAnimationFrame(frame);
+  }
+  const wake = () => { if (!raf) raf = requestAnimationFrame(frame); };
+  addEventListener('pointermove', (e) => {
+    if (!on() || (e.pointerType && e.pointerType !== 'mouse' && e.pointerType !== 'pen')) return;
+    const dt = Math.max(8, e.timeStamp - lt);
+    if (seen) { vx = vx * .4 + (e.clientX - x) / dt * 1000 * .6; vy = vy * .4 + (e.clientY - y) / dt * 1000 * .6; } lt = e.timeStamp;
+    x = e.clientX; y = e.clientY;
+    ka.style.transform = `translate3d(${x}px,${y}px,0)`;
+    if (!seen) { seen = true; apply(); }
+    read(e.target); wake();
+  }, { passive: true });
+  addEventListener('pointerdown', () => { press = .84; wake(); });
+  addEventListener('pointerup', () => { press = 1; wake(); });
+  /* the ground can change under a still pointer */
+  let rr = 0; const reread = () => { if (seen && !rr) rr = setTimeout(() => { rr = 0; read(document.elementFromPoint(x, y)); }, 90); };
+  addEventListener('scroll', reread, { passive: true, capture: true }); addEventListener('hashchange', reread);
+  document.addEventListener('mouseleave', () => { seen = false; apply(); });
+  addEventListener('blur', () => { seen = false; apply(); });
+  fine.addEventListener && fine.addEventListener('change', apply); calm.addEventListener && calm.addEventListener('change', apply);
+  apply();
+})();
+
+/* the old dot and ring cursor. One rAF loop that sleeps when nothing moves; it only ever writes transforms. */
 (() => {
   const fine = matchMedia('(hover: hover) and (pointer: fine)'), calm = matchMedia('(prefers-reduced-motion: reduce)');
   return;   /* custom cursor switched off: Kirtan disliked it (code kept for reference) */
@@ -1008,5 +1376,7 @@ dispatchEvent(new Event('kp:smooth'));
 </script>
 <script type="module" src="numbers.js"></script>
 <script type="module" src="work.js"></script>
+<!-- the whiteboard wall is off: <script type="module" src="sign-wall.js" data-api="" data-turnstile=""></script> -->
+<script type="module" src="clapper-footer.js"></script>
 </body>
 </html>

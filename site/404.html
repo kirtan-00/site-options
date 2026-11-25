@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>404 | Kirtan Purohit</title>
+<link rel="icon" href="data:,">
+<!-- Standalone on purpose: GitHub Pages serves this file for any missing URL at any depth, so nothing here uses a
+     relative path. Styles, script and data are inline; the only outside request is the font stylesheet (absolute URL).
+     VIEWS is the real view count of every reel in content/media/reels.json, numbers only, embedded at build time. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0c0d0f;--paper:#f1f2f0;--blue:#c9d8f7;--pink:#f2a7b6;--sky:#7d9bf0;--cobalt:#1c3bb0;--navy:#0f2545;
+  --arrive:cubic-bezier(.2,.8,.2,1)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--ink);color:var(--paper);
+  font-family:"Bricolage Grotesque",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.disp{font-family:"Bowlby One","Arial Black",Impact,sans-serif;font-weight:400}
+
+#game{position:fixed;inset:0;overflow:hidden;cursor:ew-resize}
+/* the big 404 sits behind the play field */
+#big{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:min(46vw,62vh);line-height:.8;
+  color:var(--navy);letter-spacing:-.02em;white-space:nowrap;pointer-events:none}
+#field{position:absolute;inset:0;z-index:1;pointer-events:none}
+/* the header is a solid block above the field: the way out, the line, the score. Figures fall out from behind it. */
+#head{position:absolute;left:0;right:0;top:0;z-index:5;background:var(--ink);padding-bottom:14px;pointer-events:none}
+
+/* top bar: the way out is always here */
+#top{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:calc(14px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 0 calc(16px + env(safe-area-inset-left));pointer-events:none}
+#home{pointer-events:auto;display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 16px 1px 13px;border-radius:22px;
+  background:var(--paper);color:var(--ink);font-weight:800;font-size:15px;text-decoration:none;white-space:nowrap;
+  transition:transform .3s var(--arrive),background-color .2s}
+#home:hover{background:var(--pink)}
+#home:active{transform:scale(.96)}
+#home:focus-visible,#again:focus-visible,#go:focus-visible{outline:2px solid var(--pink);outline-offset:3px}
+#home svg{width:16px;height:16px;flex:none}
+#say{max-width:21em;text-align:right;font-size:15px;line-height:1.3;color:var(--blue);padding-top:3px}
+#say b{display:block;font-weight:800;color:var(--paper)}
+
+/* score */
+#score{position:relative;margin-top:14px;text-align:center;pointer-events:none}
+#sum{width:fit-content;margin-left:auto;margin-right:auto;font-size:clamp(44px,9.5vw,104px);line-height:1;color:var(--paper);font-variant-numeric:tabular-nums}   /* its own width, so the bump never scales a full-width box past the screen */
+#sum.bump{animation:bump .28s var(--arrive)}
+@keyframes bump{0%{transform:scale(1.09)}100%{transform:none}}
+#of{margin-top:8px;font-size:14px;font-weight:500;color:var(--blue)}
+#bar{width:min(320px,70vw);height:6px;margin:10px auto 0;border-radius:3px;background:rgba(201,216,247,.18);overflow:hidden}
+#bar i{display:block;height:100%;width:100%;background:var(--pink);transform-origin:0 50%;transform:scaleX(0);transition:transform .3s var(--arrive)}
+
+/* falling view counts */
+.v{position:absolute;left:0;top:0;will-change:transform;white-space:nowrap;line-height:1;padding:.16em .42em .2em;border-radius:.5em;
+  font-family:"Bowlby One","Arial Black",Impact,sans-serif;transform:translate3d(-999px,-999px,0)}
+.v.c0{background:var(--blue);color:var(--ink)}
+.v.c1{background:var(--pink);color:var(--ink)}
+.v.c2{background:var(--sky);color:var(--ink)}
+.v.c3{background:var(--paper);color:var(--ink)}
+.v small{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:.42em;margin-left:.3em;letter-spacing:.02em}
+/* the little "+7.4M" that pops off the paddle */
+.pop{position:absolute;left:0;top:0;font-weight:800;font-size:17px;color:var(--pink);white-space:nowrap;pointer-events:none;opacity:0}
+.pop.on{animation:pop .7s var(--arrive) forwards}
+@keyframes pop{0%{opacity:1;translate:0 0}100%{opacity:0;translate:0 -46px}}
+
+#pad{position:absolute;left:0;top:0;height:20px;border-radius:10px;background:var(--paper);will-change:transform;
+  box-shadow:0 5px 0 var(--cobalt)}
+#pad.hit{background:var(--pink)}
+#hint{position:absolute;left:0;right:0;bottom:calc(22px + env(safe-area-inset-bottom));z-index:4;text-align:center;font-size:14px;
+  font-weight:500;color:var(--blue);pointer-events:none;transition:opacity .4s}
+#hint.off{opacity:0}
+
+/* win card, and the start card for people who asked for less motion */
+.card{position:absolute;left:50%;top:50%;z-index:6;width:min(430px,calc(100vw - 32px));padding:26px 24px 24px;border-radius:22px;
+  background:var(--paper);color:var(--ink);text-align:center;transform:translate(-50%,-50%) scale(.94);opacity:0;visibility:hidden;
+  transition:opacity .3s var(--arrive),transform .45s var(--arrive),visibility 0s .3s}
+.card.on{opacity:1;visibility:visible;transform:translate(-50%,-50%);transition-delay:0s}
+.card h2{font-size:clamp(30px,8vw,44px);line-height:1.05}
+.card p{margin:10px 0 18px;font-size:16px;line-height:1.4}
+.card button{font:inherit;font-weight:800;font-size:16px;min-height:46px;padding:0 22px 1px;border:0;border-radius:23px;
+  background:var(--ink);color:var(--paper);cursor:pointer}
+.card button:hover{background:var(--cobalt)}
+
+@media (max-width:560px){
+  #top{flex-direction:column;align-items:flex-start;gap:10px}
+  #say{font-size:14px;max-width:none;text-align:left;padding:0 2px}
+  #say b{display:inline;margin-right:.35em}
+  #score{margin-top:12px}
+}
+@media (prefers-reduced-motion:reduce){
+  #sum.bump,.pop.on{animation:none}
+  .pop.on{opacity:0}
+  #bar i,.card,#home{transition:none}
+}
+</style>
+</head>
+<body>
+<main id="game">
+  <div id="big" class="disp" aria-hidden="true">404</div>
+  <div id="field" aria-hidden="true"><div id="pad"></div></div>
+
+  <div id="head">
+  <div id="top">
+    <a id="home" href="/site-options/site/"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 3 4.5 8l5 5"/></svg>Back to the site</a>
+    <p id="say"><b>404. Nothing here.</b>This page has zero views. The reels did better.</p>
+  </div>
+
+  <div id="score">
+    <h1 class="kp-sr" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)">404, page not found</h1>
+    <div id="sum" class="disp" aria-hidden="true">0</div>
+    <div id="bar" aria-hidden="true"><i></i></div>
+    <div id="of"><span id="left">Catch the views.</span></div>
+  </div>
+  </div>
+
+  <p id="hint">Move to catch. Mouse, finger or arrow keys.</p>
+
+  <div class="card" id="start" role="dialog" aria-label="Catch the views">
+    <h2 class="disp">Catch the views</h2>
+    <p>Real view counts fall. You catch them. That is the whole game.</p>
+    <button id="go" type="button">Play</button>
+  </div>
+  <div class="card" id="win" role="dialog" aria-label="Round over" aria-live="polite">
+    <h2 class="disp" id="wintitle"></h2>
+    <p id="wintext"></p>
+    <button id="again" type="button">Next round</button>
+  </div>
+</main>
+
+<script>
+(() => {
+  'use strict';
+  /* Where "Back to the site" goes. '/' is right for a custom domain or a user site. For a GitHub project site
+     (name.github.io/repo/) set this to '/repo/'. Opened directly as a file next to index.html, it uses that instead. */
+  const SITE_HOME = '/site-options/site/';
+  const VIEWS = /*VIEWS*/[7367973,7089884,4875028,4604830,3662779,3420135,3144361,3074457,2574295,2533580,2498232,2233769,2216757,2163175,2111325,2083322,2069060,1952949,1847074,1745804,1650797,1604976,1600773,1557261,1513287,1492717,1485814,1483765,1468603,1457717,1452006,1442164,1350133,1350011,1291176,1240829,1206570,1170710,1169271,1159306,1083468,1072270,1054607,1046456,1037783,1029726,1027573,1025915,1010329,1007747,971755,939255,938912,933076,898576,881281,880488,879402,873548,868424,829814,826666,825303,786401,756976,743724,741658,738805,734985,715759,709327,708743,707896,695137,694357,689873,677346,673283,672542,666262,660422,660123,658462,656017,639315,636096,633685,626839,625840,607914,597788,590777,570122,567773,552998,546653,546594,544820,539828,524052,506569,505618,501840,491414,487084,486701,479704,475805,471779,442803,441831,440266,439217,425483,418807,417005,412717,407433,403601,402763,383596,373085,365093,359346,359270,353050,347058,329260,324509,318900,313845,312163,309862,306322,305565,294693,284589,271390,270810,264027,254544,247518,220581,214395,212827,209668,209535,205747,196685,188103,187835,185787,182387,181381,163892,162394,158969,151800,149005,141039,140068,138841,138403,128480,127867,127562,127415,123422,117689,115277,112874,112389,109197,108639,107311,102310,101421,100581,99009,95946,95427,95328,95129,95111,93429,92015,89544,85807,84656,83347,83096,81540,78576,76705,76577,75901,73913,73860,73048,72245,71128,70569,69050,66623,66134,62697,60638,59982,57257,56822,55689,55404,55315,55219,55093,53999,53795,53511,53046,52358,52145,51827,51513,51356,51259,50998,48327,47431,45771,44746,44156,43795,42544,42492,41614,39903,38625,38195,36267,35988,35845,35294,34869,34195,33937,33721,32090,30084,29581,28030,27376,26328,26066,25147,25011,24997,23671,23663,22990,22285,21760,21445,20887,19516,18819,18235,17257,16656,15815,14896,14284,14263,13429,13341,13108,13071,12862,12308,12175,12078,12069,11605,11400,11226,11061,10900,10601,9982,9897,9844,9270,8706,8705,8336,8243,7736,7609,7060,6928,6545,6033,5734,5640,5301,5013,4888,4887,4586,4565,4521,4474,4466,4391,4173,4140,4040,4031,3956,3931,3892,3880,3832,3677,3171,3169,2994,2925,2923,2869,2688,2663,2598,2580,2271,2264,2251,2244,2216,2157,1983,1978,1953,1897,1889,1859,1740,1729,1582,1568,1523,1347,1339,1268,1035,975,932]/*END*/;
+  const ROUND = 36;      /* figures per round */
+
+  const $ = (id) => document.getElementById(id);
+  const game = $('game'), field = $('field'), pad = $('pad'), sumEl = $('sum'), barEl = $('bar').firstElementChild,
+    leftEl = $('left'), hint = $('hint'), win = $('win'), start = $('start'), head = $('head');
+  $('home').href = /\/404\.html$/.test(location.pathname) ? location.pathname.replace(/404\.html$/, 'index.html') : SITE_HOME;
+
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const fmt = (n) => n >= 1e6 ? [(n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, ''), 'M']
+    : n >= 1e3 ? [(n / 1e3).toFixed(n >= 1e5 ? 0 : 1).replace(/\.0$/, ''), 'K'] : [String(n), ''];
+  const fmtSum = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? Math.round(n / 1e3) + 'K' : String(n);
+
+  /* The deck: every reel's real figure, each dealt once, in an order that leans toward the hits. A round is the next
+     ROUND figures off the deck, and the target is exactly what that round drops. Nothing is repeated to reach a number;
+     when the whole deck has been dealt it is shuffled again. */
+  let deck = [], round = 0, queue = [], roundTotal = 0, dropped = 0;
+  function shuffle() { deck = VIEWS.map((v) => [Math.pow(Math.random(), 1 / Math.pow(v, 0.5)), v]).sort((a, b) => b[0] - a[0]).map((x) => x[1]); }
+  function deal() {
+    if (deck.length < ROUND) shuffle();
+    queue = deck.splice(0, ROUND); round++; dropped = 0;
+    roundTotal = queue.reduce((a, b) => a + b, 0);
+  }
+
+  /* a small pool of nodes, reused */
+  const POOL = 9, items = [];
+  for (let i = 0; i < POOL; i++) {
+    const n = document.createElement('div'); n.className = 'v';
+    field.insertBefore(n, pad);
+    items.push({ n, on: false, x: 0, y: 0, w: 0, h: 0, vy: 0, val: 0, rot: 0 });
+  }
+  const pops = [];
+  for (let i = 0; i < 4; i++) { const n = document.createElement('div'); n.className = 'pop'; field.appendChild(n); pops.push(n); }
+  let popI = 0;
+
+  let W = 0, H = 0, headH = 0, padW = 0, padX = 0, padY = 0, target = 0, sum = 0, caught = 0, last = 0, nextAt = 0,
+    running = false, raf = 0, won = false, played = 0, keyDir = 0, first = true, hitT = 0;
+
+  function size() {
+    W = game.clientWidth; H = game.clientHeight; headH = head.offsetHeight;
+    padW = Math.max(96, Math.min(190, W * 0.3));
+    padY = H - Math.max(86, H * 0.13);
+    pad.style.width = padW + 'px';
+    target = Math.max(padW / 2, Math.min(W - padW / 2, target || W / 2));
+    if (!padX) padX = target;
+    drawPad();
+  }
+  function drawPad() { pad.style.transform = `translate3d(${(padX - padW / 2).toFixed(1)}px,${padY}px,0)`; }
+
+  function spawn(now) {
+    if (!queue.length) return;
+    const it = items.find((i) => !i.on); if (!it) return;
+    const val = queue.shift(), [num, unit] = fmt(val); dropped++;
+    const big = Math.min(1, Math.log10(val) / 7);                    /* bigger counts are bigger and slower */
+    const fs = Math.round((W < 560 ? 20 : 26) + big * big * (W < 560 ? 24 : 40));
+    it.n.className = 'v c' + ((Math.random() * 4) | 0);
+    it.n.style.fontSize = fs + 'px';
+    it.n.innerHTML = num + (unit ? '<small>' + unit + '</small>' : '');
+    it.w = it.n.offsetWidth; it.h = it.n.offsetHeight;
+    const ramp = Math.min(1, played / 60);
+    it.vy = (H * (0.30 + ramp * 0.24)) * (1.25 - big * 0.45) * (calm ? 0.7 : 1);
+    if (first) {                                                     /* the first one lands on you: a point in the first second */
+      first = false; it.x = padX - it.w / 2; it.y = headH - it.h * 0.5; it.vy = H * 0.52;
+    } else {
+      /* never further from the paddle than you can reasonably travel */
+      const reach = W * (0.55 + ramp * 0.3), lo = Math.max(8, padX - reach), hi = Math.min(W - it.w - 8, padX + reach - it.w);
+      it.x = lo + Math.random() * Math.max(0, hi - lo); it.y = headH - it.h;      /* starts hidden behind the header */
+    }
+    it.x = Math.max(8, Math.min(W - it.w - 8, it.x));
+    it.rot = (Math.random() - 0.5) * 10; it.val = val; it.on = true;
+    nextAt = now + (1050 - ramp * 480) * (0.75 + Math.random() * 0.5);
+  }
+
+  function catchIt(it) {
+    it.on = false; it.n.style.transform = 'translate3d(-999px,-999px,0)';
+    sum += it.val; caught++;
+    sumEl.textContent = fmtSum(sum);
+    if (!calm) { sumEl.classList.remove('bump'); void sumEl.offsetWidth; sumEl.classList.add('bump'); }
+    barEl.style.transform = `scaleX(${Math.min(1, sum / roundTotal).toFixed(4)})`;
+    label();
+    const p = pops[popI++ % pops.length], [num, unit] = fmt(it.val);
+    p.textContent = '+' + num + unit; p.style.transform = `translate3d(${Math.max(8, Math.min(W - 80, padX - 24))}px,${padY - 30}px,0)`;
+    p.classList.remove('on'); void p.offsetWidth; p.classList.add('on');
+    pad.classList.add('hit'); hitT = performance.now() + 140;
+    hint.classList.add('off');
+  }
+  function label() { leftEl.textContent = `Round ${round}. ${fmtSum(sum)} of ${fmtSum(roundTotal)} caught.`; }
+
+  function finish() {
+    won = true; running = false;
+    $('wintitle').textContent = Math.round(sum / roundTotal * 100) + '%';
+    $('wintext').textContent = `Round ${round}: you caught ${fmtSum(sum)} of the ${fmtSum(roundTotal)} views that fell, in ${caught} of ${ROUND} catches. Every figure is a real reel.`;
+    win.classList.add('on'); $('again').focus({ preventScroll: true });
+  }
+
+  function frame(now) {
+    raf = 0; if (!running) return;
+    const dt = Math.min(0.05, (now - last) / 1000); last = now; played += dt;
+    if (keyDir) target = Math.max(padW / 2, Math.min(W - padW / 2, target + keyDir * W * 1.15 * dt));
+    padX += (target - padX) * Math.min(1, dt * 26);
+    drawPad();
+    if (hitT && now > hitT) { hitT = 0; pad.classList.remove('hit'); }
+    if (now >= nextAt) spawn(now);
+    const l = padX - padW / 2, r = padX + padW / 2;
+    for (const it of items) {
+      if (!it.on) continue;
+      const py = it.y; it.y += it.vy * dt;
+      const bottom = it.y + it.h;
+      if (py + it.h <= padY + 14 && bottom >= padY && it.x + it.w > l - 4 && it.x < r + 4) { catchIt(it); continue; }
+      if (it.y > H + 10) { it.on = false; it.n.style.transform = 'translate3d(-999px,-999px,0)'; continue; }
+      it.n.style.transform = `translate3d(${it.x.toFixed(1)}px,${it.y.toFixed(1)}px,0) rotate(${it.rot.toFixed(1)}deg)`;
+    }
+    if (!queue.length && !items.some((i) => i.on)) { finish(); return; }      /* the round is over when its last figure has landed or gone */
+    raf = requestAnimationFrame(frame);
+  }
+
+  function play() {
+    if (running || won || document.hidden) return;
+    running = true; last = performance.now(); if (nextAt < last) nextAt = last;
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
+  function pause() { running = false; if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+  function reset() {                       /* the next round: fresh figures off the deck, score back to zero */
+    deal(); sum = 0; caught = 0; won = false; nextAt = 0;
+    sumEl.textContent = '0'; barEl.style.transform = 'scaleX(0)'; label();
+    win.classList.remove('on'); play();
+  }
+
+  /* input: the paddle sits under the pointer; arrow keys (or A and D) slide it */
+  const aim = (x) => { target = Math.max(padW / 2, Math.min(W - padW / 2, x)); };
+  game.addEventListener('pointermove', (e) => aim(e.clientX));
+  game.addEventListener('pointerdown', (e) => { if (!e.target.closest('a,button')) aim(e.clientX); });
+  addEventListener('keydown', (e) => {
+    const k = e.key;
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') { keyDir = -1; e.preventDefault(); }
+    else if (k === 'ArrowRight' || k === 'd' || k === 'D') { keyDir = 1; e.preventDefault(); }
+  });
+  addEventListener('keyup', (e) => {
+    const k = e.key;
+    if ((k === 'ArrowLeft' || k === 'a' || k === 'A') && keyDir < 0) keyDir = 0;
+    if ((k === 'ArrowRight' || k === 'd' || k === 'D') && keyDir > 0) keyDir = 0;
+  });
+  addEventListener('blur', () => { keyDir = 0; });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); else if (!start.classList.contains('on')) play(); });
+  addEventListener('resize', size);
+  $('again').addEventListener('click', reset);
+  $('go').addEventListener('click', () => { start.classList.remove('on'); play(); });
+
+  deal(); size(); label();
+  /* for tests and the curious */
+  window.CATCH = { get round() { return round; }, get roundTotal() { return roundTotal; }, get headH() { return headH; }, get sum() { return sum; }, get caught() { return caught; }, get running() { return running; }, get padX() { return padX; },
+    items: () => items.filter((i) => i.on).map((i) => ({ x: i.x + i.w / 2, y: i.y, val: i.val })) };
+  if (calm) start.classList.add('on');      /* asked for less motion: nothing falls until they press Play */
+  else play();
+})();
+</script>
+</body>
+</html>

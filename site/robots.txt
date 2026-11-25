@@ -1,0 +1,4 @@
+# Allow everything. Add the sitemap line once the domain is chosen:
+# Sitemap: https://DOMAIN/sitemap.xml
+User-agent: *
+Allow: /

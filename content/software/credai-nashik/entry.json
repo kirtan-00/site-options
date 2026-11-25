@@ -1,0 +1,58 @@
+{
+  "id": "credai-nashik",
+  "name": "Shelter Property Expo 2026",
+  "wing": "software",
+  "category": "webdev",
+  "one_line": "The website for CREDAI Nashik's Shelter Property Expo. I built it from the designer's page and turned the organisers' ground plan into a map you can explore, stall by stall.",
+  "facts": [
+    {
+      "label": "Kind",
+      "value": "Event website"
+    },
+    {
+      "label": "Client",
+      "value": "CREDAI Nashik Metro, through CrayWingz"
+    },
+    {
+      "label": "Role",
+      "value": "Front-end build, interactive ground plan, hero postcard and enquiry form. Visual design by the project's designer."
+    },
+    {
+      "label": "Year",
+      "value": "2026"
+    },
+    {
+      "label": "Event",
+      "value": "Shelter Property Expo, 12th edition"
+    },
+    {
+      "label": "Dates",
+      "value": "17 to 21 December 2026"
+    },
+    {
+      "label": "Venue",
+      "value": "Dongre Ground, Gangapur Road, Nashik"
+    },
+    {
+      "label": "Ground plan",
+      "value": "123 stalls across four domes and five open spaces"
+    }
+  ],
+  "writeup": [
+    "Shelter is CREDAI Nashik Metro's property expo, and 2026 is its 12th edition: five days at Dongre Ground on Gangapur Road. CrayWingz handles the expo's marketing, design and website. The look of this site came from the project's designer, as a single HTML page. I rebuilt that page in Astro and added what it didn't have.",
+    "The main addition is the ground plan. I took the organisers' printed layout and put an interactive layer on top, so you can zoom into any of the four domes and point at a stall to see its category and size. I also built the postcard hero from the Figma frame and an enquiry form made to send leads to a Google Sheet."
+  ],
+  "link": null,
+  "logo": "software/credai-nashik/logo.png",
+  "hero": "software/credai-nashik/desk-01.jpg",
+  "gallery": [
+    "software/credai-nashik/desk-02.jpg",
+    "software/credai-nashik/desk-03.jpg",
+    "software/credai-nashik/desk-04.jpg",
+    "software/credai-nashik/desk-05.jpg",
+    "software/credai-nashik/phone-01.jpg",
+    "software/credai-nashik/phone-02.jpg"
+  ],
+  "video": null,
+  "screens_withheld": false
+}

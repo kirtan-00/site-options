@@ -11,9 +11,9 @@ import * as THREE from 'three';
 
 /* Real values go here, as strings ('150K+', '3,677' and so on work). Until Kirtan gives them, they stay '000'. Never invent one. */
 const NUMBERS = [
-  { value: '000', label: 'number to come' },
-  { value: '000', label: 'number to come' },
-  { value: '000', label: 'number to come' },
+  { value: '177', label: 'million+ views in 4 years' },
+  { value: '40+', label: 'brands' },
+  { value: '25', label: 'software products built' },
 ];
 
 /* index.html maps only 'three', so the addons load by full URL. Their own 'three' import still resolves through the page's map. */
@@ -41,7 +41,7 @@ const SEC = document.getElementById('numbers');
 const css = document.createElement('style');
 css.textContent = `
 #numbers{position:relative;background:transparent;--nm-arrive:cubic-bezier(.2,.8,.2,1);--nm-move:cubic-bezier(.7,0,.2,1);--nm-leave:cubic-bezier(.6,0,.85,.3)}
-.nm-stage{position:absolute;left:0;top:0;width:100%;height:100vh;height:100svh;overflow:hidden;background:#c9d8f7}
+.nm-stage{position:absolute;left:0;top:0;width:100%;height:100vh;height:100lvh;overflow:hidden;background:#c9d8f7}
 .nm-stage.nm-fix,.nm-stage.nm-post{position:fixed}
 .nm-stage.nm-post{z-index:-1}
 .nm-stage.nm-gone{visibility:hidden}
@@ -66,6 +66,9 @@ labs[0].textContent = NUMBERS[0].label; labs[2].textContent = NUMBERS[2].label;
 SEC.querySelector('.nm-sr').innerHTML = NUMBERS.map(n => `<li>${n.value} ${n.label}</li>`).join('');
 
 let W = 1, H = 1, ASP = 1;
+/* the stage is 100lvh (svh left a band under it on iOS once the toolbar hid). While the toolbar shows, the stage's bottom
+   strip sits under it, so labels near the bottom keep clear of that strip. 0 on desktop. */
+const botInset = () => Math.max(0, Math.min(160, H - (innerHeight || H)));
 function sizeSection() {
   W = stage.clientWidth || innerWidth; H = stage.clientHeight || innerHeight; ASP = W / H;
   SEC.style.height = Math.round((TL.pin + 1) * H) + 'px';
@@ -97,15 +100,19 @@ pin();
 /* ---------- boot only when needed ---------- */
 let booted = false, visible = false;
 function wake() { if (!booted) { booted = true; boot().catch(e => console.error('[numbers]', e)); } }
-if (window.KP && window.KP.final) wake();
-addEventListener('kp:final', wake, { once: true });
+/* The chapter is two screens below the landing, so it is built once the first screen has loaded and the main thread is idle
+   (or at once if the page opens further down), and boot() works in slices so no single step holds the thread. */
+const nearBy = () => SEC.getBoundingClientRect().top < innerHeight * 1.5;
+const idle = () => (window.requestIdleCallback ? requestIdleCallback(wake, { timeout: 1200 }) : setTimeout(wake, 200));
+function soon() { if (nearBy()) wake(); else if (document.readyState === 'complete') idle(); else addEventListener('load', idle, { once: true }); }
+if (window.KP && window.KP.final) soon(); else addEventListener('kp:final', soon, { once: true });
 new IntersectionObserver(([en]) => {
   visible = en.isIntersecting && en.intersectionRatio > 0;
   if (visible) { wake(); kick(); }
 }, { threshold: [0, 0.01] }).observe(SEC);
 
 /* ---------- three ---------- */
-let renderer, FONT, TextGeometry;
+let renderer, FONT;
 const FOV = 30, TAN = Math.tan(THREE.MathUtils.degToRad(FOV / 2)), D = 12;
 let VH = 2 * D * TAN, VW = VH;
 const makeCam = () => { const c = new THREE.PerspectiveCamera(FOV, 1, 0.1, 400); c.position.set(0, 0, D); return c; };
@@ -118,11 +125,37 @@ const glyphCache = new Map();
 function glyph(ch, opt) { // centred on x and z; y keeps the font baseline
   const key = ch + JSON.stringify(opt);
   if (glyphCache.has(key)) return glyphCache.get(key);
-  const g = new TextGeometry(ch, Object.assign({ font: FONT, size: 1, curveSegments: 10 }, opt));
+  // TextGeometry is an extrusion of the font's outlines. Built here directly so stray specks in an outline can be dropped first:
+  // Bowlby One's '4' carries two (about 0.01 em across) off the tip of its bar, which read as a spur bridging to the next glyph.
+  const shapes = FONT.generateShapes(ch, 1).filter(sh => Math.abs(THREE.ShapeUtils.area(sh.getPoints(8))) > 5e-4);
+  const g = new THREE.ExtrudeGeometry(shapes, Object.assign({ curveSegments: 10, bevelEnabled: false }, opt, { depth: opt.height }));
   g.computeBoundingBox(); const bb = g.boundingBox;
   g.userData = { w: bb.max.x - bb.min.x, minY: bb.min.y, maxY: bb.max.y };
   g.translate(-(bb.min.x + bb.max.x) / 2, 0, -(bb.min.z + bb.max.z) / 2);
   glyphCache.set(key, g); return g;
+}
+/* A string set one glyph at a time with the same clear gap between the ink of every pair, so heavy neighbours ('4' and '0')
+   never touch or leave a hairline seam. Same contract as glyph(): centred on x and z, y keeps the baseline. .cx is the centre of
+   each character. A single character is glyph() itself. */
+const TRACK = 0.16; // ink to ink, in ems
+function word(str, opt) {
+  const chars = [...str];
+  if (chars.length < 2) { const g = glyph(str, opt); if (!g.userData.cx) g.userData.cx = [0]; return g; }
+  const key = 'w:' + str + JSON.stringify(opt);
+  if (glyphCache.has(key)) return glyphCache.get(key);
+  const gs = chars.map(ch => glyph(ch, opt)), total = gs.reduce((a, g) => a + g.userData.w, 0) + TRACK * (gs.length - 1);
+  const n = gs.reduce((a, g) => a + g.attributes.position.count, 0), P = new Float32Array(n * 3), N = new Float32Array(n * 3), cx = [];
+  let x = -total / 2, o = 0, minY = Infinity, maxY = -Infinity;
+  gs.forEach(g => {
+    const c = x + g.userData.w / 2, p = g.attributes.position.array; x += g.userData.w + TRACK; cx.push(c);
+    P.set(p, o); N.set(g.attributes.normal.array, o);
+    for (let i = 0; i < p.length; i += 3) P[o + i] += c;
+    o += p.length; minY = Math.min(minY, g.userData.minY); maxY = Math.max(maxY, g.userData.maxY);
+  });
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.BufferAttribute(P, 3)); out.setAttribute('normal', new THREE.BufferAttribute(N, 3));
+  out.userData = { w: total, minY, maxY, cx };
+  glyphCache.set(key, out); return out;
 }
 let MID = 0.5, CAPH = 1; // set from the real '0' glyph at boot
 const _v = new THREE.Vector3();
@@ -135,6 +168,7 @@ function toScreen(obj, cam, x, y, z) { obj.updateMatrixWorld(true); _v.set(x, y,
    All of it is a pure function of scroll, so it scrubs both ways and rests exactly. */
 const ODO = { spin: [-0.85, 0.16], tick: [0.16, 0.68], ticks: 3, pitch: 1.36 };
 const odo = { scene: new THREE.Scene(), cam: makeCam(), group: new THREE.Group(), drums: [] };
+odo.uni = { uOdoInv: { value: new THREE.Matrix4() }, uOdoShade: { value: new THREE.Color(0x0b1c5e) }, uOdoBand: { value: new THREE.Vector3(0.25, 0.5, 0) } };
 function bendGlyph(src, R, maxLen) { // tessellate, then wrap y round the drum: flat type becomes print on a cylinder
   const pos = src.attributes.position.array, nor = src.attributes.normal.array;
   const P = [], N = [], groups = [], L2 = maxLen * maxLen;
@@ -176,6 +210,16 @@ function buildOdo() {
   const edge = new THREE.MeshStandardMaterial({ color: C.paper, roughness: 0.6, emissive: C.paper, emissiveIntensity: 0.08 });
   const body = new THREE.MeshStandardMaterial({ color: C.cobalt, roughness: 0.44 });
   const rim = new THREE.MeshStandardMaterial({ color: C.navy, roughness: 0.32, metalness: 0.25 });
+  // the reading row: everything on the drums falls into deep cobalt shade as it turns away from the front, by its angle round
+  // the axle (not by depth, so the resting yaw shades all three drums alike). Only the front row stays lit, so that row is the number.
+  const shade = m => { m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, odo.uni);
+    sh.vertexShader = 'uniform mat4 uOdoInv;\nvarying vec2 vOdoYZ;\n' + sh.vertexShader.replace('#include <project_vertex>',
+      '#include <project_vertex>\n\tvOdoYZ = (uOdoInv * modelMatrix * vec4(transformed, 1.0)).yz;');
+    sh.fragmentShader = 'uniform vec3 uOdoShade;\nuniform vec3 uOdoBand;\nvarying vec2 vOdoYZ;\n' + sh.fragmentShader.replace('#include <opaque_fragment>',
+      '#include <opaque_fragment>\n\tgl_FragColor.rgb = mix(gl_FragColor.rgb, uOdoShade, uOdoBand.z * smoothstep(uOdoBand.x, uOdoBand.y, atan(abs(vOdoYZ.x), vOdoYZ.y)));');
+  }; return m; };
+  [face, edge, body].forEach(shade);
   const opt = { height: 0.022, bevelEnabled: true, bevelThickness: 0.008, bevelSize: 0.006, bevelSegments: 1, curveSegments: 14 };
   const G = ch => { const g = glyph(ch, opt); if (!g.userData.c) { g.translate(0, -MID, 0); g.userData.c = 1; } return g; };
   let dw = 0; for (let d = 0; d < 10; d++) dw = Math.max(dw, G(String(d)).userData.w);
@@ -204,6 +248,10 @@ function buildOdo() {
   // the axle, showing past the outer rims
   const axle = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.2, R * 0.2, total + ringW * 2 + 0.2, 48), rim); axle.rotation.z = Math.PI / 2; group.add(axle);
   odo.width = total + ringW * 2 + 0.2; odo.nd = nd;
+  odo.baseY = G(chars[chars.length - 1]).userData.minY - MID; // foot of the last character, where the label's baseline sits
+  // two index marks on the outer rims, on the reading row
+  const markG = new THREE.BoxGeometry(0.05, 0.035, 0.05), markM = new THREE.MeshBasicMaterial({ color: C.paper });
+  for (const sx of [-1, 1]) { const m = new THREE.Mesh(markG, markM); m.position.set(sx * (total / 2 + ringW / 2), 0, RR); group.add(m); }
   const digits = NUMBERS[0].value.replace(/\D/g, '');
   odo.mod = 10 ** nd; odo.end = (parseInt(digits || '0', 10) || 0) + odo.mod; // a full roll over onto the number
   buildPortal(R);
@@ -266,26 +314,37 @@ function odoZoom(cam) {
 function layoutOdo() {
   // the whole drum stays inside the frame: digits roll over its top and bottom, never off the frame edge
   odo.s = Math.min(VW * (ASP < 1 ? 0.86 : 0.6) / odo.width, VH * (ASP < 1 ? 0.6 : 0.84) / (2 * odo.RR));
+  // where the label's text baseline is, from its top: a zero-height inline box sits on it
+  const probe = document.createElement('span'); probe.style.cssText = 'display:inline-block;width:0;height:0;vertical-align:baseline';
+  labs[0].appendChild(probe); odo.labBase = probe.offsetTop; probe.remove();
 }
 /* the count, as each drum's position in digits. Place 0 is the units drum. */
-const tick = t => { const c = 1.25, d = c + 1; return t <= 0 ? 0 : t >= 1 ? 1 : 1 + d * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
+const tick = t => { const c = 0.8, d = c + 1; return t <= 0 ? 0 : t >= 1 ? 1 : 1 + d * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
 const eQIO = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 function odoCount(s, place) {
-  const n = ODO.ticks, end = odo.end, p10 = 10 ** place;
-  const nines = b => b % p10 === p10 - 1; // every drum to the right shows 9: this one is being carried
-  if (RM || s >= ODO.tick[1]) return end / p10;
-  if (s < ODO.tick[0]) { // spin up with the sheet, then slow to a stop a few counts short
-    const v = lerp(end - 44, end - n, eQIO(rng(s, ODO.spin[0], ODO.spin[1]))), b = Math.floor(v), f = v - b;
-    return Math.floor(b / p10) + (place === 0 ? f : nines(b) ? eIO(rng(f, 0.5, 1)) : 0);
-  }
-  // the last counts tick over one at a time; the final roll over is a little longer, carries every drum, right to left
-  const w = Array.from({ length: n }, (_, i) => (i === n - 1 ? 1.5 : 1)), sum = w.reduce((a, b) => a + b, 0);
-  let t = rng(s, ODO.tick[0], ODO.tick[1]) * sum, i = 0; while (i < n - 1 && t > w[i]) { t -= w[i]; i++; }
-  const l = t / w[i], b = end - n + i, last = i === n - 1;
-  const f = tick(rng(l, last ? place * 0.07 : 0, last ? 0.62 + place * 0.07 : 0.6));
-  return Math.floor(b / p10) + (place === 0 || nines(b) ? f : 0);
+  // Every drum makes whole turns and slows to a stop on its own digit, all landing together. Whole turns of ten digits mean it
+  // starts and ends on the real number and never pauses on any other one (no counting up through wrong values).
+  const T = Math.floor(odo.end / 10 ** place);
+  if (RM) return T;
+  const TURNS = 2 + place;                       // the left drums turn a little more, so the three never move as one block
+  const e = 1 - Math.pow(1 - spinP(), 3);
+  // on a portrait phone the counter waits at 000 and rolls up to the number, so the answer is never on show before the roll
+  return T - (TURNS * 10 + (ASP < 1 ? T % 10 : 0)) * (1 - e);
+}
+/* The spin plays on its own clock once the counter is mostly in view, so stopping the scroll halfway never freezes it on a
+   wrong number. Before and after, the drums simply read the number. Scrolling back above the section lets it play again. */
+const SPIN_MS = 1700; let spin0 = 0, spun = false;
+const spinP = () => (spin0 ? Math.min(1, (performance.now() - spin0) / (ASP < 1 ? 2300 : SPIN_MS)) : (ASP < 1 && !spun ? 0 : 1));
+function spinClock(s) {
+  if (RM) return;
+  // on a portrait phone the drums are still half below the screen (and under the thumb) at -0.45, so the roll was over before
+  // anyone saw it. There it waits until the counter is nearly centred, and takes a little longer.
+  if (!spun && s > (ASP < 1 ? -0.12 : -0.45)) { spun = true; spin0 = performance.now(); }
+  if (spun && s < -0.95) { spun = false; spin0 = 0; }
+  if (spin0 && spinP() < 1) dirty = true;      // keep drawing until the drums have landed
 }
 function updateOdo(s) {
+  spinClock(s);
   const { group, drums, R, STEP } = odo, sc = odo.s;
   drums.forEach(d => { d.rotation.x = -odoCount(s, d.userData.place) * STEP; });
   group.scale.setScalar(sc);
@@ -299,13 +358,15 @@ function updateOdo(s) {
   const mechH = 2 * odo.RR * sc / pxw, room = (H - mechH) / 2 - H * 0.04;
   const lift = room > 0 ? room * (1 - eIO(rng(s, -1, 0))) * RMK : 0;
   group.position.set(shiftX, lift * pxw, -R * sc);
+  group.updateMatrixWorld(true); odo.uni.uOdoInv.value.copy(group.matrixWorld).invert();
   odoZoom(odo.cam);
   const Z = odo.Z; lab.style.opacity = RM ? 1 - H1 : 1 - rng(H1, 0, 0.3);
-  const a = -CAPH / 2 / R, base = toScreen(group, odo.cam, odo.width / 2 - 0.1, R * Math.sin(a), R * Math.cos(a));
-  if (side) lab.style.transform = `translate(${(base.x + gapL * Z).toFixed(1)}px,${(base.y - lh * 0.86 * Z).toFixed(1)}px) scale(${Z.toFixed(3)})`;
-  else {
-    const l = toScreen(group, odo.cam, -odo.width / 2 + 0.1, 0, R), b = toScreen(group, odo.cam, 0, -odo.RR, 0);
-    lab.style.transform = `translate(${Math.max(16, l.x).toFixed(1)}px,${Math.min(b.y + 20, H - lh - 36).toFixed(1)}px)`;
+  // one sentence: the label's own baseline (measured, not guessed) sits on the foot of the value row, right after the last drum
+  const a = odo.baseY / R, base = toScreen(group, odo.cam, odo.width / 2 - 0.1, R * Math.sin(a), R * Math.cos(a));
+  if (side) lab.style.transform = `translate(${(base.x + gapL * Z).toFixed(1)}px,${(base.y - odo.labBase * Z).toFixed(1)}px) scale(${Z.toFixed(3)})`;
+  else { // stacked: centred, straight under the drums
+    const b = toScreen(group, odo.cam, 0, -odo.RR, 0);
+    lab.style.transform = `translate(${((W - lw) / 2).toFixed(1)}px,${Math.min(b.y + 18, H - lh - 36 - botInset()).toFixed(1)}px)`;
   }
 }
 
@@ -318,7 +379,7 @@ function buildTunnel() {
   scene.add(group); tun.cam.position.set(0, 0, 0);
   const ink = new THREE.MeshBasicMaterial({ color: C.ink });
   // the number printed on the walls: real glyph outlines, so they stay sharp at any distance
-  const flat = glyph(NUMBERS[1].value, { height: 0.001, bevelEnabled: false, curveSegments: 12 });
+  const flat = word(NUMBERS[1].value, { height: 0.001, bevelEnabled: false, curveSegments: 12 });
   const g2 = flat.clone(); g2.translate(0, -(flat.userData.minY + flat.userData.maxY) / 2, 0);
   tun.numW = flat.userData.w; tun.numH = flat.userData.maxY - flat.userData.minY;
   const rows = tun.rows = Math.ceil(tun.L / tun.SP) + 2;
@@ -327,8 +388,9 @@ function buildTunnel() {
   // the far wall: paper, the number in ink, the label printed under it
   tun.capMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   tun.cap = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), tun.capMat); group.add(tun.cap);
-  const big = glyph(NUMBERS[1].value, { height: 0.12, bevelEnabled: false, curveSegments: 14 });
+  const big = word(NUMBERS[1].value, { height: 0.12, bevelEnabled: false, curveSegments: 14 });
   tun.big = new THREE.Mesh(big, ink); group.add(tun.big); tun.bigW = big.userData.w;
+  tun.midX = big.userData.cx[Math.floor(big.userData.cx.length / 2)]; // the middle character, where the square opens
 }
 function capTexture(aw, ah) {
   const cw = innerWidth < 700 ? 1400 : 2048, ch = Math.round(cw * ah / aw);
@@ -384,11 +446,12 @@ function layoutTunnel() {
   tun.scene.fog.near = d + 3; tun.scene.fog.far = d + 46; // the far wall is never tinted at rest
 }
 function updateTunnel(s) {
-  const f = eIO(rng(s, TL.fly[0], TL.fly[1]));
+  // reduced motion: no flight down the tunnel, it rests on its end frame (the paper card with the number)
+  const f = RM ? 1 : eIO(rng(s, TL.fly[0], TL.fly[1]));
   // into the second hand-off the camera keeps going, towards the paper end wall
   tun.group.position.z = lerp(0, tun.stop, f) + (RM ? 0 : Math.pow(H2, 1.6) * tun.d * 0.55);
   // the square opens from the counter of the middle digit on the end wall
-  if (H2 > 0 && H2 < 1) tun.sc = toScreen(tun.group, tun.cam, 0, tun.big.position.y + MID * tun.big.scale.y, -tun.L + 0.13);
+  if (H2 > 0 && H2 < 1) tun.sc = toScreen(tun.group, tun.cam, tun.midX * tun.big.scale.x, tun.big.position.y + MID * tun.big.scale.y, -tun.L + 0.13);
   tun.group.rotation.z = lerp(-0.5, 0, eIO(rng(s, TL.fly[0], TL.fly[1] - 0.15))) * RMK;
 }
 
@@ -455,13 +518,15 @@ function setStackGrid(k) { // made again when the layout changes between one lin
   stk.ghost.frustumCulled = false; group.add(stk.ghost);
 }
 function layoutStack() {
-  const k = pickLines(NUMBERS[2].value);
+  /* always one line, read left to right as on desktop. Stacking the digits on a phone ('2' over '5') read as two numbers.
+     pickLines() is kept for reference but no longer used */
+  const k = 1;
   if (k !== stk.k) setStackGrid(k);
   const { cols, rows } = stk.grid;
   stk.u = Math.min(VW * (ASP < 1 ? 0.86 : 0.74) / cols, VH * (ASP < 1 ? 0.68 : 0.44) / rows);
   stk.depth = 1.6;
-  // a single line on a phone would still be a band: build it big, track the wall, then pull back
-  stk.zoom = ASP < 1 && k === 1 ? Math.max(1, Math.min(2.6, VH * 0.44 / (rows * stk.u))) : 1;
+  // the whole number is sized to fit the frame (86% of the width on a phone), so no zoom-and-track: it is always seen whole
+  stk.zoom = 1;
 }
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _p = new THREE.Vector3(), _s = new THREE.Vector3();
 function updateStack(s) {
@@ -495,7 +560,7 @@ function updateStack(s) {
   const lab = labs[2], lw = lab.offsetWidth;
   lab.style.opacity = RM ? H2 : rng(H2, 0.82, 1);
   const sc = toScreen(g, stk.cam, 0, -(rows / 2) * u - u * 0.6, u * stk.depth * 0.5);
-  lab.style.transform = `translate(${((W - lw) / 2).toFixed(1)}px,${Math.min(sc.y + 14, H - lab.offsetHeight - 36).toFixed(1)}px)`;
+  lab.style.transform = `translate(${((W - lw) / 2).toFixed(1)}px,${Math.min(sc.y + 14, H - lab.offsetHeight - 36 - botInset()).toFixed(1)}px)`;
 }
 
 /* ---------- frame ---------- */
@@ -547,8 +612,21 @@ function hand2(s) { // the tunnel, then the stack inside the opening square
   sqEl.style.transform = `translate(${(q.x - b).toFixed(1)}px,${(q.y - b).toFixed(1)}px)`;
   sqEl.style.visibility = 'visible';
 }
+/* Reduced motion: each hand-off is a short timed crossfade (about a quarter second) that starts once the scroll passes its
+   midpoint, so the two chapters can never rest half mixed, whatever the scroll position. Only opacity changes */
+const rmH = [0, 0]; let rmLast = 0;
+function rmHands(s) {
+  const now = performance.now(), dt = rmLast ? Math.min(100, now - rmLast) : 1e3; rmLast = now;
+  HO.forEach(([a, b], i) => {
+    const goal = s >= (a + b) / 2 ? 1 : 0, step = dt / 260;
+    rmH[i] = goal > rmH[i] ? Math.min(goal, rmH[i] + step) : Math.max(goal, rmH[i] - step);
+    if (rmH[i] !== goal) dirty = true;   // keep drawing until the fade has landed
+  });
+  H1 = rmH[0]; H2 = rmH[1];
+}
 function draw(s) {
-  H1 = rng(s, HO[0][0], HO[0][1]); H2 = rng(s, HO[1][0], HO[1][1]);
+  if (RM) rmHands(s);
+  else { H1 = rng(s, HO[0][0], HO[0][1]); H2 = rng(s, HO[1][0], HO[1][1]); }
   const in1 = H1 > 0 && H1 < 1, in2 = H2 > 0 && H2 < 1;
   if (!in2 || RM) sqEl.style.visibility = 'hidden';
   if (in1) { showLayers(0); RM ? fade(0, 1, s, H1) : hand1(s); }
@@ -564,7 +642,7 @@ function frame(now) {
   const t = target();
   if (cur === null || RM) cur = t;
   else { cur += (t - cur) * (1 - Math.pow(1 - 0.14, dt)); if (Math.abs(t - cur) < 0.0004) cur = t; }
-  if (ready && (cur !== prev || dirty)) { draw(cur); prev = cur; dirty = false; }
+  if (ready && (cur !== prev || dirty)) { dirty = false; draw(cur); prev = cur; }   // draw may ask for the next frame (the dial spin)
   window.__nmSettled = ready && cur === t;
   if (visible) raf = requestAnimationFrame(frame);
 }
@@ -582,25 +660,24 @@ function resize() {
 }
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(resize, 120); });
 
+const slice = () => new Promise(r => setTimeout(r, 0));   // a breath between heavy steps: input and a frame get through
 async function boot() {
-  const [{ TTFLoader }, { Font }, tg] = await Promise.all([
-    import(ADDONS + 'loaders/TTFLoader.js'), import(ADDONS + 'loaders/FontLoader.js'), import(ADDONS + 'geometries/TextGeometry.js'),
-  ]);
-  TextGeometry = tg.TextGeometry;
+  const [{ TTFLoader }, { Font }] = await Promise.all([import(ADDONS + 'loaders/TTFLoader.js'), import(ADDONS + 'loaders/FontLoader.js')]);
   const [json] = await Promise.all([
     new TTFLoader().loadAsync(FONT_URL),
     document.fonts.load('400 100px "Bowlby One"'), document.fonts.load('500 20px "Bricolage Grotesque"'),
   ]);
+  await slice();
   FONT = new Font(json);
   const zero = glyph('0', { height: 0.01, bevelEnabled: false });
   CAPH = zero.userData.maxY - zero.userData.minY; MID = (zero.userData.maxY + zero.userData.minY) / 2;
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, innerWidth <= 760 ? 1.5 : 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  buildOdo(); buildTunnel(); buildStack();
+  await slice(); buildOdo(); await slice(); buildTunnel(); await slice(); buildStack(); await slice();
   ready = true; resize();
   // upload every chapter once, so the first wipe never stalls
-  chapters.forEach(c => { c.ch.scene.traverse(o => { o.frustumCulled = false; }); renderer.compile(c.ch.scene, c.ch.cam); });
+  for (const c of chapters) { await slice(); c.ch.scene.traverse(o => { o.frustumCulled = false; }); renderer.compile(c.ch.scene, c.ch.cam); }
   dirty = true; kick();
   window.__nmReady = true;
 }

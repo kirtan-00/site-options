@@ -1,0 +1,41 @@
+# Kirtan Purohit
+
+> Creative producer and developer based in Ahmedabad, India. Makes reels, digital video commercials and documentaries for brands, and builds software.
+
+## Media work
+- Gujarat Titans: creative producer across two IPL seasons.
+- Zepto: monthly reels. Concepts, shoot, edit, client communication.
+- Palladium: festive films, including a Christmas CGI film for Palladium Mumbai.
+- Digital video commercials for Shivalik, Kaavyaratna, ABH Developers and Sahaj Group.
+- Crav Social: a page he ran end to end.
+
+## Software
+- [sorted](https://kirtan-00.github.io/sorted/): Mac app that sorts a whole photo shoot offline.
+- [Clapper](https://clapper.in): on-set shot logger for the phone.
+- [Sparks](https://kirtan-00.github.io/sparks/): lighting planner for DOPs and gaffers.
+- [Spectra Museum](https://www.spectramuseum.com/): museum website you walk through room by room.
+- [Shelter Property Expo 2026](https://credainashik.com/): expo website with an explorable ground plan.
+- [Shivasva Lifespace](https://shivasva.co): real-estate website with backend and CMS.
+
+## Pages on this site
+- [All media work](https://kirtan-00.github.io/site-options/site/media/): Reels, digital video commercials and documentaries by Kirtan Purohit, creative producer in Ahmedabad, for Gujarat Titans, Zepto, Palladium and more.
+- [Gujarat Titans](https://kirtan-00.github.io/site-options/site/media/gujarat-titans/): Kirtan Purohit was creative producer for Gujarat Titans across two IPL seasons: scripts, visuals, people, locations and schedule on set.
+- [Zepto](https://kirtan-00.github.io/site-options/site/media/zepto/): Zepto's monthly reels: concepts, shoot, edit and client communication, with a team or solo. Work by Kirtan Purohit, creative producer in Ahmedabad.
+- [All software](https://kirtan-00.github.io/site-options/site/work/): Software by Kirtan Purohit, Ahmedabad: the sorted Mac app, Clapper, Sparks, the Spectra Museum website and pages that post themselves.
+- [Clapper](https://kirtan-00.github.io/site-options/site/work/clapper/): Clapper: a shot logger for the phone in your pocket on set. Ten people use it for real. Two have exported. Working on the other eight. By Kirtan Purohit.
+- [CravAche](https://kirtan-00.github.io/site-options/site/work/cravache/): CravAche: a pixel survival game about running an Indian ad agency. Briefs pile up, clients change their minds, and your staff need sleep. By Kirtan Purohit.
+- [Shelter Property Expo 2026](https://kirtan-00.github.io/site-options/site/work/credai-nashik/): The website for CREDAI Nashik's Shelter Property Expo 2026, with a ground plan you can explore stall by stall. Front-end build by Kirtan Purohit.
+- [Deepdive Marketing](https://kirtan-00.github.io/site-options/site/work/deepdive/): Deepdive Marketing: 150K+ people follow a marketing page that runs itself. I didn't hire a team for it. I wrote one. By Kirtan Purohit, Ahmedabad.
+- [Fitkit Pro](https://kirtan-00.github.io/site-options/site/work/fitkit/): Fitkit Pro: a wrist band I already owned, bent into the app I actually wanted. Built for two: me and my girlfriend. By Kirtan Purohit, Ahmedabad.
+- [Retain+](https://kirtan-00.github.io/site-options/site/work/retain-plus/): Retain+: an internal tool I built for CrayWingz that tells every account manager, each Monday, where their client stands on the retainer. By Kirtan Purohit.
+- [Shivasva Lifespace](https://kirtan-00.github.io/site-options/site/work/shivasva/): Shivasva Lifespace: a real-estate developer's website. Kirtan Purohit built what runs it: the backend, the database, the CMS and the enquiry emails.
+- [sorted](https://kirtan-00.github.io/site-options/site/work/sorted/): sorted: sorts a whole shoot on your laptop. Nothing uploaded anywhere. Offline, on purpose. By Kirtan Purohit, creative producer and developer in Ahmedabad.
+- [Sparks](https://kirtan-00.github.io/site-options/site/work/sparks/): Sparks: a free browser app for DOPs and gaffers to plan the lighting on a photo of the location, with the numbers to back it up. By Kirtan Purohit, Ahmedabad.
+- [Spectra Museum](https://kirtan-00.github.io/site-options/site/work/spectra/): Spectra Museum: the website for Spectra, a multi-sensory museum in Ahmedabad. You don't scroll a page, you walk through all eight rooms. By Kirtan Purohit.
+- [The Sportified](https://kirtan-00.github.io/site-options/site/work/sportified/): The Sportified: a World Cup that posted itself. Fixtures in at midnight, posts and reels out by breakfast, nobody at the desk. By Kirtan Purohit, Ahmedabad.
+- [Vibe Raas LED](https://kirtan-00.github.io/site-options/site/work/vibe-raas-led/): Vibe Raas LED: one laptop, three LED walls, eight visuals that dance to the mixer. Works with no internet. By Kirtan Purohit, Ahmedabad.
+- [Vibe Raas Tickets](https://kirtan-00.github.io/site-options/site/work/vibe-raas-tickets/): Vibe Raas Tickets: sellers type a sale into Telegram and get a QR pass back. At the pickup points, any phone scans it. 675 passes sold, 449 handed over.
+
+## Contact
+- Email: purohit.krick@gmail.com
+- Instagram: https://www.instagram.com/kirtanheypurohit/

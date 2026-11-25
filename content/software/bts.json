@@ -182,12 +182,46 @@
   "compare": [
    {
     "screen": "Landing",
+    "labels": [
+     "Before",
+     "After"
+    ],
     "v1": {
-     "src": "software/spectra/compare/v1-1.jpg",
-     "date": "23 Sep"
+     "src": "software/spectra/compare/old-landing.jpg",
+     "date": "Old site, Sep"
     },
     "final": {
      "src": "software/spectra/live-01.jpg",
+     "date": "Live, Nov"
+    }
+   },
+   {
+    "screen": "Plan your visit",
+    "labels": [
+     "Before",
+     "After"
+    ],
+    "v1": {
+     "src": "software/spectra/compare/old-plan.jpg",
+     "date": "Old site, Sep"
+    },
+    "final": {
+     "src": "software/spectra/pages/visit.jpg",
+     "date": "Live, Nov"
+    }
+   },
+   {
+    "screen": "About",
+    "labels": [
+     "Before",
+     "After"
+    ],
+    "v1": {
+     "src": "software/spectra/compare/old-about.jpg",
+     "date": "Old site, Sep"
+    },
+    "final": {
+     "src": "software/spectra/pages/about.jpg",
      "date": "Live, Nov"
     }
    },
@@ -200,7 +234,11 @@
     "final": {
      "src": "software/spectra/live-02.jpg",
      "date": "Live, Nov"
-    }
+    },
+    "labels": [
+     "v1",
+     "Final"
+    ]
    },
    {
     "screen": "Lume room",
@@ -211,7 +249,11 @@
     "final": {
      "src": "software/spectra/live-09.jpg",
      "date": "Live, Nov"
-    }
+    },
+    "labels": [
+     "v1",
+     "Final"
+    ]
    }
   ]
  },
@@ -637,7 +679,7 @@
    },
    {
     "label": "Status",
-    "value": "Built, not tested on a real recce yet"
+    "value": "Experimental build, not tested on a real recce yet"
    }
   ],
   "timeline": [
@@ -1061,7 +1103,7 @@
   "stats": [
    {
     "value": "175K",
-    "label": "followers on the page when we took it over (inherited, not grown)",
+    "label": "followers on the page",
     "as_of": "2026-04-21",
     "confirmed": true
    },
@@ -1278,7 +1320,7 @@
      "date": "22 Apr, v1 yellow"
     },
     "final": {
-     "src": "software/deepdive/live-02.jpg",
+     "src": "software/deepdive/grid-01.jpg",
      "date": "Live grid"
     }
    }
@@ -1638,13 +1680,7 @@
   "stats": [
    {
     "value": "675",
-    "label": "passes sold across three nights (real, tests and a cancelled deal excluded)",
-    "as_of": "2026-10-26",
-    "confirmed": true
-   },
-   {
-    "value": "Rs 2,00,259",
-    "label": "pass sales logged through the bot",
+    "label": "passes sold across three nights (test sales and a cancelled deal left out)",
     "as_of": "2026-10-26",
     "confirmed": true
    },
@@ -1671,12 +1707,6 @@
     "label": "commits",
     "as_of": "2026-11-23",
     "confirmed": true
-   },
-   {
-    "value": "0",
-    "label": "LLM calls: the sale parser is plain rules",
-    "as_of": "2026-10-03",
-    "confirmed": true
    }
   ],
   "facts": [
@@ -1686,7 +1716,7 @@
    },
    {
     "label": "How a sale works",
-    "value": "A seller types 'malhar, 10 pass for 350' in Telegram, checks the preview, taps Confirm, and the buyer's QR pass comes back"
+    "value": "A seller types the sale in Telegram, checks the preview, taps Confirm, and the buyer's QR pass comes back"
    },
    {
     "label": "Pickup points",
@@ -1698,7 +1728,7 @@
    },
    {
     "label": "Extras added under pressure",
-    "value": "Partial pickups, payment status, food passes, a second night added the evening before"
+    "value": "Partial pickups, food passes, a second night added the day before"
    }
   ],
   "timeline": [
@@ -1721,10 +1751,6 @@
    {
     "date": "2026-10-17 to 2026-10-19",
     "title": "Three nights of pickups at the collection points"
-   },
-   {
-    "date": "2026-10-26",
-    "title": "Final accounts handed over as a spreadsheet"
    }
   ],
   "lesson": "The boring version won. Sellers already lived in Telegram, so I made Telegram the till and kept a Confirm button between every typo and a real pass. The unofficial WhatsApp bot looked smarter and lasted one evening.",
@@ -1747,21 +1773,6 @@
    {
     "src": "software/vibe-raas-tickets/bts/04-scanner-live.jpg",
     "caption": "A pickup point mid-shift, online and synced, with the running collected count.",
-    "date": "2026-10-19"
-   },
-   {
-    "src": "software/vibe-raas-tickets/bts/05-green-ready.jpg",
-    "caption": "Green: paid, nothing collected yet, hand over all 12. Buyer name hidden.",
-    "date": "2026-10-19"
-   },
-   {
-    "src": "software/vibe-raas-tickets/bts/06-amber-partial.jpg",
-    "caption": "Amber: 10 of 15 already picked up, 5 left. Buyer name hidden.",
-    "date": "2026-10-19"
-   },
-   {
-    "src": "software/vibe-raas-tickets/bts/07-red-collected.jpg",
-    "caption": "Red: every pass already collected, do not hand over. Buyer name hidden.",
     "date": "2026-10-19"
    }
   ],
@@ -1920,11 +1931,6 @@
     "date": "2026-08-01"
    },
    {
-    "src": "software/clapper/bts/03-landing-v3-frame.jpg",
-    "caption": "A concept frame for the third landing page, a scroll through a film set.",
-    "date": "2026-07-27"
-   },
-   {
     "src": "software/clapper/bts/04-share-card.jpg",
     "caption": "Where it landed: the clapperboard icon and the acid accent on the share card.",
     "date": "2026-08-29"
@@ -2056,7 +2062,7 @@
    },
    {
     "label": "Screenshots",
-    "value": "None on purpose. It holds private health data"
+    "value": "Test data only. Any screen shown runs on made-up numbers, never anyone's real readings"
    }
   ],
   "timeline": [

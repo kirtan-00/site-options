@@ -1,10 +1,6 @@
 {
  "spectra": [
   {
-   "src": "software/spectra/pages/visit.jpg",
-   "caption": "Plan your visit. The bar under the headline is today's opening hours, and the dot shows where you are in the day right now."
-  },
-  {
    "src": "software/spectra/trip.mp4",
    "poster": "software/spectra/trip-poster.jpg",
    "caption": "Getting here, as one scroll-driven trip: the plane lands, the metro brakes into Thaltej Gam, a taxi does the last 2 km, and the building lights up."
@@ -68,48 +64,69 @@
  ],
  "deepdive": [
   {
-   "src": "software/deepdive/live-02.jpg",
-   "crop": 1.05
+   "src": "software/deepdive/profile-01.jpg",
+   "caption": "The page. 150K+ marketers, founders and operators, fed every day by one server."
   },
   {
-   "src": "software/deepdive/live-01.jpg",
-   "crop": 1.05,
-   "caption": "The Instagram page, followed by 150K+ marketers, founders and operators. The posts are found, written, designed and published by one server on a fixed schedule."
+   "src": "software/deepdive/grid-01.jpg",
+   "caption": "The grid. Every cover is a headline the machine wrote, over a clip from the ad it is picking apart."
   },
   {
-   "src": "software/deepdive-blog/live-02.jpg",
-   "focus": "0% 0%",
-   "caption": "The blog opens on a rolling preview of the Instagram page, so a reader can go from the long reads to the reels in one click."
+   "src": "software/deepdive-blog/blog-01.jpg",
+   "focus": "50% 0%",
+   "caption": "The blog. One long read a day on why an ad worked. I don't write it. I wrote the thing that writes it."
   },
   {
-   "src": "software/deepdive-blog/live-03.jpg",
-   "focus": "0% 0%",
-   "caption": "One long read a day on why an ad worked. It is written and published without me touching it."
+   "src": "software/deepdive-blog/blog-02.jpg",
+   "focus": "50% 0%",
+   "caption": "Inside a post: the one number that matters, set as a card, then the story in short sections."
   },
   {
-   "src": "software/deepdive-blog/live-04.jpg",
-   "focus": "0% 0%",
-   "caption": "Older posts stack up underneath, each with its own picture, date and read time."
+   "src": "software/deepdive-blog/blog-03.jpg",
+   "focus": "50% 0%",
+   "caption": "The front page. A new teardown lands every day, whether I show up or not."
+  },
+  {
+   "src": "software/deepdive/linkedin-01.jpg",
+   "caption": "The newsprint look. One number, set big: 7.89M people watching GTA VI launch at the same time."
+  },
+  {
+   "src": "software/deepdive/linkedin-02.jpg",
+   "caption": "The poster look. Headline up top in Deepdive blue, the takeaway underneath."
+  },
+  {
+   "src": "software/deepdive/linkedin-03.jpg",
+   "caption": "The terminal look, for the tech stories. Dated, headlined, done."
   }
  ],
  "sportified": [
   {
-   "src": "software/sportified/live-01.jpg",
-   "crop": 1.05
+   "src": "software/sportified/victory-reel.mp4",
+   "poster": "software/sportified/victory-reel-poster.jpg",
+   "crop": 0.5625,
+   "caption": "The victory reel, rendered here from sample match data. Six seconds built from the score alone: winner, score, scorers, player of the match. No broadcast footage."
+  },
+  {
+   "src": "software/sportified/potm.jpg",
+   "caption": "A player of the match card in the grass theme the whole page moved to. Sample render."
+  },
+  {
+   "src": "software/sportified/standings.jpg",
+   "caption": "The group leaders board in the same theme. Sample render."
   }
  ],
  "vibe-raas-led": [
   {
-   "src": "software/vibe-raas-led/led-06.jpg",
+   "src": "software/vibe-raas-led/led-14.jpg",
    "caption": "One of the eight visuals. It is drawn live, not a video on loop, and it moves with the music because the software listens to the mixer."
   },
   {
-   "src": "software/vibe-raas-led/led-10.jpg",
+   "src": "software/vibe-raas-led/led-15.jpg",
    "caption": "The patterns are drawn from Gujarati textile and folk motifs and built by hand, eight visuals in four colourways."
   },
   {
-   "src": "software/vibe-raas-led/led-02.jpg",
-   "caption": "A wide wall layout. One laptop drives all three walls, the 50 ft stage screen and the two side screens, and it works with no internet."
+   "src": "software/vibe-raas-led/led-13.jpg",
+   "caption": "The Vibe Tribe logo on the stripes visual. One laptop drives all three walls, the 50 ft stage screen and the two side screens, and it works with no internet."
   },
   {
    "src": "software/vibe-raas-led/led-12.jpg",
@@ -119,12 +136,28 @@
  ],
  "vibe-raas-tickets": [
   {
-   "src": "software/vibe-raas-tickets/pass-01.jpg",
-   "caption": "A pass as the buyer gets it: the night, the venue, how many passes, and a QR code to show at the gate."
+   "src": "software/vibe-raas-tickets/pass-07.jpg",
+   "caption": "The pass the buyer gets: the night, the venue, how many passes and a QR code. No buyer name on it, because passes get forwarded."
   },
   {
-   "src": "software/vibe-raas-tickets/pass-02.jpg",
-   "caption": "A smaller order, with food. The seller typed the sale into Telegram the way they would say it, and this came back."
+   "src": "software/vibe-raas-tickets/scan-01.jpg",
+   "caption": "A phone at a pickup point. Hold up the QR, or type the six-letter code. The bottom line counts what has been handed over."
+  },
+  {
+   "src": "software/vibe-raas-tickets/scan-02.jpg",
+   "caption": "Green: nothing collected yet. Pick how many passes to hand over and tap the big button. Demo Buyer is made up; this is the real code on a demo database."
+  },
+  {
+   "src": "software/vibe-raas-tickets/scan-03.jpg",
+   "caption": "Handed over. The phone saves it at once and syncs when it has signal."
+  },
+  {
+   "src": "software/vibe-raas-tickets/scan-04.jpg",
+   "caption": "Amber: part of this order was already picked up. It shows how many are left and where the rest went."
+  },
+  {
+   "src": "software/vibe-raas-tickets/scan-05.jpg",
+   "caption": "Red: every pass on this QR is already collected, and it says where and when. A second scan stops here."
   }
  ],
  "retain-plus": [],
@@ -133,6 +166,28 @@
    "src": "software/clapper/landing.mp4",
    "poster": "software/clapper/landing-poster.jpg",
    "caption": "The landing page at clapper.in, scrolled top to bottom: the hero, the shot log writing itself, how it works, and the free guides for whoever holds the phone on set."
+  }
+ ],
+ "fitkit": [
+  {
+   "src": "software/fitkit/today.jpg",
+   "caption": "Today, on test data. Tonight's bedtime up top, then how rested you are, last night's sleep and the day's effort."
+  },
+  {
+   "src": "software/fitkit/sleep.jpg",
+   "caption": "Sleep, on test data. Last night against what the body needed, with deep, REM and light set against a typical range."
+  },
+  {
+   "src": "software/fitkit/readiness.jpg",
+   "caption": "Why the readiness score is what it is, on test data. Every line is measured against your own usual, not an average person."
+  },
+  {
+   "src": "software/fitkit/train.jpg",
+   "caption": "Train, on test data. It asks how hard the session felt and plans the next one around it."
+  },
+  {
+   "src": "software/fitkit/body.jpg",
+   "caption": "Body, on test data. Resting heart rate, HRV and blood oxygen, each set against your own usual range."
   }
  ]
 }

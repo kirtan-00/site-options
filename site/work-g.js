@@ -1,4 +1,4 @@
-/* Work, version G6: Gallery, rebuilt for fluid motion after lusion.co (measured, see ref/pages/lusion/motion/NOTES.md).
+/* Work, version G6: Gallery, rebuilt for smooth motion after lusion.co (measured, see ref/pages/lusion/motion/NOTES.md).
    1. Listing: a big grotesk heading (Software or Media) with a short line on the right, the category filters, then an
       aligned two column grid of large rounded cards; under each card the kind, small, then the title, big.
       On a desktop pointer one three.js canvas (fixed to the viewport, DPR at most 1.5, no MSAA) paints every card as a
@@ -50,15 +50,20 @@ const DRAFT = new URLSearchParams(location.search).get('draft') === '1';
 const VMODE = new URLSearchParams(location.search).get('inside') === 'v';
 const SPRING = 'cubic-bezier(.2,.8,.2,1)';
 const HOVER = matchMedia('(hover: hover) and (pointer: fine)');
-const HIDE = new Set([]);
-const TEXT_ONLY = new Set(['fitkit', 'fourside-studios', 'palladium', 'dvc']);
+/* a phone, upright or on its side: a landscape phone is wider than 760 but short and coarse, and gets the phone layout and
+   the vertical-drive run too (PHONE-AUDIT #5) */
+const PHQ = '(max-width:760px),(pointer:coarse) and (max-height:500px)';
+const PHONEQ = matchMedia(PHQ);
+const isPhone = () => PHONEQ.matches;
+const HIDE = new Set(['gujarat-titans']);
+const TEXT_ONLY = new Set(['fourside-studios', 'palladium', 'dvc']);
 
 const INK = '#0c0d0f', PAPER = '#f1f2f0', BLUE = '#c9d8f7', PINK = '#f2a7b6', SKY = '#7d9bf0', COBALT = '#1c3bb0', NAVY = '#0f2545';
 /* the line beside the Software heading (swap freely) */
 const SOFTWARE_LINE = 'Every one of these started as a problem on a set or in an inbox.';
 const WING = {
   software: { title: 'Software', sub: SOFTWARE_LINE, ground: BLUE, slot: SKY },
-  media: { title: 'Media', sub: 'Films and reels I produced, shot and cut.', ground: PINK, slot: PAPER },
+  media: { title: 'Media', sub: '', ground: PINK, slot: PAPER },
 };
 const CAT = { webdev: 'Web dev', automation: 'Automation', webapp: 'Web app', macapp: 'Mac app' };
 const FILTERS = [['all', 'All'], ['webdev', 'Web dev'], ['automation', 'Automation'], ['webapp', 'Web apps'], ['macapp', 'Mac app']];
@@ -72,6 +77,9 @@ const FOLLOW = 0.18;
 const T = { reveal: 1.25, rise: 1.1, zoom: 1.0, fade: 0.45, hoverIn: 0.16, hoverOut: 0.2 };
 
 const CSS = `
+.wkg-h2i{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .16s linear}.wkg-card:hover .wkg-h2i,.wkg-card:focus-visible .wkg-h2i{opacity:1}
+html.kp-nodisc #ka.lab b{opacity:0!important}html.kp-nodisc #ka.lab svg{opacity:1!important}
+
 #work{position:relative;background:var(--wkg-ground,${BLUE});color:${INK};transition:background-color .8s ${MOVE}}
 .wkg,.wkg-page{--gut:clamp(18px,4vw,64px);--cg:clamp(16px,2.2vw,40px)}
 .wkg{position:relative;font-family:${FF};font-weight:400;-webkit-font-smoothing:antialiased;padding-bottom:clamp(72px,12vh,140px)}
@@ -79,17 +87,30 @@ const CSS = `
 :where(.wkg,.wkg-page) button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left}
 .wkg :focus-visible,.wkg-page :focus-visible{outline:2px solid ${COBALT};outline-offset:4px}
 
-.wkg-top{display:flex;gap:28px;padding:24px var(--gut) 0;position:relative;z-index:2}
-.wkg-tab{position:relative;font:500 19px/1.2 ${FF}!important;letter-spacing:-.01em;padding:6px 0!important;color:rgba(12,13,15,.76)!important;transition:color .3s}
-.wkg-tab::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:${INK};transform:scaleX(0);transform-origin:left;transition:transform .6s ${ARRIVE}}
-.wkg-tab.wkg-on{color:${INK}!important}.wkg-tab.wkg-on::after{transform:none}
-@media (hover:hover){.wkg-tab:hover{color:${INK}!important}}
+/* the switch: the wing's name is the two words. The one you are on is solid ink, the other waits faint and fills on hover */
+/* the Software/Media switch; :not(.wkg-page) because a software project page carries .wkg-sw too, and inherited this
+   44-184px size and -.055em spacing (as px) into every paragraph that sets no spacing of its own: words ran together */
+/* Software sits at the left margin and Media at the right one: two separate things to tap, not one heading */
+.wkg-sw:not(.wkg-page){display:flex;align-items:flex-start;justify-content:space-between;align-self:stretch;width:100%;flex-wrap:nowrap;gap:clamp(18px,3.4vw,60px);margin:0;font:600 clamp(40px,11.2vw,184px)/.92 ${FF};letter-spacing:-.055em}
+.wkg-sw.wkg-swin:not(.wkg-page){overflow:hidden;padding:0 0 .22em;margin-bottom:-.22em}
+.wkg-w{position:relative;display:flex!important;align-items:flex-start;font:inherit!important;letter-spacing:inherit!important;padding:0 .02em .14em 0!important;white-space:nowrap;min-height:44px;-webkit-tap-highlight-color:transparent}
+.wkg-w .wkg-wg{display:block;color:rgba(12,13,15,.16);transition:color .5s ${ARRIVE}}
+.wkg-w .wkg-wf{position:absolute;left:0;top:-.1em;padding:.1em .12em .14em 0;color:${INK};clip-path:inset(0 100% 0 0);transition:clip-path .7s ${ARRIVE};pointer-events:none}
+.wkg-w[aria-selected="true"] .wkg-wf{clip-path:inset(0 0 0 0)}
+@media (hover:hover){.wkg-w[aria-selected="false"]:hover .wkg-wf{clip-path:inset(0 0 0 0)}}
+.wkg-w[aria-selected="false"]:active{transform:translateY(2px)}
+.wkg-w sup{display:block;margin:.5em 0 0 .12em;font:500 clamp(12px,1.1vw,17px)/1 ${FF};letter-spacing:0;color:${COBALT};font-variant-numeric:tabular-nums}
+.wkg-w sup,.wkg-title sup{display:none!important}   /* no counts beside Software / Media */
+/* the cut between wings: the new ground wipes across the visible part of the listing from the side of the word picked */
+.wkg-cut{position:fixed;left:0;right:0;z-index:8;pointer-events:none;background:var(--to);clip-path:inset(0 100% 0 0)}
+.wkg-cut.wkg-r{clip-path:inset(0 0 0 100%)}
+.wkg-cut.wkg-run{clip-path:inset(0 0 0 0);transition:clip-path .62s cubic-bezier(.7,0,.2,1)}
 
 /* the heading: Lusion's "Featured Work" set as the wing's name, the line on the right */
-.wkg-head{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:flex-end;gap:32px;padding:clamp(36px,7vh,88px) var(--gut) clamp(32px,5vh,64px)}
+.wkg-head{position:relative;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:clamp(14px,1.6vw,22px);padding:clamp(72px,8vh,110px) var(--gut) clamp(32px,5vh,64px)}   /* 72 at least: Media ends on the Contact pill's margin, so the row starts under the pill in a short window */
 .wkg-title{margin:0;font:500 clamp(68px,11.6vw,212px)/.9 ${FF};letter-spacing:-.058em;display:flex;align-items:flex-start;gap:.06em}
 .wkg-title sup{font:500 clamp(16px,1.4vw,22px)/1 ${FF};letter-spacing:0;color:${COBALT};margin-top:.55em;font-variant-numeric:tabular-nums}
-.wkg-head p{margin:0 0 .5em;max-width:28ch;font:400 clamp(18px,1.45vw,24px)/1.32 ${FF};letter-spacing:-.012em;text-wrap:balance}
+.wkg-head p{margin:0;max-width:44ch;font:400 clamp(18px,1.45vw,24px)/1.32 ${FF};letter-spacing:-.012em;text-wrap:balance}
 /* a line mask: 0.22em of room under the baseline so g, p and y never clip */
 .wkg-mk{display:block;overflow:hidden;padding-bottom:.22em;margin-bottom:-.22em}
 .wkg-title .wkg-mk{padding:0 .14em .22em 0;margin:0 -.14em -.22em 0}
@@ -101,15 +122,36 @@ const CSS = `
 .wkg-filt{position:relative;z-index:2;display:flex;flex-wrap:wrap;column-gap:clamp(20px,2.2vw,34px);row-gap:6px;margin:0 var(--gut) clamp(32px,5vh,60px)}
 .wkg-filt[hidden]{display:none}
 .wkg-fb{position:relative;display:inline-flex;align-items:baseline;gap:7px;font:500 18px/1.2 ${FF}!important;letter-spacing:-.01em;padding:6px 0!important;color:rgba(12,13,15,.76)!important;transition:color .3s;white-space:nowrap}
-.wkg-fb small{font:500 13px/1 ${FF};color:${COBALT};font-variant-numeric:tabular-nums}
+.wkg-fb small{font:500 14px/1 ${FF};color:${COBALT};font-variant-numeric:tabular-nums}
 .wkg-fb.wkg-on{color:${INK}!important}
 @media (hover:hover){.wkg-fb:hover{color:${INK}!important}}
+/* a finger needs 44px chips with real air between the rows (PHONE-AUDIT #7) */
+@media (pointer:coarse){.wkg-fb{min-height:44px;padding:11px 0!important}.wkg-filt{row-gap:8px!important}}
 .wkg-fbar{position:absolute;left:0;top:0;width:1px;height:2px;background:${INK};transform-origin:0 0;pointer-events:none}
 .wkg-fbar.wkg-mv{transition:transform .6s ${ARRIVE}}
+/* touch: tabs and filters keep their look, their hit box grows to 44px tall (an invisible ::before; ::after is the underline) */
+@media (pointer:coarse){.wkg-fb::before{content:"";position:absolute;left:-6px;right:-6px;top:50%;height:44px;transform:translateY(-50%)}}
 .wkg-brands{position:relative;z-index:2;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--cg);margin:0 var(--gut) clamp(40px,6vh,72px);padding-top:20px;border-top:1px solid rgba(12,13,15,.18);align-items:baseline;row-gap:12px}
 .wkg-brands[hidden]{display:none}
-.wkg-bh{grid-column:1/span 4;margin:0;font:500 clamp(26px,2.6vw,44px)/1 ${FF};letter-spacing:-.04em;white-space:nowrap}
-.wkg-bl{grid-column:5/-1;list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;column-gap:clamp(24px,3vw,50px);row-gap:8px;font:500 clamp(20px,1.9vw,30px)/1.15 ${FF};letter-spacing:-.025em}
+.wkg-bh{grid-column:1/span 4;margin:0;font:500 clamp(46px,5.2vw,92px)/1 ${FF};letter-spacing:-.04em;white-space:nowrap}
+.wkg-bl{grid-column:5/-1;list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;column-gap:clamp(16px,2vw,34px);row-gap:clamp(6px,.7vw,12px);font:500 clamp(18px,1.55vw,26px)/1.15 ${FF};letter-spacing:-.025em}
+.wkg-brands[hidden]{display:none!important}
+.wkg-brands{display:block!important;margin-left:0;margin-right:0;padding-left:0;padding-right:0}
+.wkg-brands .wkg-bh{margin:0 var(--gut) clamp(16px,2vw,28px);font-size:clamp(26px,2.6vw,44px)}
+/* the brands cylinder: a section of its own height. Two rings of tiles that turn slowly by themselves, spin under a drag
+   and lift under the pointer; a tile with a client folder opens it */
+.wkg-lgv{--h:clamp(55px,5.28vw,77px);position:relative;overflow:hidden;padding:10px 0;-webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.wkg-lgb{display:flex;width:max-content;animation:wkgBelt var(--dur,40s) linear infinite;animation-direction:reverse;animation-play-state:paused}
+.wkg-lgon .wkg-lgb{animation-play-state:running}
+.wkg-lgr{display:flex;gap:clamp(18px,2.4vw,40px);padding-right:clamp(18px,2.4vw,40px)}
+@keyframes wkgBelt{to{transform:translate3d(-50%,0,0)}}
+.wkg-brands .wkg-lgt{flex:none;display:flex;align-items:center;justify-content:center;height:var(--h);font-size:var(--h);box-sizing:border-box;background:none;text-decoration:none;color:${INK};transition:transform .35s ${ARRIVE};-webkit-tap-highlight-color:transparent}
+.wkg-lgt.wkg-go{cursor:pointer}
+.wkg-lgt.wkg-go:focus-visible{outline:2px solid ${INK};outline-offset:3px}
+@media (hover:hover) and (pointer:fine){.wkg-lgt.wkg-go:hover{transform:translate3d(0,-5px,0)}}
+.wkg-lgm{display:block;flex:none}img.wkg-lgm{object-fit:contain;mix-blend-mode:multiply}
+i.wkg-lgm{background:${INK};-webkit-mask:center/contain no-repeat;mask:center/contain no-repeat}
+@media (prefers-reduced-motion:reduce){.wkg-lgv{overflow-x:auto;-webkit-mask:none;mask:none}.wkg-lgb{animation:none}.wkg-lgr+.wkg-lgr{display:none}}
 .wkg-bl li{white-space:nowrap}.wkg-bl .wkg-tbc{color:${COBALT};font-weight:400}
 
 /* the grid: two equal columns, one gutter, every box one ratio, so rows share image top, bottom and title line */
@@ -121,6 +163,10 @@ const CSS = `
 .wkg-list{position:relative;z-index:1;box-sizing:border-box;width:100%;max-width:2560px;margin:0 auto;padding:0 var(--gut);
   display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:var(--lg);row-gap:var(--rg);align-items:start;align-content:start}
 .wkg-card{display:block;width:100%;min-width:0;cursor:pointer}
+/* a card is a real link now (it was a button): these are the button's own defaults, so nothing on screen moves */
+a.wkg-card{color:inherit;text-decoration:none;text-align:left;letter-spacing:normal;word-spacing:normal;text-transform:none;text-indent:0;text-shadow:none;-webkit-user-select:none;user-select:none;-webkit-user-drag:none;-webkit-touch-callout:none}
+/* text for screen readers and search only: a client's name beside its logo, a heading over the two lists */
+.wkg-sr{position:absolute!important;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .wkg-m{position:relative;display:block;width:100%;aspect-ratio:16/10;border-radius:var(--rad);overflow:hidden;container-type:inline-size;isolation:isolate}
 .wkg-mi{position:absolute;inset:0;display:block;background:var(--wkg-slot,${SKY});will-change:transform}
 .wkg-mi>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block;transition:transform 1s ${ARRIVE}}
@@ -157,11 +203,28 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-sc{position:absolute;inset:0;overflow:hidden;touch-action:pan-x pan-y}
 .wkg-sc.wkg-native{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
 .wkg-sc.wkg-native::-webkit-scrollbar{display:none}
+/* phones (25 Nov, Kirtan): the run stays sideways, but the finger scrolls up and down. The scroller is vertical only, the
+   track sits sticky at its top and is moved sideways by that scroll (one transform per frame); a spacer gives the length.
+   A panel taller than the screen is a stop: the run holds while the same scroll carries its text up (wkg-gt8) */
+.wkg-sc.wkg-pin{overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;scroll-snap-type:none;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.wkg-sc.wkg-pin::-webkit-scrollbar{display:none}
+.wkg-pin>.wkg-track{position:sticky;top:0;left:0}
+.wkg-track>.wkg-pn:last-child{margin-right:var(--gut,18px)}   /* with no Next panel, the run ends on the page margin */
+.wkg-pin .wkg-track>.wkg-pn{transition:opacity .3s}.wkg-pin .wkg-track>.wkg-pn.wkg-hid{opacity:0}
+.wkg-pinsp{display:block;width:1px;pointer-events:none;visibility:hidden}
+.wkg-pin .wkg-gt8{overflow-y:hidden!important}
+/* nothing inside the run may stop the finger's scroll from reaching the scroller (a contain on a clipped panel did, over the GT route) */
+.wkg-pin .wkg-track :is(.wkg-pn,.wkg-pi,.wkg-gt8,.mr-vsc){overscroll-behavior:auto!important}
+/* a stop's text carried up fades out before it reaches Back and Contact at the top (and, until its end, at the line) */
+.wkg-pin .wkg-track>.wkg-gt8{-webkit-mask-image:linear-gradient(transparent calc(var(--top) - 18px),#000 calc(var(--top) - 2px));mask-image:linear-gradient(transparent calc(var(--top) - 18px),#000 calc(var(--top) - 2px))}
+.wkg-page:not(.wkg-vm) .wkg-pin .wkg-track>.wkg-gt8.wkg-ovf:not(.wkg-end){-webkit-mask-image:linear-gradient(transparent calc(var(--top) - 18px),#000 calc(var(--top) - 2px),#000 calc(100% - 22px),transparent);mask-image:linear-gradient(transparent calc(var(--top) - 18px),#000 calc(var(--top) - 2px),#000 calc(100% - 22px),transparent)}
 .wkg-sc.wkg-drag{cursor:grabbing}
 .wkg-track{position:relative;display:flex;height:100%;width:max-content;will-change:transform}
 .wkg-bg{position:absolute;inset:0;pointer-events:none}.wkg-bg i{position:absolute;inset:0;background:var(--wkg-pg,${BLUE})}.wkg-bg i+i{opacity:0;will-change:opacity}
 .wkg-pn{flex:0 0 auto;position:relative;height:100%;padding:var(--top) 0 var(--bot) var(--pgap);display:flex;flex-direction:column;scroll-snap-align:start}
 .wkg-pi{margin-top:0}
+.wkg-stk{flex:0 0 auto;height:100%;display:flex;flex-direction:column;gap:64px;padding:var(--top) 0 var(--bot)}.wkg-stk>.wkg-pn{height:auto;padding-top:0;padding-bottom:0}
+.wkg-bstk{display:flex;flex-direction:column;gap:44px}
 /* Back: a pill (navy on light grounds, paper on dark), Lusion's arrow swap on hover; hovering it (or Projects on touch)
    opens a sheet of every project, its name read out as each is hovered; a click goes straight there */
 .wkg-page{--bkc:${NAVY};--bki:${PAPER};--bkh:${PINK};--bkhi:${NAVY}}
@@ -187,7 +250,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-sh::before{content:"";position:absolute;left:0;right:0;top:-12px;height:12px}
 .wkg-bk.wkg-sho .wkg-sh{opacity:1;visibility:visible;transform:none;transition:opacity .35s ${ARRIVE},transform .55s ${ARRIVE},visibility 0s}
 .wkg-shn{display:flex;justify-content:space-between;align-items:baseline;gap:24px;margin:2px 4px 12px}
-.wkg-shn small{font:500 13px/1.2 ${FF};color:rgba(15,37,69,.7);white-space:nowrap}
+.wkg-shn small{font:500 14px/1.2 ${FF};color:rgba(15,37,69,.7);white-space:nowrap}
 .wkg-shr{display:block;overflow:hidden;padding:0 .1em .22em 0;margin-bottom:-.22em;font:500 22px/1.15 ${FF};letter-spacing:-.025em;white-space:nowrap}
 .wkg-shr>span{display:block}
 .wkg-shg{display:grid;grid-template-columns:repeat(var(--cols,8),104px);gap:8px}
@@ -196,7 +259,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-thm{position:relative;display:block;width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:${SKY};container-type:inline-size;isolation:isolate}
 .wkg-thm>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block;transition:transform .7s ${ARRIVE}}
 .wkg-th.wkg-cur .wkg-thm{box-shadow:0 0 0 2px ${PAPER},0 0 0 4px ${NAVY}}
-.wkg-thn{display:none;margin-top:6px;font:500 13px/1.25 ${FF};letter-spacing:-.005em;text-align:left;text-wrap:balance}
+.wkg-thn{display:none;margin-top:6px;font:500 14px/1.25 ${FF};letter-spacing:-.005em;text-align:left;text-wrap:balance}
 @media (hover:hover) and (pointer:fine){.wkg-th:hover .wkg-thm>img,.wkg-th:focus-visible .wkg-thm>img{transform:scale(1.08)}.wkg-th:hover{transform:translate3d(0,-3px,0)!important}}
 .wkg-th:focus-visible{outline:none}.wkg-th:focus-visible .wkg-thm{outline:2px solid ${COBALT};outline-offset:2px}
 @media (hover:none),(pointer:coarse),(max-width:760px){
@@ -216,7 +279,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-hero:not(.wkg-txt):not(.wkg-hfr)::before{content:"";position:absolute;left:0;right:0;top:0;height:170px;z-index:1;background:linear-gradient(rgba(12,13,15,.42),rgba(12,13,15,0));pointer-events:none}
 .wkg-hero.wkg-hfr{background:transparent;color:${INK};display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.6fr);align-items:center;column-gap:clamp(28px,4vw,80px);padding:var(--top) var(--gut) var(--bot)}
 .wkg-hfr::after{display:none}
-.wkg-hfr .wkg-hm{position:relative;inset:auto;justify-self:end;width:min(100%,calc((100vh - var(--top) - var(--bot)) * var(--ar,1.6)));aspect-ratio:var(--ar,1.6);border-radius:20px;overflow:hidden;background:var(--wkg-slot,${SKY});isolation:isolate}
+.wkg-hfr .wkg-hm{position:relative;inset:auto;justify-self:end;width:min(100%,calc((100vh - var(--top) - var(--bot)) * var(--ar,1.6)));width:min(100%,calc((100dvh - var(--top) - var(--bot)) * var(--ar,1.6)));aspect-ratio:var(--ar,1.6);border-radius:20px;overflow:hidden;background:var(--wkg-slot,${SKY});isolation:isolate}
 .wkg-hfr .wkg-hcap{position:static;display:block}
 .wkg-hfr .wkg-hcap>span{display:block;text-align:left;margin-bottom:clamp(18px,3vh,32px);opacity:1;color:rgba(12,13,15,.76)}
 .wkg-hfr .wkg-hcap h1{font-size:clamp(48px,5.4vw,104px);line-height:.92}
@@ -238,8 +301,8 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-hcols dl{margin:0;display:grid;gap:14px}.wkg-hcols dl>div{min-width:0}
 .wkg-hcols dt{font:500 14px/1.3 ${FF};color:${COBALT};margin:0 0 3px}.wkg-hcols dd{margin:0;font:500 clamp(15px,1.1vw,18px)/1.35 ${FF}}
 @media (min-width:761px){
-  .wkg-page:not(.wkg-vm) .wkg-hero.wkg-hfr{display:block;padding:0;width:calc(46vw + (100vh - var(--top) - var(--bot)) * var(--ar,1.6) + var(--gut))}
-  .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hm{position:absolute;left:46vw;top:var(--top);height:calc(100vh - var(--top) - var(--bot));width:calc((100vh - var(--top) - var(--bot)) * var(--ar,1.6));max-height:none;aspect-ratio:auto}
+  .wkg-page:not(.wkg-vm) .wkg-hero.wkg-hfr{display:block;padding:0;width:calc(46vw + (100vh - var(--top) - var(--bot)) * var(--ar,1.6) + var(--gut));width:calc(46vw + (100dvh - var(--top) - var(--bot)) * var(--ar,1.6) + var(--gut))}
+  .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hm{position:absolute;left:46vw;top:var(--top);height:calc(100vh - var(--top) - var(--bot));height:calc(100dvh - var(--top) - var(--bot));width:calc((100vh - var(--top) - var(--bot)) * var(--ar,1.6));width:calc((100dvh - var(--top) - var(--bot)) * var(--ar,1.6));max-height:none;aspect-ratio:auto}
   .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hcap{position:absolute;left:var(--gut);top:var(--top);bottom:var(--bot);width:calc(46vw - var(--gut) - clamp(28px,3vw,60px));display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
   .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hcols{align-self:stretch}
   .wkg-page:not(.wkg-vm) .wkg-hfr .wkg-hcap h1{font-size:clamp(60px,6.8vw,136px);line-height:.9}
@@ -247,7 +310,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
   .wkg-page:not(.wkg-vm).wkg-hfrp .wkg-info-i{display:none}
   .wkg-page:not(.wkg-vm).wkg-hfrp .wkg-intro.wkg-ionly{display:none}
 }
-@media (max-width:760px){.wkg-hcols dl{display:none}.wkg-hcols{display:block}}
+@media ${PHQ}{.wkg-hcols dl{display:none}.wkg-hcols{display:block}}
 .wkg-vm .wkg-hcols dl{display:none}.wkg-vm .wkg-hcols{display:block}
 /* text-only: a typographic opener on the plate's ground */
 .wkg-hero.wkg-txt{display:flex;flex-direction:column;justify-content:space-between;gap:40px;padding:var(--top) var(--gut) var(--bot);background:var(--pc);color:var(--pf)}
@@ -258,7 +321,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-tg{display:flex;justify-content:space-between;align-items:flex-end;gap:40px;margin-top:clamp(24px,5vh,56px)}
 .wkg-tq{margin:0;max-width:30ch;font:400 clamp(22px,2.1vw,36px)/1.2 ${FF};letter-spacing:-.025em;text-wrap:pretty}
 .wkg-tf{text-align:right;flex:0 0 auto}
-.wkg-tf b{display:block;font:500 clamp(80px,9vw,168px)/.86 ${FF};letter-spacing:-.06em;color:var(--pa);font-variant-numeric:tabular-nums}
+.wkg-tf b{display:block;font:500 clamp(80px,9vw,168px)/.86 ${FF};letter-spacing:-.03em;color:var(--pa);font-variant-numeric:tabular-nums}
 .wkg-tf small{display:block;margin-top:12px;font:500 16px/1.3 ${FF};color:var(--pk)}
 .wkg-ln{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .12em .22em 0;margin:0 -.12em -.22em 0}
 .wkg-ln>span{display:inline-block}
@@ -272,7 +335,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-lab{display:block;font:500 14px/1.3 ${FF};color:rgba(12,13,15,.76);margin:0 0 6px}
 .wkg-info dd{margin:0;font:500 clamp(17px,1.35vw,21px)/1.3 ${FF};letter-spacing:-.01em}
 .wkg-stats{display:flex;flex-wrap:wrap;gap:20px clamp(28px,4vw,72px);margin-top:clamp(26px,4.5vh,48px)}
-.wkg-stat b{display:block;font:500 clamp(52px,5.6vw,104px)/.9 ${FF};letter-spacing:-.06em;font-variant-numeric:tabular-nums}
+.wkg-stat b{display:block;font:500 clamp(52px,5.6vw,104px)/.9 ${FF};letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .wkg-stat.wkg-tbc b{font-size:clamp(30px,2.6vw,44px);letter-spacing:-.04em;color:rgba(12,13,15,.76)}
 .wkg-stat.wkg-tbc small{color:rgba(12,13,15,.76)}
 .wkg-stat small{display:block;margin-top:8px;font:500 15px/1.3 ${FF};color:rgba(12,13,15,.76)}
@@ -292,7 +355,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-fx .wkg-in .wkg-fact::before,.wkg-fx .wkg-in .wkg-credits dl>div::before,.wkg-fx .wkg-in.wkg-credits dl>div::before,.wkg-fx .wkg-in .wkg-info::before{transform:none}
 .wkg-info,.wkg-credits dl>div{position:relative}
 .wkg-fact b{display:block;font:500 clamp(26px,2.2vw,40px)/1.05 ${FF};letter-spacing:-.04em;text-wrap:balance;overflow-wrap:anywhere}
-.wkg-fact.wkg-num b{font-size:clamp(52px,5vw,96px);line-height:.95;letter-spacing:-.06em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wkg-fact.wkg-num b{font-size:clamp(52px,5vw,96px);line-height:.95;letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
 .wkg-stat b,.wkg-tf b{white-space:nowrap}
 .wkg-stat b,.wkg-fact b,.wkg-tf b,.wkg-pf b{font-variant-numeric:normal!important}
 .wkg-u{font-size:.4em;letter-spacing:-.01em;font-weight:500}
@@ -302,7 +365,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-cls-steps{list-style:none;margin:0;padding:0;counter-reset:st}
 .wkg-cls-steps li{counter-increment:st;display:grid;grid-template-columns:34px minmax(0,1fr);padding:0 0 clamp(14px,2.2vh,22px);font:400 clamp(18px,1.3vw,22px)/1.42 ${FF};letter-spacing:-.008em;text-wrap:pretty}
 .wkg-cls-steps li::before{content:counter(st);font:500 14px/1.9 ${FF};color:var(--pa,${COBALT});font-variant-numeric:tabular-nums}
-.wkg-file{margin:0;flex:0 0 auto;display:flex;flex-direction:column;gap:18px;height:min(100%,calc(100vh - var(--top) - var(--bot)))}
+.wkg-file{margin:0;flex:0 0 auto;display:flex;flex-direction:column;gap:18px;height:min(100%,calc(100vh - var(--top) - var(--bot)));height:min(100%,calc(100dvh - var(--top) - var(--bot)))}
 .wkg-doc{position:relative;flex:1 1 auto;min-height:0;aspect-ratio:3/4;max-height:min(66vh,640px);padding:clamp(28px,3.4vw,52px);border-radius:6px;background:color-mix(in srgb,var(--pf,${INK}) 6%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pf,${INK}) 12%,transparent);display:flex;flex-direction:column;gap:14px;overflow:hidden}
 .wkg-doc>i{display:block;height:14px;border-radius:2px;background:color-mix(in srgb,var(--pf,${INK}) 20%,transparent)}
 .wkg-doc>i.wkg-hd{height:24px;margin-bottom:8px;background:color-mix(in srgb,var(--pf,${INK}) 34%,transparent)}
@@ -343,20 +406,23 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-bav{--p:50%;position:relative;overflow:hidden;border-radius:14px;background:var(--wkg-slot,${SKY});cursor:ew-resize;touch-action:pan-y;user-select:none;-webkit-user-select:none}
 .wkg-bav img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
 .wkg-bv1{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--p)) 0 0);background:var(--wkg-slot,${SKY})}
+.wkg-bah::before{content:"";position:absolute;top:0;bottom:0;left:-21px;right:-21px}   /* a finger-wide grip around the 2px line */
 .wkg-bah{position:absolute;top:0;bottom:0;left:var(--p);width:2px;margin-left:-1px;background:${PAPER};box-shadow:0 0 0 1px rgba(12,13,15,.12)}
 .wkg-bah span{position:absolute;top:50%;left:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:${PAPER};color:${INK};display:grid;place-items:center;box-shadow:0 6px 20px rgba(12,13,15,.22);transition:transform .25s cubic-bezier(.2,1.6,.4,1)}
 .wkg-bah svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .wkg-bav:hover .wkg-bah span,.wkg-bdr .wkg-bah span{transform:scale(1.1)}
 .wkg-bah:focus-visible{outline:none}.wkg-bah:focus-visible span{outline:2px solid ${COBALT};outline-offset:3px}
-.wkg-btag{position:absolute;top:12px;padding:5px 11px;border-radius:999px;font:500 13px/1.2 ${FF};background:rgba(12,13,15,.72);color:${PAPER};pointer-events:none}
+.wkg-btag{position:absolute;top:12px;padding:5px 11px;border-radius:999px;font:500 14px/1.2 ${FF};background:rgba(12,13,15,.72);color:${PAPER};pointer-events:none}
 .wkg-btl{left:12px}.wkg-btr{right:12px;background:${PAPER};color:${INK}}
+/* phones: the tags sit small at the foot of the picture, clear of the app's own title bar at the top */
+@media ${PHQ}{.wkg-btag{top:auto;bottom:8px;padding:3px 9px;font-size:12px}.wkg-btl{left:8px}.wkg-btr{right:8px}}
 .wkg-ba figcaption{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;margin-top:12px}
 .wkg-bs{font:500 17px/1.3 ${FF};letter-spacing:-.01em}
 .wkg-bd{font:400 15px/1.3 ${FF};color:rgba(12,13,15,.62);white-space:pre}
 .wkg-gd .wkg-cmpq,.wkg-gd .wkg-bd{color:${BLUE}}.wkg-gd .wkg-bs{color:${PAPER}}
 .wkg-bcs{width:clamp(300px,24vw,440px)}.wkg-bcs>.wkg-lab{margin:0 0 18px}
 .wkg-sg{padding:0 0 clamp(18px,2.6vh,28px)}
-.wkg-sgl{display:block;font:500 13px/1.3 ${FF};letter-spacing:.01em;color:rgba(12,13,15,.6);margin:0 0 10px}
+.wkg-sgl{display:block;font:500 14px/1.3 ${FF};letter-spacing:.01em;color:rgba(12,13,15,.6);margin:0 0 10px}
 .wkg-chips{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px}
 .wkg-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 14px 8px 12px;border-radius:999px;background:rgba(255,255,255,.55);box-shadow:inset 0 0 0 1px rgba(12,13,15,.1);font:500 15px/1.2 ${FF};letter-spacing:-.01em;color:${INK};white-space:nowrap}
 .wkg-chip i{flex:none;width:16px;height:16px;background:currentColor;-webkit-mask:center/contain no-repeat;mask:center/contain no-repeat}
@@ -380,8 +446,8 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-vm .wkg-media.wkg-cp{flex-wrap:nowrap;align-items:flex-end;padding-top:clamp(56px,9vh,110px)}
 .wkg-vm .wkg-media.wkg-cpr{flex-direction:row-reverse;justify-content:flex-end}
 .wkg-cap2{display:flex;flex-direction:column;gap:4px;margin-top:10px;font:400 15px/1.45 ${FF};text-wrap:pretty}
-.wkg-cap2 .wkg-lab{margin:0;font-size:13px;white-space:nowrap}
-@media (max-width:760px){.wkg-cap2{font-size:14px}}
+.wkg-cap2 .wkg-lab{margin:0;font-size:14px;white-space:nowrap}
+@media ${PHQ}{.wkg-cap2{font-size:14px}}
 .wkg-credits dl{margin:0;display:grid;grid-auto-flow:column;grid-template-rows:repeat(var(--cr,4),auto);grid-auto-columns:minmax(220px,320px);gap:0 var(--cg)}
 .wkg-credits dl>div{padding:16px 0 18px;border-top:1px solid rgba(12,13,15,.2)}
 .wkg-credits dt{margin:0 0 6px;font:500 14px/1.3 ${FF};color:rgba(12,13,15,.76)}
@@ -396,7 +462,6 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-sw .wkg-fm{left:0;width:100%}.wkg-vm.wkg-sw .wkg-fm{top:0;height:100%}
 .wkg-vm .wkg-fm{left:0;top:-5%;width:100%;height:110%}
 .wkg-fm>img,.wkg-fm>video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;display:block}
-.wkg-fr:has(.kpf-hide),.wkg-hm:has(.kpf-hide),.wkg-hero:has(.kpf-hide),.wkg-tri>div:has(.kpf-hide){background:transparent!important}
 .wkg-blr{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;pointer-events:none;will-change:opacity}
 .wkg-fm>video{opacity:0;transition:opacity .8s ${ARRIVE}}.wkg-fm>video.wkg-ld{opacity:1}
 .wkg-ch{flex-direction:row;align-items:flex-start;gap:var(--cg)}
@@ -410,33 +475,48 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 
 /* the end: the run holds on the next project's name, its picture peeking in from the right edge; once the scroll has
    come to rest, "Scroll to continue" fades in, and a further deliberate scroll (or a click) carries on into it */
-.wkg-next{width:min(80vw,1480px);margin-left:var(--pgap);padding:var(--top) 0 var(--bot);background:transparent;color:inherit;cursor:pointer;flex-direction:row;align-items:flex-end;gap:clamp(28px,3.2vw,64px);overflow:hidden}
+/* the last panel fills the view and ends on the page margin, like the first panel starts on it: nothing before it is left
+   half-cut at the left edge and its picture is not cut by the right one */
+.wkg-next{width:calc(100vw - var(--pgap));margin-left:var(--pgap);padding:var(--top) var(--gut) var(--bot) 0;background:transparent;color:inherit;cursor:pointer;flex-direction:row;align-items:flex-end;gap:clamp(28px,3.2vw,64px);overflow:hidden}
 .wkg-nx{flex:0 0 auto;width:clamp(260px,24vw,440px)}
 .wkg-nl{display:block;font:500 16px/1.3 ${FF};color:${COBALT};margin-bottom:16px}
-.wkg-nt{display:block;font:500 clamp(52px,6vw,120px)/1.04 ${FF};letter-spacing:-.058em;text-wrap:balance;margin-left:-.06em;padding-bottom:.1em}
+.wkg-nt{display:block;font:500 clamp(52px,6vw,120px)/1.04 ${FF};letter-spacing:-.058em;text-wrap:balance;padding-bottom:.1em}
 .wkg-nk{display:block;margin-top:20px;font:500 17px/1.3 ${FF};color:rgba(12,13,15,.76)}
 .wkg-ncue{display:flex;align-items:center;gap:14px;margin-top:clamp(28px,5vh,52px);font:500 17px/1.2 ${FF};letter-spacing:-.01em;opacity:0;transform:translate3d(0,12px,0);transition:opacity .7s ${ARRIVE},transform .9s ${ARRIVE}}
 .wkg-ncue i{position:relative;flex:0 0 auto;width:56px;height:2px;overflow:hidden;background:rgba(12,13,15,.16)}
 .wkg-ncue b{position:absolute;inset:0;background:currentColor;transform:scaleX(var(--acc,0));transform-origin:0 50%;transition:transform .25s ${ARRIVE}}
 .wkg-page.wkg-nxon .wkg-ncue{opacity:1;transform:none}
 .wkg-gd .wkg-nl{color:${PINK}}.wkg-gd .wkg-nk{color:${BLUE}}.wkg-gd .wkg-ncue i{background:rgba(241,242,240,.3)}
-.wkg-nm{position:relative;flex:0 0 auto;height:min(64vh,46vw);aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:var(--wkg-slot,${SKY});container-type:inline-size;transform-origin:0 100%;will-change:transform}
+.wkg-nm{position:relative;flex:0 1 auto;min-width:0;margin-left:auto;height:min(64vh,46vw);aspect-ratio:16/10;border-radius:16px;overflow:hidden;background:var(--wkg-slot,${SKY});container-type:inline-size;transform-origin:0 100%;will-change:transform}
 .wkg-nm.wkg-v{aspect-ratio:4/5}
 .wkg-nm>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 40%;transition:transform 1.1s ${ARRIVE}}
 @media (hover:hover){.wkg-next:hover .wkg-nm>img{transform:scale(1.05)}}
 
-@media (max-width:760px){
+@media ${PHQ}{
   .wkg,.wkg-page{--gut:18px;--cg:14px}
-  .wkg-head{flex-direction:column;align-items:flex-start;gap:14px;padding-top:36px;padding-bottom:30px}
-  .wkg-title{font-size:clamp(60px,18.5vw,92px)}
+  .wkg-head{flex-direction:column;align-items:flex-start;gap:14px;padding-top:76px;padding-bottom:30px}   /* the words clear the fixed Contact button */
+  .wkg-sw:not(.wkg-page){font-size:clamp(36px,11.4vw,92px);gap:clamp(14px,4vw,28px)}
   .wkg-bh,.wkg-bl{grid-column:1/-1}
   .wkg-filt{column-gap:20px;row-gap:2px;margin-bottom:28px}
   .wkg-fb{font-size:17px!important}
   .wkg-list{grid-template-columns:minmax(0,1fr);row-gap:52px}
   .wkg-cap h3{font-size:30px}
-  .wkg-page{--top:76px;--bot:64px;--pgap:18px}
+  .wkg-page{--top:76px;--bot:64px;--pgap:max(18px,env(safe-area-inset-left))}   /* a landscape notch takes its inset (PHONE-AUDIT #17b) */
+  /* Back, Projects and Contact float over the moving run: a scrim of the ground under them, once the run is past the
+     hero, so text travelling up never shows through the pills (PHONE-AUDIT #2) */
+  .wkg-page:not(.wkg-vm)::after{content:"";position:absolute;left:0;right:0;top:0;height:calc(var(--top) - 2px);z-index:2;pointer-events:none;background:linear-gradient(var(--wkg-gnow,transparent) 64%,transparent);opacity:0;transition:opacity .35s}
+  .wkg-page.wkg-scr:not(.wkg-vm)::after{opacity:1}
+  .wkg-prog{left:max(var(--gut),env(safe-area-inset-left));right:max(var(--gut),env(safe-area-inset-right))}
   .wkg-pn{max-width:calc(100vw - 36px)}
   .wkg-pn:not(.wkg-media):not(.wkg-hero):not(.wkg-next){overflow-y:auto;overscroll-behavior:contain;width:calc(100vw - 36px)}
+  /* overflow-y:auto turns overflow-x to auto too: the word masks' 2-3px right padding then made each text panel a sideways
+     scroller whose contain stopped the swipe dead (the run stalled at the first text panel). Sideways belongs to the run only */
+  .wkg-pn:not(.wkg-media):not(.wkg-hero):not(.wkg-next),.wkg-ch{overflow-x:hidden;overscroll-behavior-x:auto}
+  /* a scroll panel's box stops where the bottom band starts (the progress line and Next live there): at rest nothing
+     runs under the line, the rest is a scroll inside the panel; one that overflows fades out over its last 22px until
+     it is scrolled to its end (wkg-end), so the cut reads as more to come and the last line still lands clear */
+  .wkg-page:not(.wkg-vm) .wkg-pn:not(.wkg-media):not(.wkg-hero):not(.wkg-next):not(.mr-gp):not(.mr-tlp):not(.mr-vxp):not(.mr-vox){height:calc(100% - var(--bot));padding-bottom:0}
+  .wkg-page:not(.wkg-vm) .wkg-pn.wkg-ovf:not(.wkg-end){-webkit-mask-image:linear-gradient(#000 calc(100% - 22px),transparent);mask-image:linear-gradient(#000 calc(100% - 22px),transparent)}
   .wkg-hero,.wkg-next{max-width:none}
   .wkg-intro{width:calc(100vw - 36px)}
   .wkg-info{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
@@ -467,8 +547,8 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
   .wkg-chl{width:100%}
   .wkg-next{flex-direction:column;align-items:flex-start;justify-content:flex-end;width:calc(100vw - 18px);gap:24px}
   .wkg-nx{width:100%}.wkg-ncue{margin-top:20px}
-  .wkg-nm{height:auto;width:118%}.wkg-nm.wkg-v{width:62%}
-  .wkg-bk{top:12px;left:12px}
+  .wkg-nm{height:auto;width:100%;margin-left:0}.wkg-nm.wkg-v{width:62%}
+  .wkg-bk{top:12px;left:max(12px,env(safe-area-inset-left))}
   .wkg-bm{height:44px}
   .wkg-hero.wkg-hfr{grid-template-columns:minmax(0,1fr);align-content:center;row-gap:24px;padding:var(--top) 18px var(--bot)}
   .wkg-hfr .wkg-hm{justify-self:stretch;width:100%;max-height:46vh}
@@ -480,7 +560,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-vm .wkg-sc.wkg-native{overflow-x:hidden;overflow-y:auto;scroll-snap-type:none;overscroll-behavior:contain}
 .wkg-vm .wkg-track{flex-direction:column;width:100%;height:auto}
 .wkg-vm .wkg-pn{width:100%!important;max-width:none!important;height:auto;overflow:visible!important;display:block;padding:clamp(96px,15vh,190px) var(--gut) 0}
-.wkg-vm .wkg-hero{height:100vh;padding:0}
+.wkg-vm .wkg-hero{height:100vh;height:100dvh;padding:0}
 .wkg-vm .wkg-hero.wkg-hfr{display:grid;padding:var(--top) var(--gut) var(--bot)}
 .wkg-vm .wkg-hero.wkg-txt{display:flex;padding:var(--top) var(--gut) var(--bot)}
 .wkg-vm .wkg-intro .wkg-pi,.wkg-vm .wkg-about .wkg-pi,.wkg-vm .wkg-factp .wkg-pi,.wkg-vm .wkg-credits .wkg-pi{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));column-gap:var(--cg);align-items:start}
@@ -503,9 +583,9 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-vm .wkg-bts>.wkg-pi{flex-wrap:wrap}.wkg-vm .wkg-bcb,.wkg-vm .wkg-bcc,.wkg-vm .wkg-bcs{flex:1 1 40%}
 .wkg-vm .wkg-bts .wkg-stats,.wkg-vm .wkg-bts .wkg-facts{grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .wkg-vm .wkg-bcd,.wkg-vm .wkg-bce{flex:1 1 100%}.wkg-vm .wkg-tl{grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}.wkg-vm .wkg-its{grid-template-rows:none;grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(260px,max-content))}
-.wkg-vm .wkg-next{width:100%;min-height:100vh;margin:clamp(96px,15vh,190px) 0 0;display:flex;padding:var(--top) var(--gut) var(--bot)}
+.wkg-vm .wkg-next{width:100%;min-height:100vh;min-height:100dvh;margin:clamp(96px,15vh,190px) 0 0;display:flex;padding:var(--top) var(--gut) var(--bot)}
 .wkg-vm .wkg-nm{transform-origin:50% 100%}
-@media (max-width:760px){
+@media ${PHQ}{
   .wkg-vm .wkg-pn{padding-top:72px}
   .wkg-vm .wkg-intro .wkg-pi,.wkg-vm .wkg-about .wkg-pi,.wkg-vm .wkg-factp .wkg-pi,.wkg-vm .wkg-credits .wkg-pi{grid-template-columns:minmax(0,1fr)}
   .wkg-vm .wkg-intro .wkg-lede,.wkg-vm .wkg-intro .wkg-info,.wkg-vm .wkg-intro .wkg-stats,.wkg-vm .wkg-intro .wkg-links,.wkg-vm .wkg-pi>.wkg-h2,.wkg-vm .wkg-about .wkg-cols,.wkg-vm .wkg-facts,.wkg-vm .wkg-credits dl{grid-column:1/-1;grid-row:auto}
@@ -531,27 +611,29 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-bf h3{margin:0 0 8px;font:500 14px/1.3 ${FF};color:rgba(12,13,15,.76)}
 .wkg-bf ul{list-style:none;margin:0;padding:0}
 .wkg-bf li{padding:10px 0;border-top:1px solid rgba(12,13,15,.2);font:500 clamp(16px,1.2vw,19px)/1.35 ${FF}}
-@media (max-width:760px){.wkg-bf{width:calc(100vw - 36px)}.wkg-bfl{grid-template-columns:minmax(0,1fr)}}
+@media ${PHQ}{.wkg-bf{width:calc(100vw - 36px)}.wkg-bfl{grid-template-columns:minmax(0,1fr)}}
 .wkg-vm .wkg-bf{width:100%!important}
 /* no decorative rules anywhere: groups are separated by space; only the progress line is a line */
 .wkg-brands,.wkg-info,.wkg-fact,.wkg-credits dl>div,.wkg-tl li,.wkg-bf li{border-top:0!important}
 .wkg-fx :is(.wkg-fact,.wkg-credits dl>div,.wkg-info)::before{display:none}
-.wkg-brands{padding-top:clamp(12px,2vh,24px)}.wkg-info{padding-top:0}
+/* the logo strip sits close under the two words. Its tiles took the live button's top margin (.wkg-go is also the strip's
+   'has a folder' class), an empty band above the logos nobody asked for */
+.wkg-brands{padding-top:0;margin-bottom:clamp(26px,4vh,48px)}.wkg-brands .wkg-lgt.wkg-go{margin-top:0}.wkg-info{padding-top:0}
 .wkg-fact{padding:0 0 clamp(26px,4vh,44px)}.wkg-credits dl>div{padding:0 0 clamp(20px,3vh,32px)}
 .wkg-tl li{padding-top:0}.wkg-bf li{padding:6px 0}
 /* listing: on hover a drawn arrow slides in before the title and the title makes room (after Lusion) */
 .wkg-cap h3{position:relative;transition:transform .6s ${ARRIVE}}
-.wkg-cap h3::before{content:"";position:absolute;left:-.78em;top:.3em;width:.56em;height:.44em;background:currentColor;opacity:0;transform:translateX(-.35em);transition:opacity .4s ${ARRIVE},transform .6s ${ARRIVE};
+.wkg-cap h3::before{display:none;content:"";position:absolute;left:-.78em;top:.3em;width:.56em;height:.44em;background:currentColor;opacity:0;transform:translateX(-.35em);transition:opacity .4s ${ARRIVE},transform .6s ${ARRIVE};
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 17'%3E%3Cpath d='M1 8.5h19M13 1.5l7 7-7 7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 17'%3E%3Cpath d='M1 8.5h19M13 1.5l7 7-7 7' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/contain no-repeat}
-@media (hover:hover) and (pointer:fine){.wkg-card:hover .wkg-cap h3{transform:translateX(.78em)}.wkg-card:hover .wkg-cap h3::before{opacity:1;transform:none}}
+@media (hover:hover) and (pointer:fine){.wkg-card:hover .wkg-cap h3{transform:none}.wkg-card:hover .wkg-cap h3::before{opacity:1;transform:none}}
 /* the live button */
 .wkg-go{display:inline-block;margin-top:clamp(22px,3.6vh,36px);text-decoration:none;color:${INK}!important;-webkit-tap-highlight-color:transparent}
 .wkg-gm{position:relative;display:inline-flex;align-items:center;gap:12px;height:56px;padding:0 24px 0 20px;border-radius:999px;background:${PAPER};overflow:hidden;isolation:isolate;transition:transform .45s ${SPRING}}
 .wkg-gm i{flex:0 0 auto;width:8px;height:8px;border-radius:50%;background:${INK};transition:background-color .3s}
 .wkg-gf{position:absolute;left:24px;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;border-radius:50%;background:${INK};transform:scale(0);transition:transform .6s ${SPRING};z-index:-1}
 .wkg-gt{display:flex;flex-direction:column;gap:4px;font:500 16px/1 ${FF};letter-spacing:-.005em;white-space:nowrap;transition:color .3s}
-.wkg-gt small{font:500 12px/1 ${FF};letter-spacing:0;opacity:.62}
+.wkg-gt small{font:500 14px/1 ${FF};letter-spacing:0;opacity:.62}
 .wkg-lbs{column-gap:12px;row-gap:12px}.wkg-lbs .wkg-go{margin-top:0}.wkg-lbs a.wkg-go::after{display:none}.wkg-links a.wkg-go{padding:0}
 .wkg-gm svg{width:16px;height:16px;margin-left:-28px;opacity:0;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transform:translateX(-8px);transition:margin .5s ${SPRING},opacity .3s,transform .5s ${SPRING}}
 @media (hover:hover) and (pointer:fine){
@@ -562,7 +644,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-go:focus-visible{outline:none}.wkg-go:focus-visible .wkg-gm{outline:2px solid ${COBALT};outline-offset:3px}
 .wkg-gd .wkg-go:focus-visible .wkg-gm{outline-color:${PINK}}
 .wkg-hero:not(.wkg-txt):not(.wkg-hfr) .wkg-gol{grid-column:1/-1}
-@media (max-width:760px){.wkg-gm{height:50px}.wkg-go,.wkg-links a.wkg-go{display:block}.wkg-gm{width:100%;justify-content:center}.wkg-gf{left:50%}.wkg-lbs{flex-direction:column;align-items:stretch}}
+@media ${PHQ}{.wkg-gm{height:50px}.wkg-go,.wkg-links a.wkg-go{display:block}.wkg-gm{width:100%;justify-content:center}.wkg-gf{left:50%}.wkg-lbs{flex-direction:column;align-items:stretch}}
 @media (prefers-reduced-motion:reduce){.wkg-mi>img,.wkg-nm>img{transition:none}.wkg-cap h3,.wkg-cap h3::before{transition:none}}
 `;
 
@@ -640,6 +722,8 @@ function arrange(list) {
   return out;
 }
 const cardKind = (p) => (p.wing === 'software' && CAT[p.category]) || kindOf(p);
+/* alt text for a project's or client's own picture: its name and what it is, both from the manifest ("sorted, Mac app") */
+const altOf = (p) => (p.heroAlt ? clean(p.heroAlt) : [clean(p.name), clean(kindOf(p))].filter(Boolean).join(', '));   // a client page opens on one of its films: media-reels.js names it
 const partsOf = (p) => (Array.isArray(p.parts) ? p.parts : []).filter(x => x && x.name);
 
 const THUMBABLE = /\.(jpe?g|png)$/i;
@@ -665,6 +749,7 @@ function fmt(n) {
 }
 const STATS = { software: [['visitors', 'Visitors']], media: [['views', 'Views'], ['shares', 'Shares'], ['likes', 'Likes']] };
 function statsOf(p) {
+  if (p._run) return p._run.stats;           // reels (or DVCs) and views, never likes
   return (STATS[p.wing] || []).map(([k, label]) => {
     let v = fmt(p.stats && typeof p.stats === 'object' ? p.stats[k] : null), from = null;
     if (v == null) { const f = factOf(p, new RegExp('^' + label + '$', 'i')); if (f) { v = clean(f.value); from = f; } }
@@ -697,38 +782,36 @@ function videosOf(p) {
   return out;
 }
 
-/* fluid-g.js (the pointer fluid and photo lens) through one hook. One canvas for the whole section, kept UNDER the
-   content in tree order: in the listing right after the card canvas (so captions sit on it), on a project page right
-   after the ground (so text, Back, the progress line and the end cue all sit on it). While it draws a picture's GL
-   copy it hides the DOM picture, so the frame's own ground turns transparent then (.kpf-hide rules below).
-   Listing cards are NOT attached: they are already planes on the card canvas; there the fluid draws only its trail. */
-let FLUID = null, FLUIDC = null, WORKON = false;
-function fluidGate() { if (!FLUID) return; const on = WORKON || !!openId; FLUID.setEnabled(on); FLUIDC.style.visibility = on ? '' : 'hidden'; }
-function fluidAttach(media, clip) {
-  const page = curPage; if (!FLUID || !media || !page) return;
-  FLUID.attach(media, { clip: clip || media.parentElement });
-  (page._fl ||= []).push(media);
-}
-function fluidDetach(page) { if (!FLUID || !page || !page._fl) return; page._fl.forEach(m => FLUID.detach(m)); page._fl = []; }
-function fluidHome(page) {
-  if (!FLUIDC) return;
-  if (page) { const bg = page.querySelector('.wkg-bg'); if (bg && FLUIDC.previousSibling !== bg) bg.after(FLUIDC); }
-  else if (ui.wrap) { const g = ui.wrap.querySelector('.wkg-gl'); if (g) g.after(FLUIDC); else ui.wrap.prepend(FLUIDC); }
-}
-async function initFluid() {
-  if (RM.matches || !HOVER.matches) return;
-  try {
-    const { createFluid } = await import('./fluid-g.js');
-    const f = createFluid({ root: ui.wrap, zIndex: 0, kpPause: 'ignore' });
-    const c = ui.wrap.querySelector('canvas.kp-fluid');
-    if (!c) return;
-    FLUID = f; FLUIDC = c; fluidHome(null);
-    // only while #work covers the screen (index.html's kp:pause, paused: true) or a project is open: the landing and the
-    // numbers never get the trail
-    addEventListener('kp:pause', (e) => { WORKON = !!(e.detail && e.detail.paused); fluidGate(); });
-    WORKON = document.body.classList.contains('kp-work'); fluidGate();
-  } catch (e) { console.warn('work-g: fluid-g.js did not load', e); }
-}
+/* every brand logo file. Spectra's mark is the file named saladific.svg (spectra.png is white and vanishes on a white
+   tile), Zepto is its ink file, Kaavyaratna's mark is eve-for-her.svg; Saladific and Eve For Her have no file and are set
+   in type. flat: a one-colour file filled with ink. sc: a lift for files with wide padding */
+const BRAND_LOGOS = [
+  { name: 'Gujarat Titans', file: 'media/logos/gujarat-titans.png', ar: 1.341 },
+  { name: 'Zepto', file: 'media/logos/zepto-ink.png', ar: 2.847 },
+  { name: 'Palladium', file: 'media/logos/palladium-ahmedabad.svg', ar: 1.787 },
+  { name: 'Shivalik', file: 'media/logos/shivalik.svg', ar: 2.857 },
+  { name: 'Crav Social', file: 'media/logos/crav-social.png', ar: 0.996 },
+  { name: 'Spectra Museum', file: 'media/logos/saladific.svg', ar: 1.756 },
+  { name: 'Fourside Studios', file: 'media/logos/fourside-studios.png', ar: 3.173, flat: 1 },
+  { name: 'ABH Developers', file: 'media/logos/abh-developers.svg', ar: 4.11 },
+  { name: 'Lofy', file: 'media/logos/lofy-clean.png', ar: 1.887 },
+  { name: 'Kaavyaratna', file: 'media/logos/eve-for-her.svg', ar: 6.0 },
+  { name: 'Oliver Brown', file: 'media/logos/oliver-brown.svg', ar: 1.813 },
+  { name: 'Landmark Volkswagen', file: 'media/logos/landmark-volkswagen-trim.svg', ar: 2.564 },
+  { name: 'Stellar Skoda', file: 'media/logos/stellar-skoda.svg', ar: 3.191 },
+  { name: 'United Farmers Creamery', file: 'media/logos/united-farmers-creamery-trim.svg', ar: 1.508 },
+  { name: 'Puffizza', file: 'media/logos/puffizza.svg', ar: 1.0 },
+  { name: 'MMV', file: 'media/logos/mmv.svg', ar: 2.703 },
+  { name: 'Qutone Ceramics', file: 'media/logos/qutone-ceramics-trim.svg', ar: 4.63 },
+  { name: 'SJ Sangath', file: 'media/logos/sj-sangath-clean.svg', ar: 1.0, sc: 1.6 },
+  { name: 'Space Arcade', file: 'media/logos/space-arcade.svg', ar: 3.409 },
+  { name: 'Vishwanath Builders', file: 'media/logos/vishwanath-builders.png', ar: 3.659 },
+  { name: 'Eklingji Skylights', file: 'media/logos/eklingji-skylights-trim.png', ar: 1.214, sc: 1.3 },
+  { name: 'Pawfect', file: 'media/logos/pawfect.svg', ar: 2.885 },
+  { name: 'UltraPop', file: 'media/logos/ultrapop-trim.png', ar: 4.195 },
+  { name: 'CREDAI Shelter', file: 'media/logos/credai-shelter.png', ar: 3.399 },
+  { name: 'Vibe Raas', file: 'media/logos/vibe-raas.png', ar: 1.0 },
+];
 let DATA = { software: [], media: [] }, ALL = [], byId = new Map(), BRANDS = [], tab = 'software', SW = [], cat = 'all';
 let ui = {}, gl = null, openId = null, curPage = null, busy = false;
 const holds = [];                        // running flight animations, so a test can hold them still
@@ -738,6 +821,15 @@ const holds = [];                        // running flight animations, so a test
 /* a logo trimmed to its ink (some files carry wide transparent margins), cached per project. The ink box is found on
    a copy at most 256 px across, so the pixel scan stays well under a millisecond whatever the file size. */
 const LOGOS = new Map();
+/* resolves when #work is within two screens, when a page opens, or at once on a deep link: what the first screen does not
+   need (logo trims, the card canvas and its WebGL context) waits for it */
+let wakeWork = () => {};
+const nearWork = new Promise((res) => {
+  wakeWork = res;
+  if (/^#(work|media)(\/|$)/.test(location.hash) || !('IntersectionObserver' in window) || !ROOT) { res(); return; }
+  const io = new IntersectionObserver((es) => { if (es.some(e => e.isIntersecting)) { io.disconnect(); res(); } }, { rootMargin: '200% 0px' });
+  io.observe(ROOT);
+});
 function logoOf(p) {
   if (!p.logo) return null;
   if (LOGOS.has(p.id)) return LOGOS.get(p.id);
@@ -761,14 +853,14 @@ function logoOf(p) {
       } catch (e) { res({ canvas: im, url: im.src }); }
     };
     im.onerror = () => res(null);
-    im.src = src(p.logo);
+    nearWork.then(() => { im.src = src(p.logo); });   // not at load: the trim is canvas work the first screen does not need
   });
   LOGOS.set(p.id, pr); return pr;
 }
 function plateEl(p) {
   const d = paint(el('div', 'wkg-pl'), p);
   const lp = logoOf(p);
-  if (lp) { const g = el('span', 'wkg-plg'), im = el('img'); im.alt = ''; im.draggable = false; g.appendChild(im); d.appendChild(g); lp.then(l => { if (l) im.src = l.url; else { g.className = 'wkg-plg wkg-pw'; g.textContent = ''; g.appendChild(el('span', '', clean(p.name))); } }); }
+  if (lp) { const g = el('span', 'wkg-plg'), im = el('img'); im.alt = ''; im.draggable = false; g.appendChild(im); d.appendChild(g); lp.then(l => { if (l) { im.src = l.url; im.alt = clean(p.name) + ' logo'; } else { g.className = 'wkg-plg wkg-pw'; g.textContent = ''; g.appendChild(el('span', '', clean(p.name))); } }); }
   else { const g = el('span', 'wkg-plg wkg-pw'); g.appendChild(el('span', '', clean(p.name))); d.appendChild(g); }
   const f = plateFact(p);
   if (f) { const x = el('span', 'wkg-pf'); x.append(el('b', '', clean(f.value)), el('small', '', clean(f.label))); d.appendChild(x); }
@@ -776,18 +868,25 @@ function plateEl(p) {
   return d;
 }
 function cardEl(p) {
-  const c = el('button', 'wkg-card'); c.type = 'button'; c.dataset.id = p.id;
-  c.setAttribute('aria-label', `${clean(p.name)}. ${clean(cardKind(p))}. Open the project`);
+  const c = el('a', 'wkg-card'); c.href = p.hash || '#work/' + p.id; c.draggable = false; c.tabIndex = 0; c.dataset.id = p.id;   // a real link: crawlers and keyboards follow an href
+  c.setAttribute('aria-label', `${clean(p.name)}. Open the project`);
   const m = el('span', 'wkg-m'), mi = el('span', 'wkg-mi');
   if (isText(p)) mi.appendChild(plateEl(p));
-  else { const im = el('img'); im.alt = ''; im.decoding = 'async'; im.draggable = false; im.loading = 'lazy'; setImg(im, p.hero, '(max-width:760px) 92vw, 46vw'); mi.appendChild(im); }
+  else { const im = el('img'); im.alt = altOf(p); im.decoding = 'async'; im.draggable = false; im.loading = 'lazy'; setImg(im, p.hero, '(max-width:760px) 92vw, 46vw'); mi.appendChild(im); }
   m.appendChild(mi);
   const cap = el('span', 'wkg-cap');
-  cap.append(el('span', 'wkg-k', clean(cardKind(p))), el('h3', '', clean(p.name)));
+  cap.append(el('h3', '', clean(p.name)));   // no kind line: the filters above already sort the work
   c.append(m, cap);
-  c.addEventListener('click', () => go(p.id, m));
+  // a plain click opens the page the way the button did; a modified click (new tab, new window) is the browser's
+  c.addEventListener('click', (e) => { if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return; e.preventDefault(); go(p.id, m); });
+  c.addEventListener('keydown', (e) => { if (e.key === ' ' && !e.repeat) { e.preventDefault(); go(p.id, m); } });   // Space opened the button too
   c.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') prefetch(p); });
   c.addEventListener('focus', () => prefetch(p));
+  // without the card canvas (reduced motion, no WebGL): the same second picture as a 160 ms crossfade, on a fine pointer
+  if (HOVER_PAIRS[p.id] && HOVER.matches) {
+    const two = () => { if (mi.querySelector('.wkg-h2i') || ui.w.classList.contains('wkg-glon')) return; const im = el('img', 'wkg-h2i'); im.alt = ''; im.decoding = 'async'; setImg(im, HOVER_PAIRS[p.id], '(max-width:760px) 92vw, 46vw'); mi.appendChild(im); };
+    c.addEventListener('pointerenter', two, { passive: true }); c.addEventListener('focus', two);
+  }
   return c;
 }
 const CARDS = new Map();
@@ -801,7 +900,7 @@ function stopFilterAnims() { fanims.forEach(a => a.cancel()); fanims = []; }
 function place(list) {
   const cards = list.map(cardOf);
   ui.list.replaceChildren(...cards);
-  ui.cards = cards;
+  ui.cards = cards; ui.shown = list;
   if (gl) gl.setCards(list, cards);
   return cards;
 }
@@ -852,53 +951,106 @@ function decodeIn(c) {
     .then(() => im.decode ? im.decode().catch(() => {}) : null);
 }
 function headIn() {
-  const lines = [ui.titleIn, ui.subIn].filter(Boolean);
+  const lines = [ui.sw, ui.subIn].filter(Boolean);
   if (RM.matches) return;
-  gsap.set(ui.titleIn, { yPercent: 110 });
-  gsap.set([ui.sub, ui.top, ui.filt, ui.brands], { autoAlpha: 0, y: 18 });
+  // the two words rise inside a mask (on only for the rise, so it never clips a focus ring later)
+  ui.sw.classList.add('wkg-swin');
+  gsap.set(ui.words, { yPercent: 110 });
+  gsap.set([ui.sub, ui.brands], { autoAlpha: 0, y: 18 });
+  gsap.set(ui.filt, { opacity: 0, y: 18 });   // opacity only: hidden with visibility they dropped out of the Tab order
   ScrollTrigger.create({
     trigger: ui.head, start: 'top 88%', once: true,
     onEnter: () => {
       const tl = gsap.timeline();
-      tl.to(ui.titleIn, { yPercent: 0, duration: T.rise + 0.2, ease: 'expo.out' })
-        .to([ui.top, ui.sub], { autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08, clearProps: 'transform' }, 0.12)
-        .to([ui.filt, ui.brands], { autoAlpha: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08, clearProps: 'transform' }, 0.22);
+      tl.to(ui.words, { yPercent: 0, duration: T.rise + 0.2, ease: 'expo.out', stagger: 0.07, clearProps: 'transform', onComplete: () => ui.sw.classList.remove('wkg-swin') })
+        .to(ui.sub, { autoAlpha: 1, opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08, clearProps: 'transform' }, 0.12)
+        .to([ui.filt, ui.brands], { autoAlpha: 1, opacity: 1, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08, clearProps: 'transform' }, 0.22);
     },
   });
   return lines;
 }
 
+/* the Media tab's folders and player live in media-reels.js, fetched the first time Media opens. If it can't load, the
+   original Media cards come back */
+let reels = null, reelsP = null, reelsFailed = false;
+/* Media client pages are this file's project page: media-reels.js hands over a project object with a _run (its reels,
+   timeline, next client), and the same build, layout, engine, entry and next-project code runs them */
+const RUN_API = {
+  add(list) { list.forEach(p => byId.set(p.id, p)); },
+  go: (id, fromEl) => go(id, fromEl),
+  get dragged() { return PG.dragged; },
+  get open() { return !!curPage; },
+  pause() { if (curPage) { curPage._io && curPage._io.disconnect(); curPage.querySelectorAll('video').forEach(v => v.pause()); } },
+  resume() { if (curPage) watchMedia(curPage); },
+  reveal(n) { if (curPage && curPage.contains(n)) revealIn(curPage, n); },
+  jump(n) { if (curPage && n && curPage.contains(n)) jumpTo(curPage, n); },
+};
+function showReels() {
+  if (!ui.mr) ui.mr = el('div', 'mr');
+  ui.list.appendChild(ui.mr);
+  if (reels) { reels.route(); return; }
+  reelsP ||= import('./media-reels.js').then(async (m) => {
+    await m.mount(ui.mr, { base: BASE, project: (id) => byId.get(id), openProject: (id) => go(id), refresh: () => ScrollTrigger.refresh(), runs: RUN_API });
+    reels = m;
+    route();                                  // a cold #media/<client> link: the run can open now that it is registered
+  }).catch((e) => {
+    console.warn('work-g: reels layer did not load, plain Media cards instead', e);
+    reelsFailed = true; ui.mr.remove();
+    if (tab === 'media') watchCards(place(viewOf('media')));
+  });
+}
 function setTab(t, first) {
   tab = t;
-  ROOT.style.setProperty('--wkg-ground', WING[t].ground);
-  ROOT.style.setProperty('--wkg-slot', WING[t].slot);
-  ui.tabs.forEach(b => { const on = b.dataset.tab === t; b.classList.toggle('wkg-on', on); b.setAttribute('aria-selected', on); });
+  const mark = () => {
+    ROOT.style.setProperty('--wkg-ground', WING[t].ground);
+    document.documentElement.style.setProperty('--kp-work', WING[t].ground);   // Contact's plate takes the listing's ground
+    ROOT.style.setProperty('--wkg-slot', WING[t].slot);
+    ui.words.forEach(b => { const on = b.dataset.tab === t; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
+    ui.sub.textContent = WING[t].sub; ui.sub.style.display = WING[t].sub ? '' : 'none';   // no line, no empty box or gap
+  };
   const build = () => {
     stopFilterAnims(); ftok++;
-    ui.titleIn.textContent = WING[t].title;
-    ui.sub.textContent = WING[t].sub;
     ui.brands.hidden = t !== 'media';
     ui.filt.hidden = t !== 'software';
-    const cards = place(viewOf(t));
+    const useReels = t === 'media' && !reelsFailed;
+    const cards = place(useReels ? [] : viewOf(t));
+    if (useReels) showReels();
+    if (CYL) CYL.active(t === 'media');
     if (t === 'software') requestAnimationFrame(() => placeBar(false));
     watchCards(cards);
     ScrollTrigger.refresh();
   };
-  if (first) { build(); return; }
+  if (cutEl) { cutEl.remove(); cutEl = null; }
+  if (first) { mark(); build(); return; }
   // a switch never scrolls the page: the grid keeps its height while the cards change, then eases to the new one
   holdHeight();
-  if (RM.matches) { build(); easeHeight(); return; }
-  gsap.killTweensOf(ui.titleIn);
-  // out: the cards drop and fade together, then the new wing's heading rises and its cards reveal in order
+  if (RM.matches) { mark(); build(); easeHeight(); return; }
+  // the cut: the new ground wipes across the listing's visible part from the side of the word picked, everything
+  // changes under it, then it lifts. It covers only #work on screen, so the menu and the landing are never hidden
   const old = ui.cards || [];
   if (gl) gl.fadeAll(0.32);
   gsap.to([...old.map(c => c.querySelector('.wkg-cap')), ...(gl ? [] : old.map(c => c.querySelector('.wkg-m')))], { autoAlpha: 0, y: 16, duration: 0.32, ease: 'power2.in' });
-  gsap.to(ui.titleIn, { yPercent: -110, duration: 0.36, ease: 'power3.in', onComplete: () => {
+  const r = ROOT.getBoundingClientRect(), top = Math.max(0, r.top), bot = Math.min(innerHeight, r.bottom);
+  const swap = () => {
     old.forEach(c => { REVEALED.delete(c.dataset.id); gsap.set([c.querySelector('.wkg-cap'), c.querySelector('.wkg-m')], { clearProps: 'all' }); });
+    ROOT.style.transition = 'none'; mark(); void ROOT.offsetWidth; ROOT.style.transition = '';   // the ground is already there under the cut: no second fade
     build(); easeHeight();
-    gsap.fromTo(ui.titleIn, { yPercent: 110 }, { yPercent: 0, duration: T.rise + 0.2, ease: 'expo.out' });
-  } });
+  };
+  if (bot - top < 2) { swap(); return; }
+  const w = cutEl = el('div', 'wkg-cut' + (t === 'software' ? '' : ' wkg-r'));
+  w.style.setProperty('--to', WING[t].ground); w.style.top = top + 'px'; w.style.height = (bot - top) + 'px';
+  document.body.appendChild(w);
+  let done = false;
+  const lift = () => {
+    if (done || cutEl !== w) return; done = true; swap();
+    w.style.transition = 'opacity .25s'; w.style.opacity = '0';
+    setTimeout(() => { w.remove(); if (cutEl === w) cutEl = null; }, 280);
+  };
+  requestAnimationFrame(() => requestAnimationFrame(() => w.classList.add('wkg-run')));
+  w.addEventListener('transitionend', lift, { once: true });
+  setTimeout(lift, 900);   // a hidden tab can skip transitionend
 }
+let cutEl = null;
 /* the grid's height is held through a tab or filter swap (no collapse, so the page never jumps), then eased */
 function holdHeight() { const l = ui.list; gsap.killTweensOf(l); l.style.minHeight = Math.max(l.offsetHeight, parseFloat(l.style.minHeight) || 0) + 'px'; }
 function easeHeight() {
@@ -927,7 +1079,8 @@ function writeCat() {
 function placeBar(move) {
   const b = ui.fbtn && ui.fbtn.find(x => x.dataset.cat === cat); if (!b || ui.filt.hidden) return;
   ui.fbar.classList.toggle('wkg-mv', !!move && !RM.matches);
-  ui.fbar.style.transform = `translate3d(${b.offsetLeft}px,${b.offsetTop + b.offsetHeight - 2}px,0) scaleX(${b.offsetWidth})`;
+  const padB = (parseFloat(getComputedStyle(b).paddingBottom) || 6) - 6;   // the taller touch chips keep the line under the word
+  ui.fbar.style.transform = `translate3d(${b.offsetLeft}px,${b.offsetTop + b.offsetHeight - 2 - padB}px,0) scaleX(${b.offsetWidth})`;
 }
 function markFilters() {
   ui.fbtn.forEach(b => { const on = b.dataset.cat === cat; b.classList.toggle('wkg-on', on); b.setAttribute('aria-pressed', on); });
@@ -976,22 +1129,126 @@ async function setCat(c, fromUrl) {
   if (gl) gl.sync(1600);
   easeHeight();
 }
+/* ---------- the clients strip (Media) ----------
+   Every client with a logo file in one small, fast belt of logos: brands.json, every logo file and every client in the
+   reels data, one entry per name, most viewed first. It never stops; a tile with a client folder opens it.
+   Reduced motion: the belt stands still and scrolls sideways by hand. */
+let CYL = null;
+const CY_SKIP = new Set(['unidentified', 'craywingz', 'redbull', 'redbulluniversityspecfilm',
+  'nearhood', 'eklingjiskylights', 'pawfect', 'eveforher', 'swastik42', 'vishwanathbuilders', 'cautio', 'indusuniversity', 'glsinstituteofdesign', 'spacearcade']);   // + his client cut of 25 Nov 2026   // no client, his own handle, a spec film
+const CY_SAME = { fitandflexminibites: 'fitflex' };   // one client under two names
+const STRIP_PX_S = 110;
+/* his 29 kept clients (25 Nov 2026), by key; only these run in the strip */
+const STRIP_KEEP = new Set(['gujarattitans', 'palladium', 'shivalik', 'zepto', 'sahajgroup', 'pycnavratri', 'abhdevelopers', 'lofy', 'cravsocial',
+  'gcrankz', 'nagarsheth', 'oliverbrown', 'landmarkvolkswagen', 'kaavyaratna', 'mmv', 'qutoneceramics', 'puffizza', 'saladific', 'credaishelter',
+  'sjsangath', 'onnirico', 'unitedfarmerscreamery', 'gallonspremiumwater', 'ragodental', 'fitflex', 'fitandflexminibites', 'stellarskoda', 'gallanttmt', 'ultrapop', 'formularc']);
+const STRIP_BAD_LOGO = new Set(['saladific']);   // its file is Spectra's mark, not Saladific's   // belt speed, px per second
+function brandCylinder(host) {
+  const key = (n) => { const k = String(n).toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, ''); return CY_SAME[k] || k; };
+  const slugOf = (n) => String(n).toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const SLUG = { fitflex: 'fit-and-flex-mini-bites' };
+  const logoOf = new Map(BRAND_LOGOS.map(l => [key(l.name), l]));
+  const vp = el('div', 'wkg-lgv'), belt = el('div', 'wkg-lgb');
+  vp.appendChild(belt); host.appendChild(vp);
+  let items = [], tiles = [], ready = null;
+  // equal ink area per logo, in tile heights (em): wide marks get wide tiles, tall marks stay short
+  function mark(it) {
+    const l = it.logo;
+    let w = Math.sqrt(0.36 * l.ar) * (l.sc || 1), h = w / l.ar;
+    if (h > 0.56) { h = 0.56; w = h * l.ar; } if (w > 2.6) { w = 2.6; h = w / l.ar; }
+    let m;
+    if (l.flat) { m = el('i'); m.style.webkitMaskImage = m.style.maskImage = `url("${src(l.file)}")`; }
+    else { m = el('img'); m.src = src(l.file); m.alt = ''; m.decoding = 'async'; m.loading = 'lazy'; m.draggable = false; }
+    m.className = 'wkg-lgm'; m.style.width = w.toFixed(3) + 'em'; m.style.height = h.toFixed(3) + 'em';
+    return [m, Math.max(1.5, w + 0.5)];
+  }
+  function gather(reelsData) {
+    const by = new Map();
+    const add = (n) => { n = String(n || '').replace(/\s*\(.*?\)\s*/g, ' ').trim(); const k = key(n); if (!n || CY_SKIP.has(k) || by.has(k)) return; by.set(k, { name: n, k, logo: logoOf.get(k) || null, views: 0, slug: SLUG[k] || slugOf(n) }); };
+    BRANDS.forEach(add); BRAND_LOGOS.forEach(l => add(l.name));
+    const list = Array.isArray(reelsData) ? reelsData : [], ids = new Set(list.map(x => x.id));
+    list.forEach(x => add(x.client));
+    list.forEach(x => { if (x.hidden || (x.same_as && ids.has(x.same_as))) return; const it = by.get(key(x.client)); if (it) it.views += Number(x.views) || 0; });
+    return [...by.values()].filter(it => STRIP_KEEP.has(it.k) && it.logo && !STRIP_BAD_LOGO.has(it.k)).map((it, i) => ({ ...it, i })).sort((a, b) => (b.views - a.views) || (a.i - b.i));
+  }
+  function tile(it, copy) {
+    const t = el('a', 'wkg-lgt'); const [m, w] = mark(it);
+    t.style.width = w.toFixed(3) + 'em';
+    t.appendChild(m);
+    if (copy) { t.setAttribute('aria-hidden', 'true'); t.tabIndex = -1; }
+    else if (m.tagName === 'IMG') m.alt = it.name;   // the client's name as real text: alt on a picture logo, a hidden span on a masked one
+    else t.appendChild(el('span', 'wkg-sr', it.name));
+    return t;
+  }
+  function build() {
+    belt.replaceChildren(); tiles = [];
+    // two copies of the run back to back: the belt slides one copy's width and starts over without a seam
+    [0, 1].forEach(copy => { const run = el('div', 'wkg-lgr'); items.forEach(it => { const t = tile(it, copy); tiles.push({ t, it, copy }); run.appendChild(t); }); belt.appendChild(run); });
+    vp.setAttribute('aria-label', 'Clients: ' + items.map(x => x.name).join(', '));
+    links(); requestAnimationFrame(speed);
+  }
+  function speed() { const run = belt.firstChild; if (run && run.offsetWidth) belt.style.setProperty('--dur', (run.offsetWidth / STRIP_PX_S).toFixed(1) + 's'); }
+  // a client with a folder becomes a link; the folder list lives in media-reels.js once it has loaded
+  function links() {
+    const have = (s) => !!(reels && reels.runOf('#media/' + s));
+    tiles.forEach(o => {
+      const go = have(o.it.slug); o.t.classList.toggle('wkg-go', go);
+      if (go) { o.t.href = '#media/' + o.it.slug; if (!o.copy) { o.t.removeAttribute('tabindex'); o.t.setAttribute('aria-label', 'Open ' + o.it.name); } }
+      else { o.t.removeAttribute('href'); if (!o.copy) o.t.removeAttribute('aria-label'); }
+    });
+  }
+  addEventListener('resize', speed);
+  ready = nearWork.then(() => fetch(BASE + 'media/reels.json')).then(x => (x.ok ? x.json() : [])).catch(() => []).then(d => { items = gather(d).filter(it => it.logo); build(); });   // logos only: a client without a logo file is left out, never written as text
+  return {
+    active(v) {
+      host.classList.toggle('wkg-lgon', v); if (!v) return;
+      ready.then(() => { links(); requestAnimationFrame(speed); });
+      if (reelsP) reelsP.then(() => links()).catch(() => {});
+    },
+  };
+}
 function buildListing() {
   ROOT.textContent = '';
   const w = el('div', 'wkg'); ui.w = w;
-  const top = el('div', 'wkg-top'); top.setAttribute('role', 'tablist'); ui.top = top;
-  ui.tabs = ['software', 'media'].map(t => { const b = el('button', 'wkg-tab', WING[t].title); b.type = 'button'; b.dataset.tab = t; b.setAttribute('role', 'tab'); b.addEventListener('click', () => { if (tab !== t) setTab(t); }); top.appendChild(b); return b; });
   const head = el('div', 'wkg-head'); ui.head = head;
-  ui.title = el('h2', 'wkg-title');
-  const mk = el('span', 'wkg-mk'); ui.titleIn = el('span'); mk.appendChild(ui.titleIn);
-  ui.title.append(mk);
+  // the title is the switch: two tabs, the wing you are on solid, the other faint; a cobalt count on each
+  const sw = ui.sw = el('div', 'wkg-sw'); sw.setAttribute('role', 'tablist'); sw.setAttribute('aria-label', 'Work');
+  const pick = (t) => {
+    if (tab === t) return;
+    if (t === 'software' && /^#media(\/|$)/.test(location.hash)) history.replaceState(history.state, '', location.pathname + location.search + '#work');
+    else if (t === 'media' && /^(#work)?$/.test(location.hash)) history.replaceState(history.state, '', location.pathname + location.search + '#media');   // a reload lands back on Media
+    syncTitle();
+    setTab(t);
+  };
+  ui.counts = {};
+  ui.words = ['software', 'media'].map(t => {
+    const b = el('button', 'wkg-w'); b.type = 'button'; b.dataset.tab = t; b.id = 'wkg-w-' + t;
+    b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', 'false'); b.setAttribute('aria-controls', 'wkg-panel'); b.tabIndex = -1;
+    const n = ui.counts[t] = el('sup'); n.setAttribute('aria-hidden', 'true');
+    const f = el('span', 'wkg-wf', WING[t].title); f.setAttribute('aria-hidden', 'true');
+    b.append(el('span', 'wkg-wg', WING[t].title), f, n);
+    b.addEventListener('click', () => pick(t));
+    sw.appendChild(b); return b;
+  });
+  // arrows, Home and End move between the two and switch (automatic activation)
+  sw.addEventListener('keydown', (e) => {
+    const i = ui.words.indexOf(document.activeElement); if (i < 0 || e.repeat) return;
+    let j = null;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') j = (i + 1) % 2;
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') j = (i + 1) % 2;
+    else if (e.key === 'Home') j = 0; else if (e.key === 'End') j = 1;
+    if (j === null) return;
+    e.preventDefault(); ui.words[j].focus(); pick(ui.words[j].dataset.tab);
+  });
+  setCount('software', SW.length);
+  nearWork.then(mediaFilms).then(n => setCount('media', n));
   ui.sub = el('p');
-  head.append(ui.title, ui.sub);
+  head.append(el('h2', 'wkg-sr', 'Work'), sw, ui.sub);   // a heading over the two lists, so the project and client h3s have a parent (not shown)
   ui.filt = el('div', 'wkg-filt'); ui.filt.setAttribute('aria-label', 'Filter the software');
   ui.fbtn = FILTERS.map(([k, label]) => {
     const n = k === 'all' ? SW.length : SW.filter(p => p.category === k).length;
     const b = el('button', 'wkg-fb'); b.type = 'button'; b.dataset.cat = k;
-    b.append(document.createTextNode(label), el('small', '', String(n)));
+    b.append(document.createTextNode(label + ' '), el('small', '', String(n)));   // the space is for the read-out; the flex gap sets the look
     b.setAttribute('aria-label', `${label}, ${n}`);
     b.addEventListener('click', () => setCat(k));
     if (k !== 'all' && !n) b.hidden = true;
@@ -1001,14 +1258,30 @@ function buildListing() {
   markFilters();
   if (window.ResizeObserver) new ResizeObserver(() => placeBar(false)).observe(ui.filt);
   ui.brands = el('div', 'wkg-brands');
-  const bl = el('ul', 'wkg-bl');
-  if (BRANDS.length) BRANDS.forEach(b => bl.appendChild(el('li', '', b))); else bl.appendChild(el('li', 'wkg-tbc', 'Brand names to come'));
-  ui.brands.append(el('h3', 'wkg-bh', 'Brands impacted'), bl);
-  ui.wrap = el('div', 'wkg-wrap');
+  CYL = brandCylinder(ui.brands);
+  ui.wrap = el('div', 'wkg-wrap'); ui.wrap.id = 'wkg-panel'; ui.wrap.setAttribute('role', 'tabpanel');
   ui.list = el('div', 'wkg-list');
   ui.wrap.appendChild(ui.list);
-  w.append(top, head, ui.filt, ui.brands, ui.wrap);
+  w.append(head, ui.filt, ui.brands, ui.wrap);
   ROOT.appendChild(w);
+}
+/* a wing's count: the cobalt number on its word, and in its name for a screen reader */
+function setCount(t, n) {
+  const ok = Number.isFinite(n) && n > 0, b = ui.words && ui.words.find(x => x.dataset.tab === t);
+  ui.counts[t].textContent = ok ? String(n) : '';
+  if (b) b.setAttribute('aria-label', ok ? `${WING[t].title}, ${n}` : WING[t].title);
+}
+/* the films on the Media index, counted the way media-reels.js counts a folder: shown reels only (no hidden, no
+   count-only, never the dropped one), a film posted on two channels once, a single image no film, and only films the
+   index reaches (a category, or a client folder still in his cut, the same clients the logo strip keeps) */
+function mediaFilms() {
+  const k = (n) => { const x = String(n || '').toLowerCase().replace(/\(.*?\)/g, '').replace(/[^a-z0-9]/g, ''); return CY_SAME[x] || x; };
+  return fetch(BASE + 'media/reels.json').then(r => (r.ok ? r.json() : [])).catch(() => []).then(d => {
+    const R = (Array.isArray(d) ? d : []).filter(r => r && typeof r.id === 'string' && r.id !== 'DGC1_GpMidX' && !r.count_only && r.hidden !== true);
+    const ids = new Set(R.map(r => r.id));
+    return R.filter(r => r.type !== 'Image' && !(r.same_as && ids.has(r.same_as))
+      && (r.in_fav || r.in_viral || r.in_dvc || r.in_doc || (r.in_client && STRIP_KEEP.has(k(r.client))))).length;
+  });
 }
 
 /* ---------- the WebGL gallery: one canvas, fixed to the viewport, drawn only when something moved ---------- */
@@ -1021,10 +1294,26 @@ void main(){
   wp.y += sin(uv.x * 3.14159265) * uVel;                     // a slight bow with the scroll speed, flat at rest
   gl_Position = projectionMatrix * viewMatrix * wp;
 }`;
+/* the second picture each Software card dissolves into, picked by hand (landscape on both sides, same framing) */
+const HOVER_PAIRS = {
+  spectra: 'software/spectra/live-02.jpg', shivasva: 'software/shivasva/live-02.jpg', 'credai-nashik': 'software/credai-nashik/desk-02.jpg',
+  cravache: 'software/cravache/live-03.jpg', 'vibe-raas-led': 'software/vibe-raas-led/led-13.jpg', sorted: 'software/sorted/client-pick.jpg',
+  deepdive: 'software/deepdive/intro-hover.jpg',
+};
+/* switches for the open calls: ?map=cloud swaps the strips for a soft cloud map; ?disc=off hides the cursor's Play/View disc */
+const QS = new URLSearchParams(location.search);
+const CLOUD = QS.get('map') === 'cloud' ? 1 : 0;
+const DISC_OFF = QS.get('disc') === 'off';
 const FRAG = `
 uniform sampler2D uTex; uniform vec2 uSize; uniform vec2 uImg; uniform float uHover; uniform vec2 uMouse; uniform vec2 uPar;
 uniform float uReveal; uniform float uLoad; uniform vec3 uBase; uniform float uAlpha; uniform float uRad; uniform float uVel;
+uniform sampler2D uTex2; uniform vec2 uImg2; uniform float uMix; uniform float uPair; uniform float uEnter; uniform float uBands; uniform float uAmp; uniform float uCloud;
 varying vec2 vUv;
+// the hover dissolve (after Codrops' distortion hover, with the landing wall's vertical strips as the map): each band
+// carries a fixed random push in -1..1 and blends into the next over 35% of its width, so the picture warps, not shutters
+float hash(float n){ return fract(sin(n * 91.3458) * 47453.5453); }
+float bandOf(float x){ float b = x * uBands, i = floor(b), f = fract(b); return mix(hash(i) * 2.0 - 1.0, hash(i + 1.0) * 2.0 - 1.0, smoothstep(0.65, 1.0, f)); }
+float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); float a = hash(i.x + i.y * 57.0), b = hash(i.x + 1.0 + i.y * 57.0), c = hash(i.x + (i.y + 1.0) * 57.0), d = hash(i.x + 1.0 + (i.y + 1.0) * 57.0); return mix(mix(a, b, f.x), mix(c, d, f.x), f.y) * 2.0 - 1.0; }
 float box(vec2 p, vec2 b, float r){ vec2 q = abs(p) - b + r; return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r; }
 void main(){
   // the reveal: the rounded box grows up from the card's bottom edge
@@ -1036,18 +1325,31 @@ void main(){
   float pa = uSize.x / uSize.y, ia = uImg.x / uImg.y;
   vec2 s = pa > ia ? vec2(1.0, ia / pa) : vec2(pa / ia, 1.0);
   vec2 c = (vUv - 0.5) * s;
-  c /= 1.0 + 0.16 * (1.0 - uReveal) + 0.07 * uHover;          // settles from a slight zoom; hover zooms in slowly
+  float hz = uHover * (1.0 - uPair);                           // a card with a second picture drops the zoom, drift and lens
+  c /= 1.0 + 0.16 * (1.0 - uReveal) + 0.07 * hz;               // settles from a slight zoom; hover zooms in slowly
   c.y += 0.07 * (1.0 - uReveal) * s.y;                         // and rises a little as it settles
-  c -= uPar * s * 0.035 * uHover;                              // drifts with the pointer
+  c -= uPar * s * 0.035 * hz;                                  // drifts with the pointer
   vec2 dd = (vUv - uMouse) * vec2(pa, 1.0);
-  c -= (vUv - uMouse) * s * exp(-dot(dd, dd) * 5.0) * 0.055 * uHover;   // a soft lens toward the pointer
+  c -= (vUv - uMouse) * s * exp(-dot(dd, dd) * 5.0) * 0.055 * hz;   // a soft lens toward the pointer
   c.y *= 1.0 - min(abs(uVel) * 0.0014, 0.035);
-  vec3 col = mix(uBase, texture2D(uTex, c + 0.5).rgb, uLoad);
+  vec3 col = texture2D(uTex, c + 0.5).rgb;
+  if (uMix > 0.0) {
+    // bands start in order of distance from where the pointer came in; the spread is 30% of the progress
+    float bc = (floor(vUv.x * uBands) + 0.5) / uBands, far = max(uEnter, 1.0 - uEnter);
+    float pb = clamp((uMix - 0.3 * abs(bc - uEnter) / max(far, 0.001)) / 0.7, 0.0, 1.0); pb = pb * pb * (3.0 - 2.0 * pb);
+    float disp = mix(bandOf(vUv.x), noise(vUv * vec2(4.0, 6.0)), uCloud) * uAmp;
+    float ia2 = uImg2.x / uImg2.y; vec2 s2 = pa > ia2 ? vec2(1.0, ia2 / pa) : vec2(pa / ia2, 1.0);
+    vec2 c2 = (vUv - 0.5) * s2;
+    vec3 a1 = texture2D(uTex, c + 0.5 + vec2(0.0, disp * pb * s.y)).rgb;
+    vec3 a2 = texture2D(uTex2, c2 + 0.5 - vec2(0.0, disp * (1.0 - pb) * s2.y)).rgb;
+    col = mix(a1, a2, pb);
+  }
+  col = mix(uBase, col, uLoad);
   gl_FragColor = vec4(col * a, a);
 }`;
 
 async function initGL() {
-  if (RM.matches || !HOVER.matches || innerWidth <= 760 || !KP.lenis) return null;
+  if (RM.matches || !HOVER.matches || isPhone() || !KP.lenis) return null;
   let THREE;
   try { THREE = await import('three'); } catch (e) { console.warn('work-g: three did not load, plain images instead'); return null; }
   const canvas = el('canvas', 'wkg-gl'); canvas.setAttribute('aria-hidden', 'true');
@@ -1091,16 +1393,32 @@ async function initGL() {
     });
     return rec.texP;
   }
+  /* the second picture: fetched the first time the pointer meets the card (and its neighbours), at most 8 kept */
+  const held = [];
+  function tex2For(p, m) {
+    const path = HOVER_PAIRS[p.id]; if (!path || m.tex2P) return;
+    m.tex2P = new Promise((res) => {
+      const im = new Image(); im.decoding = 'async';
+      im.onload = () => (im.decode ? im.decode().catch(() => {}) : Promise.resolve()).then(() => {
+        const t = new THREE.Texture(im); t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; t.needsUpdate = true;
+        uploads.push(() => { renderer.initTexture(t); m.tex2 = t; m.u.uTex2.value = t; m.u.uImg2.value.set(im.naturalWidth, im.naturalHeight); held.push(m); res();
+          while (held.length > 8) { const o = held.find(x => x.mix === 0 && x.hov === 0); if (!o) break; held.splice(held.indexOf(o), 1); o.tex2.dispose(); o.tex2 = null; o.tex2P = null; o.u.uTex2.value = blank; } });
+      });
+      im.onerror = () => res();
+      im.src = big(path);
+    });
+  }
   const tio = new IntersectionObserver((es) => es.forEach(e => { if (!e.isIntersecting) return; const it = items.find(x => x.card === e.target); if (it) texFor(it.p, it.m); }), { rootMargin: '160% 0px' });
 
   function rec(p) {
     let m = meshes.get(p.id);
     if (m) return m;
     const u = { uTex: { value: blank }, uSize: { value: new THREE.Vector2(1, 1) }, uImg: { value: new THREE.Vector2(16, 10) }, uHover: { value: 0 }, uMouse: { value: new THREE.Vector2(.5, .5) },
-      uPar: { value: new THREE.Vector2(0, 0) }, uReveal: { value: 0 }, uLoad: { value: 0 }, uBase: { value: new THREE.Color(WING[p.wing].slot) }, uAlpha: { value: 1 }, uRad: { value: rad }, uVel: { value: 0 } };
+      uPar: { value: new THREE.Vector2(0, 0) }, uReveal: { value: 0 }, uLoad: { value: 0 }, uBase: { value: new THREE.Color(WING[p.wing].slot) }, uAlpha: { value: 1 }, uRad: { value: rad }, uVel: { value: 0 },
+      uTex2: { value: blank }, uImg2: { value: new THREE.Vector2(16, 10) }, uMix: { value: 0 }, uPair: { value: HOVER_PAIRS[p.id] ? 1 : 0 }, uEnter: { value: 0.5 }, uBands: { value: 24 }, uAmp: { value: 0.14 }, uCloud: { value: CLOUD } };
     const mat = new THREE.ShaderMaterial({ uniforms: u, vertexShader: VERT, fragmentShader: FRAG, transparent: true, premultipliedAlpha: true, depthTest: false, depthWrite: false });
     const mesh = new THREE.Mesh(geo, mat); mesh.frustumCulled = false; mesh.visible = false; scene.add(mesh);
-    m = { mesh, u, hov: 0, mu: 0.5, mv: 0.5, alpha: 1, alphaT: 1, alphaK: 0.2, st: { reveal: 0 }, texP: null };
+    m = { mesh, u, hov: 0, mu: 0.5, mv: 0.5, alpha: 1, alphaT: 1, alphaK: 0.2, st: { reveal: 0 }, texP: null, mix: 0, tex2: null, tex2P: null, used: 0 };
     meshes.set(p.id, m);
     return m;
   }
@@ -1155,6 +1473,10 @@ async function initGL() {
       const ht = i === over ? 1 : 0;
       const nh = damp(m.hov, ht, ht ? T.hoverIn : T.hoverOut, dt);
       m.hov = Math.abs(nh - ht) < 0.002 ? ht : nh; if (m.hov !== ht) moving = true;
+      const entered = ht && !m.was; m.was = !!ht;
+      if (entered) { m.u.uEnter.value = clamp((mx - r.x) / r.w, 0, 1); tex2For(it.p, m); if (items[i - 1]) tex2For(items[i - 1].p, items[i - 1].m); if (items[i + 1]) tex2For(items[i + 1].p, items[i + 1].m); }
+      // the dissolve runs only once the second picture is on the card: 0.18 s in, 0.12 s out (damped, reversible)
+      if (m.tex2 || m.mix) { const tm = ht && m.tex2 ? 1 : 0, nm = damp(m.mix, tm, tm ? 0.18 : 0.12, dt); m.mix = Math.abs(nm - tm) < 0.002 ? tm : nm; if (m.force != null) m.mix = m.force; else if (m.mix !== tm) moving = true; u.uMix.value = m.mix; u.uBands.value = clamp(Math.round(r.w / 28), 6, 24); }
       if (i === over) {
         const tu = clamp((mx - r.x) / r.w, 0, 1), tv = clamp(1 - (my - r.y) / r.h, 0, 1);
         const nu = damp(m.mu, tu, 0.12, dt), nv = damp(m.mv, tv, 0.12, dt);
@@ -1198,6 +1520,8 @@ async function initGL() {
       gsap.to(m.st, { reveal: 1, duration: dur, delay, ease: 'expo.out', onUpdate: () => { dirty = 1; } });
     },
     hover(id) { const m = meshes.get(id); return m ? m.hov : 0; },
+    hold(id, v) { const m = meshes.get(id); if (m) { m.force = v; dirty = 2; } },   // test hook: hold a dissolve at a given progress
+    mix(id) { const m = meshes.get(id); return m ? { mix: m.mix, ready: !!m.tex2 } : null; },
     alpha(id, a, k) { const m = meshes.get(id); if (!m) return; m.alphaT = a; m.alphaK = k || 0.0001; if (!k) m.alpha = a; dirty = 2; },
     others(id, a, k) { for (const [i, m] of meshes) if (i !== id) { m.alphaT = a; m.alphaK = k || 0.0001; if (!k) m.alpha = a; } dirty = 2; },
     fadeAll(d) { for (const m of meshes.values()) { m.alphaT = 0; m.alphaK = d / 3; } dirty = 2; },
@@ -1252,19 +1576,20 @@ function rise(node, text) {
 function heroOf(p) {
   const hero = el('section', 'wkg-pn wkg-hero');
   const hm = el('div', 'wkg-hm');
+  if (p._run && p._run.heroDeco) p._run.heroDeco(hm);
   if (isText(p)) {
     hero.classList.add('wkg-txt'); paint(hero, p);
     const tm = el('div', 'wkg-tm'); tm.append(el('span', '', clean(kindOf(p))));
     const bd = el('div');
     const lp = logoOf(p);
-    if (lp) { const lg = el('img', 'wkg-tlogo'); lg.alt = ''; lg.hidden = true; bd.appendChild(lg); lp.then(l => { if (l) { if (l.canvas.width / l.canvas.height > 1.6) lg.classList.add('wkg-tlw'); lg.src = l.url; lg.hidden = false; } }); }
+    if (lp) { const lg = el('img', 'wkg-tlogo'); lg.alt = ''; lg.hidden = true; bd.appendChild(lg); lp.then(l => { if (l) { if (l.canvas.width / l.canvas.height > 1.6) lg.classList.add('wkg-tlw'); lg.src = l.url; lg.alt = clean(p.name) + ' logo'; lg.hidden = false; } }); }
     const h1 = el('h1'); rise(h1, clean(p.name));
     const tg = el('div', 'wkg-tg'), q = el('p', 'wkg-tq'), f = keyFact(p);
     q.textContent = clean(p.one_line);
     tg.appendChild(q);
     if (f) { const x = el('div', 'wkg-tf'); x.append(el('b', '', clean(f.value)), el('small', '', clean(f.label))); tg.appendChild(x); }
     const go = launchEl(p); if (go) tg.firstChild.after(go);
-    bd.append(h1, tg); hero.append(tm, bd);
+    bd.append(h1, tg); hero.append(bd);   // no kind line over the title: no kickers
     hero._title = h1;
     return hero;
   }
@@ -1282,13 +1607,13 @@ function heroOf(p) {
     [left, { ...(heroV || { still: p.hero }), main: true }, right].forEach(v => {
       if (!v) return;
       const d = el('div'); if (v.main) d.classList.add('wkg-hp');
-      if (v.still || v.poster) { const im = el('img'); im.alt = ''; im.decoding = 'async'; im.src = big(v.still || v.poster); d.appendChild(im); }
+      if (v.still || v.poster) { const im = el('img'); im.alt = v.main ? altOf(p) : ''; im.decoding = 'async'; im.src = big(v.still || v.poster); d.appendChild(im); }
       if (v.video) { const vd = el('video'); vd.muted = true; vd.loop = true; vd.playsInline = true; vd.autoplay = false; vd.preload = 'auto'; vd.poster = big(v.poster); vd.src = src(v.video); vd.setAttribute('aria-hidden', 'true'); d.appendChild(vd); panes.push(v.video); }
       hm.appendChild(d);
     });
     hero._used = new Set([...panes, ...[left, right].filter(x => x && x.still).map(x => x.still)]);
   } else {
-    const lo = el('img'); lo.alt = ''; lo.decoding = 'async'; lo.src = big(p.hero); hmi.appendChild(lo); hm.appendChild(hmi);
+    const lo = el('img'); lo.alt = altOf(p); lo.decoding = 'async'; lo.src = big(p.hero); hmi.appendChild(lo); hm.appendChild(hmi);
     const hn = framed && noteFor(p, p.hero), hc = hn && parseFloat(hn.crop);
     if (hn && hn.focus) lo.style.objectPosition = hn.focus;
     if (hc > 0.3 && hc < 4) hm.style.setProperty('--ar', hc.toFixed(4));
@@ -1300,7 +1625,7 @@ function heroOf(p) {
     }, { once: true });
     const vids = videosOf(p);
     if (vids.length && !RM.matches) {
-      const vd = el('video'); vd.muted = true; vd.loop = true; vd.playsInline = true; vd.autoplay = false; vd.preload = 'auto'; vd.className = 'wkg-hi2'; vd.src = src(vids[0].video); vd.setAttribute('aria-hidden', 'true');
+      const vd = el('video'); vd.muted = true; vd.loop = true; vd.playsInline = true; vd.autoplay = false; vd.preload = p._run ? 'none' : 'auto'; vd.className = 'wkg-hi2'; vd.src = src(vids[0].video); vd.setAttribute('aria-hidden', 'true');
       vd.addEventListener('playing', () => vd.classList.add('wkg-ld'), { once: true }); hmi.appendChild(vd);
       hero._used = new Set([vids[0].video]);
     } else if (THUMBABLE.test(p.hero)) {
@@ -1315,7 +1640,7 @@ function heroOf(p) {
   const meta = el('span', '', clean(kindOf(p)));
   if (framed) {
     // Lusion's opener: the title and a short line on the left, the work framed on the right
-    cap.append(meta, h1);
+    cap.append(h1);   // no kind line over the title: no kickers
     const cols = el('div', 'wkg-hcols');
     if (p.one_line) cols.appendChild(el('p', 'wkg-hlede', clean(p.one_line)));
     const dl = infoEl(p); if (dl) cols.appendChild(dl);
@@ -1323,14 +1648,14 @@ function heroOf(p) {
     hero._cols = cols;
     const go = launchEl(p); if (go) cap.appendChild(go);
     hero.append(cap, hm);
-  } else { cap.append(h1, meta); const go = launchEl(p); if (go) { go.classList.add('wkg-gol'); cap.appendChild(go); } hero.append(hm, cap); }
-  hero._title = h1; hero._meta = meta;
+  } else { cap.append(h1); const go = launchEl(p); if (go) { go.classList.add('wkg-gol'); cap.appendChild(go); } hero.append(hm, cap); }
+  hero._title = h1; hero._meta = null;
   hero._t = hm; hero._s = hm.classList.contains('wkg-tri') ? hm : hmi;
   return hero;
 }
 const NUM_RE = /^(\d[\d,.]*\s?[KMB]?\+?|\d+\/\d+|\d+\s?(min|sec|hrs?|days?))$/i;
 /* website captures sit framed on the ground (no UI of theirs under our controls); photos and films stay full bleed */
-const isFramed = (p) => p.wing === 'software' && !isText(p);
+const isFramed = (p) => (p.wing === 'software' && !isText(p)) || !!p._run;
 /* a number with its unit kept on one line, the unit smaller */
 function numEl(v) {
   const b = el('b'), m = v.match(/^(.*?\d)(\s?)(min|sec|hrs?|days?)$/i);
@@ -1342,14 +1667,14 @@ const CREDIT_RE = /^(role|team|hands on|concepts|covered|in frame)$/i;
 const panel = (cls) => { const s = el('section', 'wkg-pn ' + cls); const i = el('div', 'wkg-pi'); s.appendChild(i); s._in = i; return s; };
 /* the live link as a real button (Lusion's "Launch project"): the dot grows into a fill that wipes the pill, a drawn
    arrow slides in, it leans toward the pointer and presses in */
-function launchEl(p) { const l = linksOf(p)[0]; return l ? liveBtn(l.url) : null; }
+function launchEl(p) { const l = linksOf(p)[0]; if (!l) return null; const a = liveBtn(l.url); a.setAttribute('aria-label', `${clean(p.name)}: ${a.getAttribute('aria-label')}`); return a; }   // the read-out names the project; the words on screen stay
 /* every external link is this button, never a raw address: "Live project" (or "Open on Instagram") with a small
    "Click to open" ("Tap to open" on touch) under it; new tab, noopener */
 function liveBtn(url, own) {
   const a = el('a', 'wkg-go'); a.href = url; a.target = '_blank'; a.rel = 'noopener';
   const label = own ? String(own).replace(/[<>&"]/g, '') : /instagram\.com/i.test(url) ? 'Open on Instagram' : 'Live project';
-  a.setAttribute('aria-label', `${label}: ${domain(url)}, opens in a new tab`);
-  a.innerHTML = `<span class="wkg-gm"><span class="wkg-gf"></span><i></i><span class="wkg-gt"><span>${label}</span><small>${HOVER.matches ? 'Click' : 'Tap'} to open</small></span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg></span>`;
+  a.setAttribute('aria-label', `${label}, ${HOVER.matches ? 'Click' : 'Tap'} to open: ${domain(url)}, opens in a new tab`);
+  a.innerHTML = `<span class="wkg-gm"><span class="wkg-gf"></span><i></i><span class="wkg-gt"><span>${label}</span></span><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9 3.5 13.5 8 9 12.5"/></svg></span>`;
   const gm = a.firstChild, qx = gsap.quickTo(gm, 'x', { duration: 0.5, ease: 'power3.out' }), qy = gsap.quickTo(gm, 'y', { duration: 0.5, ease: 'power3.out' });
   a.addEventListener('pointermove', (e) => { if (!HOVER.matches || RM.matches) return; const r = a.getBoundingClientRect(); qx((e.clientX - r.left - r.width / 2) * 0.18); qy((e.clientY - r.top - r.height / 2) * 0.3); });
   a.addEventListener('pointerleave', () => { qx(0); qy(0); });
@@ -1378,14 +1703,16 @@ function briefOf(p) {
 }
 function infoEl(p) {
   const dl = el('dl');
-  // the kind already sits over the title
-  for (const [re] of INFO.slice(1)) { const f = factOf(p, re); if (!f) continue; const d = el('div'); d.append(el('dt', '', clean(f.label)), el('dd', '', clean(f.value))); dl.appendChild(d); }
+  // the kind is a plain row now (no kicker over the title); "Status: Live" goes when the Live project button says it
+  const live = linksOf(p).length > 0;
+  for (const [re] of INFO) { const f = factOf(p, re); if (!f || (live && /^status$/i.test(f.label) && /^live$/i.test(String(f.value).trim()))) continue; const d = el('div'); d.append(el('dt', '', clean(f.label)), el('dd', '', clean(f.value))); dl.appendChild(d); }
   if (p.year && !factOf(p, /^year$/i)) { const d = el('div'); d.append(el('dt', '', 'Year'), el('dd', '', clean(p.year))); dl.appendChild(d); }
   return dl.children.length ? dl : null;
 }
 function introOf(p) {
   const s = panel('wkg-intro'), b = s._in;
-  if (!isText(p) && !isFramed(p)) b.appendChild(el('p', 'wkg-lede', clean(p.one_line)));   // text-only and framed heroes already set it
+  if (!isText(p) && !isFramed(p) && (p.one_line || !p._run)) b.appendChild(el('p', 'wkg-lede', clean(p.one_line)));   // text-only and framed heroes already set it
+  if (p._run && p.one_line) b.appendChild(el('p', 'wkg-lede mr-phl', clean(p.one_line)));   // phones: the film fills the opener, so its line comes here
   const dl = el('dl', 'wkg-info' + (isFramed(p) ? ' wkg-info-i' : ''));
   for (const [re] of INFO) { const f = factOf(p, re); if (!f) continue; const d = el('div'); d.append(el('dt', 'wkg-lab', clean(f.label)), el('dd', '', clean(f.value))); dl.appendChild(d); }
   if (p.year && !factOf(p, /^year$/i)) { const d = el('div'); d.append(el('dt', 'wkg-lab', 'Year'), el('dd', '', clean(p.year))); dl.appendChild(d); }
@@ -1408,7 +1735,7 @@ function channelsOf(p) {
     const l = el('div', 'wkg-chl');
     const gal = (Array.isArray(x.gallery) ? x.gallery : []).filter(Boolean);
     if (i === 0) l.appendChild(el('h2', 'wkg-h2', `${WORDS[parts.length] || parts.length} channel${parts.length === 1 ? '' : 's'}`));
-    l.append(el('span', 'wkg-chn', pad(i + 1)), el('h3', '', clean(x.name)));
+    l.append(el('h3', '', clean(x.name)));   // heading only, no 01/02
     if (gal.length && x.one_line) l.appendChild(el('p', '', clean(x.one_line)));
     if (typeof x.link === 'string' && /^https?:\/\//i.test(x.link)) {
       const w = linksEl([{ url: x.link }]); w.firstChild.setAttribute('aria-label', `${clean(x.name)}: ${domain(x.link)}, opens in a new tab`); l.appendChild(w);
@@ -1589,15 +1916,16 @@ function frameEl(it) {
     v.addEventListener('playing', () => v.classList.add('wkg-ld'), { once: true }); m.appendChild(v);
   } else { const im = el('img'); im.alt = ''; im.decoding = 'async'; im.loading = 'lazy'; setImg(im, it.still, '(max-width:760px) 92vw, 70vw'); m.appendChild(im); }
   if (it.focus) m.querySelectorAll('img,video').forEach(x => { x.style.objectPosition = it.focus; });
+  if (it.deco) it.deco(f);
   if (it.bts && (it.caption || it.date)) { const c = el('div', 'wkg-cap2'); if (it.date) c.appendChild(el('span', 'wkg-lab', clean(it.date))); if (it.caption) c.appendChild(el('span', '', clean(it.caption))); f._cap = c; f._capLen = (it.caption || '').length; }
   return f;
 }
 /* media panels: a landscape frame alone; portraits two or three together (one shoot at a time on vertical work) */
 function mediaPanels(p, items) {
-  const out = [], q = items.slice(), vert = isVert(p), phone = innerWidth <= 760;
+  const out = [], q = items.slice(), vert = isVert(p), phone = isPhone();
   const portrait = (x) => x.ar < 0.86;
   let shoot = null;
-  let side = 0;
+  let side = 0, pic = 0;
   while (q.length) {
     const a = q[0];
     if (a.caption) {
@@ -1610,7 +1938,7 @@ function mediaPanels(p, items) {
     const group = q.splice(0, n);
     const s = el('section', 'wkg-pn wkg-media');
     if (vert && a.shoot && a.shoot !== shoot) { shoot = a.shoot; s.appendChild(el('p', 'wkg-shoot', pretty(a.shoot))); }
-    group.forEach(x => s.appendChild(frameEl(x)));
+    group.forEach(x => { const fr = frameEl(x), im = fr.querySelector('img'); if (im) im.alt = `${altOf(p)}, picture ${++pic}`; s.appendChild(fr); });   // a captioned picture keeps alt="": its caption is beside it
     out.push(s);
   }
   return out;
@@ -1642,27 +1970,42 @@ function compareOf(p) {
   const b = BTS[p.id]; const cs = (b && Array.isArray(b.compare) ? b.compare : []).filter(c => c && c.v1 && c.final && c.v1.src && c.final.src);
   if (!cs.length) return null;
   const s = panel('wkg-cmp'), i = s._in;
-  const hd = el('div', 'wkg-cmph'); hd.append(el('h2', 'wkg-h2', 'v1 and final'), el('p', 'wkg-cmpq', HOVER.matches ? 'Move across a picture to compare' : 'Drag the handle to compare'));
+  const hd = el('div', 'wkg-cmph'); hd.append(el('h2', 'wkg-h2', 'Before and after'), el('p', 'wkg-cmpq', HOVER.matches ? 'Move across a picture to compare' : 'Drag the handle to compare'));
   i.appendChild(hd);
   const row = el('div', 'wkg-bas'); i.appendChild(row);
   s._ba = cs.map(c => {
+    const [la, lb] = Array.isArray(c.labels) && c.labels.length === 2 ? c.labels.map(clean) : ['v1', 'Final'];
     const fig = el('figure', 'wkg-ba'), fr = el('div', 'wkg-bav');
-    const a = el('img'), v = el('img'); a.alt = `${clean(c.screen || '')}, final`; v.alt = `${clean(c.screen || '')}, v1`;
+    const a = el('img'), v = el('img'); a.alt = `${clean(c.screen || '')}, ${lb.toLowerCase()}`; v.alt = `${clean(c.screen || '')}, ${la.toLowerCase()}`;
     a.decoding = v.decoding = 'async'; a.loading = v.loading = 'lazy'; a.draggable = v.draggable = false;
     a.src = src(c.final.src); v.src = src(c.v1.src);
     const top = el('div', 'wkg-bv1'); top.appendChild(v);
-    const h = el('div', 'wkg-bah'); h.setAttribute('role', 'slider'); h.tabIndex = 0; h.setAttribute('aria-label', `Compare v1 and final: ${clean(c.screen || '')}`); h.setAttribute('aria-valuemin', '0'); h.setAttribute('aria-valuemax', '100');
+    const h = el('div', 'wkg-bah'); h.setAttribute('role', 'slider'); h.tabIndex = 0; h.setAttribute('aria-label', `Compare ${la.toLowerCase()} and ${lb.toLowerCase()}: ${clean(c.screen || '')}`); h.setAttribute('aria-valuemin', '0'); h.setAttribute('aria-valuemax', '100');
     h.innerHTML = '<span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6 3 12l6 6M15 6l6 6-6 6"/></svg></span>';
-    fr.append(a, top, h, el('b', 'wkg-btag wkg-btl', 'v1'), el('b', 'wkg-btag wkg-btr', 'Final'));
-    const cap = el('figcaption'); cap.append(el('span', 'wkg-bs', clean(c.screen || '')), el('span', 'wkg-bd', `${clean(c.v1.date || 'v1')}  →  ${clean(c.final.date || 'final')}`));
+    fr.append(a, top, h, el('b', 'wkg-btag wkg-btl', la), el('b', 'wkg-btag wkg-btr', lb));
+    const cap = el('figcaption'); cap.append(el('span', 'wkg-bs', clean(c.screen || '')), el('span', 'wkg-bd', `${clean(c.v1.date || 'v1')} to ${clean(c.final.date || 'final')}`));
     fig.append(fr, cap); row.appendChild(fig);
     let pct = 50; const set = (x) => { pct = clamp(x, 0, 100); fr.style.setProperty('--p', pct + '%'); h.setAttribute('aria-valuenow', String(Math.round(pct))); };
     set(50);
     const at = (e) => { const r = fr.getBoundingClientRect(); set(((e.clientX - r.left) / r.width) * 100); };
-    let drag = false;
-    fr.addEventListener('pointerdown', (e) => { e.stopPropagation(); drag = true; fr.setPointerCapture(e.pointerId); at(e); fr.classList.add('wkg-bdr'); });
-    fr.addEventListener('pointermove', (e) => { if (drag || (HOVER.matches && e.pointerType === 'mouse')) at(e); });
-    const up = () => { drag = false; fr.classList.remove('wkg-bdr'); };
+    // a finger: an up-and-down drag is the page's scroll (it drives the run), so the split only follows once the drag is
+    // clearly sideways; a tap still moves it there (PHONE-AUDIT #11). A mouse grabs at once, as before
+    let drag = false, tdown = false, tch = false, sx = 0, sy = 0;
+    fr.addEventListener('pointerdown', (e) => {
+      e.stopPropagation(); tch = e.pointerType !== 'mouse'; sx = e.clientX; sy = e.clientY;
+      if (tch) { tdown = true; return; }
+      drag = true; fr.setPointerCapture(e.pointerId); at(e); fr.classList.add('wkg-bdr');
+    });
+    fr.addEventListener('pointermove', (e) => {
+      if (tch && tdown && !drag) {
+        const dx = Math.abs(e.clientX - sx), dy = Math.abs(e.clientY - sy);
+        if (dx > 8 && dx > dy) { drag = true; try { fr.setPointerCapture(e.pointerId); } catch (_) {} fr.classList.add('wkg-bdr'); }
+        else if (dy > 8) tdown = false;
+      }
+      if (drag || (HOVER.matches && e.pointerType === 'mouse')) at(e);
+    });
+    fr.addEventListener('pointerup', (e) => { if (tch && tdown && !drag) at(e); });
+    const up = () => { drag = false; tdown = false; fr.classList.remove('wkg-bdr'); };
     fr.addEventListener('pointerup', up); fr.addEventListener('pointercancel', up);
     h.addEventListener('keydown', (e) => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); e.stopPropagation(); set(pct + (e.key === 'ArrowLeft' ? -5 : 5)); } });
     fig._fr = fr; fig._set = set; fig._ar = 1.6; fig._src = c.final.src;
@@ -1676,15 +2019,20 @@ function compareOf(p) {
   return s;
 }
 function nextOf(p) {
-  const i = ALL.indexOf(p); const nx = ALL[(i + 1) % ALL.length];
-  const a = el('section', 'wkg-pn wkg-next'); a.setAttribute('role', 'link'); a.tabIndex = 0;
-  a.setAttribute('aria-label', `Next project: ${clean(nx.name)}`);
-  const t = el('div', 'wkg-nx'); t.append(el('span', 'wkg-nl', 'Next project'), el('span', 'wkg-nt', clean(nx.name)), el('span', 'wkg-nk', clean(cardKind(nx))));
+  // software runs through the software list only; after the last one, Next hands over to the Media tab
+  const SWL = DATA.software, si = p.wing === 'software' ? SWL.indexOf(p) : -1;
+  if (si === SWL.length - 1 && !p._run) return toMediaOf();
+  const i = ALL.indexOf(p); const nx = p._run ? p._run.next() : si >= 0 ? SWL[si + 1] : ALL[(i + 1) % ALL.length];
+  const nxWord = p._run ? p._run.nextWord : 'Next project';
+  const a = el('div', 'wkg-pn wkg-next'); a.setAttribute('role', 'link'); a.tabIndex = 0;   // a div: role=link is not allowed on a section
+  a.setAttribute('aria-label', `${nxWord}: ${clean(nx.name)}`);
+  const t = el('div', 'wkg-nx'); t.append(el('span', 'wkg-nl', nxWord), el('span', 'wkg-nt', clean(nx.name)), el('span', 'wkg-nk', clean(nx._run ? nx._run.line : cardKind(nx))));
   const cue = el('span', 'wkg-ncue'); cue.setAttribute('aria-hidden', 'true');
   cue.append(el('span', '', HOVER.matches ? 'Scroll to continue' : 'Swipe to continue'), el('i')); cue.lastChild.appendChild(el('b'));
   t.appendChild(cue);
   const m = el('div', 'wkg-nm');
-  if (isText(nx)) m.appendChild(plateEl(nx));
+  if (nx._run && nx._run.mark) m.appendChild(nx._run.mark());   // a Media client hands over with its mark, never a video still
+  else if (isText(nx)) m.appendChild(plateEl(nx));
   else { const im = el('img'); im.alt = ''; im.loading = 'lazy'; im.decoding = 'async'; setImg(im, nx.hero, '(max-width:760px) 92vw, 46vw'); m.appendChild(im); }
   a.append(t, m);
   const open = () => { if (PG.dragged) return; go(nx.id, m, true); };
@@ -1693,6 +2041,59 @@ function nextOf(p) {
   a.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
   a.addEventListener('pointerenter', () => prefetch(nx));
   return a;
+}
+/* the last software page: Next is the Media tab itself, set in type on the media ground */
+function toMediaOf() {
+  const a = el('div', 'wkg-pn wkg-next'); a.setAttribute('role', 'link'); a.tabIndex = 0;
+  a.setAttribute('aria-label', 'Next: Media');
+  const t = el('div', 'wkg-nx'); t.append(el('span', 'wkg-nl', 'Next'), el('span', 'wkg-nt', 'Media')); if (WING.media.sub) t.appendChild(el('span', 'wkg-nk', WING.media.sub));
+  const cue = el('span', 'wkg-ncue'); cue.setAttribute('aria-hidden', 'true');
+  cue.append(el('span', '', HOVER.matches ? 'Scroll to continue' : 'Swipe to continue'), el('i')); cue.lastChild.appendChild(el('b'));
+  t.appendChild(cue);
+  const m = el('div', 'wkg-nm'); m.style.background = WING.media.ground; m.style.display = 'grid'; m.style.placeItems = 'center';
+  const w = el('span', '', 'Media'); w.style.cssText = `font:500 clamp(64px,11vw,200px)/1 ${FF};letter-spacing:-.045em;color:${INK}`; m.appendChild(w);
+  a.append(t, m);
+  const open = () => {
+    if (PG.dragged) return;
+    close();
+    // once the page has gone, the listing switches to Media and the window comes to the top of the work
+    const after = () => { if (openId || busy) return requestAnimationFrame(after);
+      setTab('media'); const y = (document.getElementById('work')?.getBoundingClientRect().top || 0) + scrollY;
+      if (KP.lenis) KP.lenis.scrollTo(y, { immediate: true, force: true }); else scrollTo(0, y); };
+    requestAnimationFrame(after);
+  };
+  a._open = open; a._cue = cue;
+  a.addEventListener('click', open);
+  a.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  return a;
+}
+/* keyboard inside a page: a control that takes focus off screen is brought into view (the run moves by transform, so the
+   browser cannot do it), and the browser's own focus scroll of the clipped track is undone */
+function wirePage(page) {
+  page.addEventListener('focusin', (e) => {
+    const n = e.target, sc = page._sc, hx = page._hx;
+    if (!page._live || !page._track.contains(n)) return;
+    if (!hx.native) { if (sc.scrollLeft) sc.scrollLeft = 0; if (sc.scrollTop && !page._v) sc.scrollTop = 0; }
+    else if (hx.pin && sc.scrollLeft) sc.scrollLeft = 0;
+    // a column still waiting for its reveal is on screen but not yet drawn: bring it in, so the ring has something to sit on
+    if (n.matches(':focus-visible') && !page._v) { const col = n.closest('.mr-col'); revealIn(page, n, !!(col && page.classList.contains('wkg-fx') && !col.classList.contains('mr-rv'))); }
+  });
+}
+/* a closed page lets go of everything that could keep it (and its hundreds of listeners) alive */
+function dropPage(page) {
+  if (!page || page._dropped) return; page._dropped = true; page._live = false;
+  page._io && page._io.disconnect(); page._io = null;
+  page._ro && page._ro.disconnect(); page._ro = null;
+  page._back && page._back._off && page._back._off();
+  page.querySelectorAll('video').forEach(v => { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} });
+  // every tween on the page or inside it, paused ones too (a quickTo waits paused on the global timeline and held the whole page)
+  try { const inside = (x) => x && x.nodeType === 1 && (x === page || page.contains(x)); gsap.globalTimeline.getChildren(true, true, true).forEach(t => { if (t.targets && t.targets().some(inside)) t.kill(); }); } catch (e) {}
+  if (reels && reels.forget) reels.forget(page);
+  page.remove();
+}
+/* while a page is open, what is behind it cannot take focus or be read out; Contact stays, it sits above the page */
+function behind(on) {
+  for (const n of [document.getElementById('hero'), document.getElementById('numbers'), document.getElementById('signwall'), ui.w]) if (n) n.inert = on;
 }
 function buildPage(p) {
   const page = el('div', 'wkg-page');
@@ -1710,8 +2111,9 @@ function buildPage(p) {
   track.appendChild(hero);
   // the hero's line breaks follow its column: split again whenever the lede's width changes (fonts, the picture's ratio)
   const ld = hero.querySelector('.wkg-hlede');
-  if (ld && window.ResizeObserver) new ResizeObserver(([e]) => { const w = e.contentRect.width; if (w && ld._lines && Math.abs(w - (ld._sw || 0)) > 1) splitLines([ld], !ld._shown && page.classList.contains('wkg-fx')); }).observe(ld);
+  if (ld && window.ResizeObserver) { page._ro = new ResizeObserver(([e]) => { const w = e.contentRect.width; if (w && ld._lines && Math.abs(w - (ld._sw || 0)) > 1) splitLines([ld], !ld._shown && page.classList.contains('wkg-fx')); }); page._ro.observe(ld); }
   track.appendChild(introOf(p));
+  if (p._run) return finishRun(p, page, bg, sc, track, hero);
   const bf = briefOf(p); if (bf) track.appendChild(bf);
   const chs = channelsOf(p); chs.forEach(s => track.appendChild(s));
   const ab = aboutOf(p); if (ab) track.appendChild(ab);
@@ -1720,14 +2122,14 @@ function buildPage(p) {
   const cmp = compareOf(p); if (cmp) track.appendChild(cmp);
   const bts = btsOf(p); if (bts) { track.appendChild(bts); if (bts._rail) track.appendChild(bts._rail); }
   const cr = creditsOf(p);
-  const nx = nextOf(p);
+  const nx = null;   // no Next panel at the end of a run, on phones or desktop (Kirtan, 25 Nov; PHONE-AUDIT #6). nextOf() stays unused
   if (cr) track.appendChild(cr);
   { const end = cr || bts || fa || ab; const go = end && launchEl(p); if (go) end._in.appendChild(go); }
-  track.appendChild(nx);
   sc.appendChild(track);
   const back = backEl(p);
   const prog = el('div', 'wkg-prog'); prog.appendChild(el('i')); prog.setAttribute('aria-hidden', 'true');
-  page.append(bg, sc, back._wrap, prog);
+  page.append(bg, back._wrap, sc, prog);   // Back first: it is the first thing on the page, so it is the first Tab stop
+  wirePage(page);
   Object.assign(page, { _p: p, _hero: hero, _sc: sc, _track: track, _back: back, _bg: [...bg.children], _prog: prog.firstChild, _progW: prog,
     _hx: { t: 0, x: 0, max: 0, vel: 0, native: false, light: false, frames: [], rvq: [], stops: [], heroZ: 1 } });
   if (cmp) { const its = cmp._ba.map(f => ({ still: f._src })); ratios(its, false).then(() => { cmp._ba.forEach((f, n) => { f._ar = its[n].ar || 1.6; f._fr.style.aspectRatio = String(f._ar); }); if (page.isConnected) layoutPage(page); }); }
@@ -1738,9 +2140,51 @@ function buildPage(p) {
   page._media = ratios([...items, ...chItems], isVert(p)).then(() => {
     for (const s of chs) if (s._items) s._items.forEach(it => s.appendChild(frameEl(it)));
     const ps = mediaPanels(p, items);
+    unstack(track);   // the credits may sit inside a stacked pair by now; layoutPage pairs them again
     ps.forEach(s => track.insertBefore(s, bts || cr || nx));   // the work first, then behind the scenes
     if (page.isConnected) layoutPage(page);
   });
+  return page;
+}
+/* a Media client's run: the same panels in the same order as the old Zepto page (about, facts, the work, credits, next),
+   with the reels as the work, then the dated rail. The vox pops grid, where a client has one, is the last stop. */
+function finishRun(p, page, bg, sc, track, hero) {
+  const R = p._run;
+  page.classList.add('mr-run');
+  if (R.heroLab) hero.appendChild(R.heroLab());
+  // films first: the title, the sized grid, then the words. Junior Titans and the vox pops close the run
+  const intro = track.querySelector('.wkg-intro'); if (intro) intro.remove();
+  const mark = (n, b) => { if (b.ch) n.dataset.ch = b.ch; return n; };
+  const put = (b) => {
+    if (b.title) {
+      const s = el('section', 'wkg-pn wkg-ch mr-chd'), l = el('div', 'wkg-chl');
+      if (b.count) l.appendChild(el('span', 'wkg-chn', b.count));
+      l.appendChild(el('h3', '', clean(b.title)));
+      if (b.note) l.appendChild(el('p', '', clean(b.note)));
+      if (b.note && b.note.length > 60) s.classList.add('mr-long');
+      s.appendChild(l); track.appendChild(mark(s, b));
+    }
+    if (b.panel) track.appendChild(mark(b.panel(), b));
+  };
+  R.blocks.filter(b => !b.ch).forEach(put);
+  if (R.timeline) track.appendChild(R.timeline());
+  if (intro) track.appendChild(intro);
+  const ab = aboutOf(p); if (ab) track.appendChild(ab);
+  const fa = factsOf(p); if (fa) track.appendChild(fa);
+  const cr = creditsOf(p); if (cr) track.appendChild(cr);
+  R.blocks.filter(b => b.ch).forEach(put);
+  if (R.grid) track.appendChild(R.grid());
+  sc.appendChild(track);
+  const back = backEl(p);
+  const prog = el('div', 'wkg-prog'); prog.appendChild(el('i')); prog.setAttribute('aria-hidden', 'true');
+  page.append(bg, back._wrap, sc, prog);   // Back first: it is the first thing on the page, so it is the first Tab stop
+  wirePage(page);
+  Object.assign(page, { _p: p, _hero: hero, _sc: sc, _track: track, _back: back, _bg: [...bg.children], _prog: prog.firstChild, _progW: prog,
+    _hx: { t: 0, x: 0, max: 0, vel: 0, native: false, light: false, frames: [], rvq: [], stops: [], heroZ: 1 } });
+  page._media = Promise.resolve();
+  // the readout's count is kept (readout() writes it each frame) but nothing is pinned: the Next link at the bottom is gone (Kirtan, 25 Nov)
+  page._rd = el('span', 'mr-rdn');
+  if (R.crew) { const c = el('p', 'mr-crew', R.crew); page.appendChild(c); page._crew = c; page.classList.add('mr-crewp'); }
   return page;
 }
 /* the back control: a pill after Lusion's (arrow swap on hover) that also opens a sheet of every project. On a fine
@@ -1753,14 +2197,15 @@ function backEl(p) {
   back.innerHTML = `<span class="wkg-bm">${icon('wkg-bi1')}<span class="wkg-bt"><span>Back</span></span>${icon('wkg-bi2')}</span>`;
   back.addEventListener('click', () => { shut(true); close(); });
   wrap.appendChild(back);
+  const LIST = p._run ? p._run.sib : ALL, WORD = p._run ? 'folders' : 'projects';
   let allb = null;
   if (!HOVER.matches) {
-    allb = el('button', 'wkg-allb'); allb.type = 'button'; allb.setAttribute('aria-expanded', 'false'); allb.setAttribute('aria-label', 'All projects');
-    allb.innerHTML = '<span class="wkg-bm"><span class="wkg-bt"><span>Projects</span></span></span>';
+    allb = el('button', 'wkg-allb'); allb.type = 'button'; allb.setAttribute('aria-expanded', 'false'); allb.setAttribute('aria-label', p._run ? 'Categories' : 'All projects');
+    allb.innerHTML = `<span class="wkg-bm"><span class="wkg-bt"><span>${p._run ? 'Categories' : 'Projects'}</span></span></span>`;
     allb.addEventListener('click', () => (wrap.classList.contains('wkg-sho') ? shut(true) : openSheet()));
     wrap.appendChild(allb);
   }
-  const sh = el('nav', 'wkg-sh'); sh.setAttribute('aria-label', 'All projects');
+  const sh = el('nav', 'wkg-sh'); sh.setAttribute('aria-label', p._run ? 'All folders' : 'All projects');
   wrap.appendChild(sh);
   let built = false, tOpen = 0, tShut = 0, rd = null;
   const say = (text) => {
@@ -1770,10 +2215,12 @@ function backEl(p) {
   };
   function build() {
     if (built) return; built = true;
+    if (p._run && p._run.sheet) { sh.setAttribute('aria-label', 'Categories'); sh.appendChild(p._run.sheet(() => shut(true))); return; }
     const head = el('div', 'wkg-shn'), r = el('span', 'wkg-shr'); rd = el('span', '', clean(p.name)); r.appendChild(rd);
-    head.append(r, el('small', '', `${ALL.length} projects`));
-    const g = el('div', 'wkg-shg'); g.style.setProperty('--cols', Math.min(8, Math.ceil(ALL.length / 2)));
-    ALL.forEach((q, i) => {
+    head.append(r);   // no count here: it disagreed with the Software filter, and counts are gone from the site (PHONE-AUDIT #18)
+    void WORD;
+    const g = el('div', 'wkg-shg'); g.style.setProperty('--cols', Math.min(8, Math.ceil(LIST.length / 2)));
+    LIST.forEach((q, i) => {
       const b = el('button', 'wkg-th' + (q === p ? ' wkg-cur' : '')); b.type = 'button'; b.style.setProperty('--i', i);
       b.setAttribute('aria-label', clean(q.name) + (q === p ? ', you are here' : ''));
       if (q === p) b.setAttribute('aria-current', 'page');
@@ -1806,7 +2253,7 @@ function backEl(p) {
     wrap.addEventListener('pointerleave', () => { clearTimeout(tOpen); tShut = setTimeout(() => shut(true), 240); });
     wrap.addEventListener('focusin', (e) => { if (e.target !== back || back.matches(':focus-visible')) openSheet(); });
     wrap.addEventListener('focusout', (e) => { if (!wrap.contains(e.relatedTarget)) shut(true); });
-  } else addEventListener('pointerdown', (e) => { if (wrap.classList.contains('wkg-sho') && !wrap.contains(e.target)) shut(true); }, { passive: true });
+  } else { const away = (e) => { if (wrap.classList.contains('wkg-sho') && !wrap.contains(e.target)) shut(true); }; addEventListener('pointerdown', away, { passive: true }); back._off = () => removeEventListener('pointerdown', away); }
   wrap.addEventListener('keydown', (e) => { if (e.key === 'Escape' && wrap.classList.contains('wkg-sho')) { e.stopPropagation(); shut(true); back.focus(); } });
   const bm = back.firstChild;
   const qx = gsap.quickTo(bm, 'x', { duration: 0.6, ease: 'power3.out' }), qy = gsap.quickTo(bm, 'y', { duration: 0.6, ease: 'power3.out' });
@@ -1821,8 +2268,8 @@ function backEl(p) {
    flyer then uses, so the click costs no build, no layout and no decode */
 let pre = null;
 function prefetch(p) {
-  if (!p || openId === p.id || (pre && pre.p === p)) return;
-  if (pre && pre.page && pre.page !== curPage) pre.page.remove();
+  if (!p || !EXTRAS_OK || openId === p.id || (pre && pre.p === p)) return;
+  if (pre && pre.page && pre.page !== curPage) dropPage(pre.page);
   const page = buildPage(p);
   const it = pre = { p, page, img: null };
   if (!isText(p)) { const im = new Image(); im.decoding = 'async'; im.src = big(p.hero); (im.decode ? im.decode() : Promise.resolve()).then(() => { it.img = im; }, () => {}); }
@@ -1831,7 +2278,7 @@ function prefetch(p) {
 }
 function takePage(p) {
   if (pre && pre.p === p && pre.page) { const pg = pre.page; return pg; }
-  if (pre && pre.page && pre.page !== curPage) pre.page.remove();
+  if (pre && pre.page && pre.page !== curPage) dropPage(pre.page);
   pre = null;
   return buildPage(p);
 }
@@ -1852,17 +2299,26 @@ const FADE_SEL = '.wkg-cap2>span,.wkg-bf small,.wkg-bf h3,.wkg-bf li,.wkg-lab,.w
 const NUMS_SEL = '.wkg-stat b,.wkg-fact.wkg-num b';
 const CLIP0 = 'inset(100% 0% 0% 0% round 14px)', CLIP1 = 'inset(0% 0% 0% 0% round 14px)';
 function layoutPage(page) {
+  // a page laid out before the web fonts land measures the fallback font, so stacked panels can overflow once the real font arrives: lay it out again then
+  if (document.fonts && document.fonts.status !== 'loaded' && !page._fontWait) { page._fontWait = true; document.fonts.ready.then(() => { page._fontWait = false; if (page.isConnected) { layoutPage(page); page._dirty = true; } }); }
   const hx = page._hx, track = page._track, sc = page._sc, V = !!page._v;
-  const phone = innerWidth <= 760, fx = page.classList.contains('wkg-fx');
+  const phone = isPhone(), fx = page.classList.contains('wkg-fx');
+  unstack(track);
   hx.native = !HOVER.matches || phone;
+  hx.pin = phone && !V;                     // phones: vertical finger scroll drives the sideways run (see .wkg-pin)
+  sc.classList.toggle('wkg-pin', hx.pin);
+  if (!hx.pin && page._pinsp) { page._pinsp.remove(); page._pinsp = null; sc.scrollTop = 0; for (const n of track.querySelectorAll('.wkg-gt8')) n.classList.remove('wkg-gt8'); hx.gates = []; }
   hx.light = hx.native;                     // touch and phones: reveals yes, no heavy parallax, no skew
   sc.classList.toggle('wkg-native', hx.native);
   const media = track.querySelector('.wkg-media,.wkg-ch') || track.querySelector('.wkg-pn:not(.wkg-hero)');
   const first = track.querySelector('.wkg-pn:not(.wkg-hero)');
   const pcs = getComputedStyle(media || track.firstChild);
-  const top = parseFloat(pcs.paddingTop) || 100, bot = parseFloat(pcs.paddingBottom) || 90;
+  const nxp = track.querySelector('.wkg-next');   // phone scroll panels drop their bottom padding (their box ends above the line): the Next panel keeps it
+  const top = parseFloat(pcs.paddingTop) || 100, bot = parseFloat(getComputedStyle(nxp || media || track.firstChild).paddingBottom) || 90;
   const gap = parseFloat(pcs.columnGap) || 24, gut = parseFloat(pcs.paddingLeft) || 18;
-  const room = innerHeight - top - bot, maxW = innerWidth - 36;
+  // phones: a panel is 100vw - 36 with an 18px gap on its left, so a picture is 100vw - 54: it fits its panel, and two
+  // pictures in a row keep the gap between them instead of touching
+  const room = innerHeight - top - bot, maxW = innerWidth - 36 - (phone && !V ? 18 : 0);
   if (V) {
     const avail = innerWidth - 2 * gut, maxH = innerHeight * (phone ? 0.72 : 0.86);
     for (const s of track.querySelectorAll('.wkg-media,.wkg-ch')) { const fr = [...s.querySelectorAll(':scope>.wkg-fr')]; if (fr.length) sizeRow(fr, s.classList.contains('wkg-cp') && !phone ? avail * 0.6 : avail, s.classList.contains('wkg-cp') ? maxH * 0.8 : maxH, gap); }
@@ -1918,22 +2374,33 @@ function layoutPage(page) {
   for (const c of track.querySelectorAll('.wkg-cols')) {
     c.style.height = ''; c.style.width = '';
     if (phone || V) continue;
-    const h2 = c.previousElementSibling, h = room - (h2 ? h2.offsetHeight + 28 : 0);
+    // the room left is what sits under everything above the text in its panel (heading, and on client pages the stats too)
+    const box = c.closest('.wkg-pi') || c.parentElement, h = room - Math.max(0, c.getBoundingClientRect().top - box.getBoundingClientRect().top);
     const cw = parseFloat(getComputedStyle(c).columnWidth) || 380;
     c.style.width = cw + 'px'; c.style.height = Math.max(200, h) + 'px';
+    // more than one column: the height stays, or column-fill:auto pours every line back into the first column (under the line)
     if (c.scrollWidth > cw + 2) c.style.width = c.scrollWidth + 'px';
-    if (c.scrollHeight <= h) { c.style.height = ''; }
+    else if (c.scrollHeight <= h) { c.style.height = ''; }
   }
+  // facts grow sideways too: drop a row at a time until the grid fits under whatever sits above it
+  if (!phone && !V) for (const g of track.querySelectorAll('.wkg-facts')) {
+    if (g._fr == null) g._fr = parseInt(g.style.getPropertyValue('--fr')) || 2;
+    g.style.setProperty('--fr', g._fr);
+    const box = g.closest('.wkg-pi') || g.parentElement, avail = room - Math.max(0, g.getBoundingClientRect().top - box.getBoundingClientRect().top);
+    for (let fr = g._fr; fr > 1 && g.offsetHeight > avail; ) g.style.setProperty('--fr', --fr);
+  }
+  if (!phone && !V) stack(track, room);
+  if (page._p._run) sizeGrids(page, phone);
   prepText(page, fx);
   fitNums(track);
-  hx.max = hx.native ? Math.max(0, V ? sc.scrollHeight - sc.clientHeight : sc.scrollWidth - sc.clientWidth)
+  hx.max = hx.pin ? Math.max(0, track.scrollWidth - innerWidth) : hx.native ? Math.max(0, V ? sc.scrollHeight - sc.clientHeight : sc.scrollWidth - sc.clientWidth)
     : Math.max(0, V ? track.offsetHeight - innerHeight : track.scrollWidth - innerWidth);
   const hero = page._hero;
   hx.heroW = V ? hero.offsetHeight : hero.offsetWidth;
   hx.framed = hero.classList.contains('wkg-hfr');
   hx.sw = page.classList.contains('wkg-sw');
   hx.heroZ = RM.matches || hx.light || !hero._s || (hx.framed && hx.sw) ? 1 : 1.08;
-  hx.heroDark = !hx.framed && (!hero.classList.contains('wkg-txt') || isDark(schemeOf(page._p).pc));
+  hx.heroDark = (!hx.framed && (!hero.classList.contains('wkg-txt') || isDark(schemeOf(page._p).pc)));
   if (hx.framed) { const hm = hero._t; hx.hf = { x: hero.offsetLeft + hm.offsetLeft, y: hero.offsetTop + hm.offsetTop, w: hm.offsetWidth, h: hm.offsetHeight }; }
   hx.heroEnd = false;
   // frames: centre on the run, place in their row (for depth), settle scale
@@ -1954,8 +2421,9 @@ function layoutPage(page) {
     pn.querySelectorAll(WORDS_SEL).forEach(n => add(n, 'words'));
     pn.querySelectorAll(FADE_SEL).forEach(n => add(n, 'fade'));
     pn.querySelectorAll(NUMS_SEL).forEach(n => add(n, 'num'));
-    const r = pn.querySelector('.wkg-info,.wkg-facts,.wkg-credits dl,.wkg-doc,.wkg-stops'); if (r && !pn._ruled) add(r, 'rule', { pn });
+    const r = pn.querySelector('.wkg-info,.wkg-facts,.wkg-credits dl,.wkg-doc,.wkg-stops,.mr-bars'); if (r && !pn._ruled) add(r, 'rule', { pn });
     pn.querySelectorAll('.wkg-fr').forEach(n => add(n, 'frame'));
+    pn.querySelectorAll('.mr-col').forEach(n => add(n, 'col'));
   }
   items.sort((a, b) => a.pos - b.pos);
   hx.rvq = items;
@@ -1964,18 +2432,70 @@ function layoutPage(page) {
   const stops = [];
   for (const pn of track.children) {
     if (pn.classList.contains('wkg-next')) break;
-    const col = pn.classList.contains('wkg-media') && !page.classList.contains('wkg-tx') ? PAPER : G;
+    const col = (pn.classList.contains('wkg-media') || pn.classList.contains('mr-gp')) && !page.classList.contains('wkg-tx') ? PAPER : G;
     if (!stops.length || stops[stops.length - 1].col !== col) stops.push({ pos: posIn(pn, track, V), col });
   }
   hx.stops = stops; hx.gj = -1;
-  hx.tp = V ? [] : [...track.children].filter(pn => !pn.matches('.wkg-hero,.wkg-media,.wkg-next,.wkg-ch') && !pn.querySelector('.wkg-fr,img')).map(pn => ({ el: pn, pos: posIn(pn, track, false), w: pn.offsetWidth, o: -1 }));
+  hx.tp = V ? [] : [...track.children].filter(pn => !pn.matches('.wkg-hero,.wkg-media,.wkg-next,.wkg-ch:not(.mr-chd)') && !pn.querySelector('.wkg-fr,img')).map(pn => ({ el: pn, pos: posIn(pn, track, false), w: pn.offsetWidth, hw: textW(pn.querySelector('h2,h3,.mr-vxh')), pl: parseFloat(getComputedStyle(pn).paddingLeft) || 0, o: -1 }));
   hx.pgap = parseFloat(getComputedStyle(first || track.firstChild).paddingLeft) || 48;
   const nx = track.querySelector('.wkg-next');
   hx.nx = nx ? { pos: posIn(nx, track, V), m: nx.querySelector('.wkg-nm'), q: -1 } : null;
   hx.t = Math.min(hx.t, hx.max); hx.x = Math.min(hx.x, hx.max);
+  // the one vertical stop on a run: sideways travel pauses here while the grid scrolls down, then carries on
+  const vx = track.querySelector('.mr-vox');
+  if (vx) {
+    const box = vx.querySelector('.mr-vsc'), was = hx.gate, gm = Math.max(0, box.scrollHeight - box.clientHeight);
+    hx.gate = hx.native ? null : { pos: Math.min(posIn(vx, track, false), hx.max), el: box, max: gm, t: was ? Math.min(was.t, gm) : 0, x: was ? Math.min(was.x, gm) : 0 };
+    if (hx.gate && !box._gs) { box._gs = true; box.addEventListener('scroll', () => { const g = page._hx.gate; if (g && Math.abs(box.scrollTop - g.x) > 2) g.t = g.x = box.scrollTop; }, { passive: true }); }
+  } else hx.gate = null;
+  if (page._p._run) measureGrids(page);
+  // a chapter's strip (Junior Titans crew) shows while the run is inside that chapter
+  const chp = page._crew ? [...track.querySelectorAll('[data-ch]')] : [];
+  if (chp.length) { const l = chp[chp.length - 1]; hx.band = { a: posIn(chp[0], track, false) - innerWidth * 0.5, b: posIn(l, track, false) + l.offsetWidth - innerWidth * 0.5, on: null }; } else hx.band = null;
+  // a panel that scrolls on its own (phones) can be reached and scrolled from the keyboard
+  for (const n of track.querySelectorAll(':scope>.wkg-pn')) {
+    const ov = phone && !V && (n.classList.contains('wkg-gt8') || /auto|scroll/.test(getComputedStyle(n).overflowY)) && n.scrollHeight > n.clientHeight + 2;
+    n.classList.toggle('wkg-ovf', ov);
+    if (ov && !n._ovs) { n._ovs = () => n.classList.toggle('wkg-end', n.scrollTop >= n.scrollHeight - n.clientHeight - 2); n.addEventListener('scroll', n._ovs, { passive: true }); }
+    if (n._ovs) n._ovs();
+  }
+  for (const n of track.querySelectorAll('.wkg-bts,.wkg-railp,.mr-route>.wkg-pi,.mr-vsc')) { const sc2 = n.scrollHeight > n.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(n).overflowY); if (sc2) { n.tabIndex = 0; n.setAttribute('role', 'group'); if (!n.hasAttribute('aria-label')) n.setAttribute('aria-label', 'Scrollable panel'); } else if (n.getAttribute('role') === 'group') { n.removeAttribute('tabindex'); n.removeAttribute('role'); } }
+  if (hx.pin) pinLayout(page);
   page._dirty = true;
   watchMedia(page);
 }
+/* option A: short text panels share a column. After layout, two neighbouring text panels (or two columns inside the
+   behind-the-scenes panel) go one above the other when both fit the screen's height, so the bottom half is used and
+   the run gets shorter. Undone and redone on every layout, so a resize re-packs from scratch. */
+const STACK_PN = '.wkg-about,.wkg-factp,.wkg-credits,.wkg-brief,.wkg-intro:not(.wkg-ionly)';
+function unstack(track) {
+  for (const w of [...track.querySelectorAll('.wkg-stk,.wkg-bstk')]) { while (w.firstChild) w.parentNode.insertBefore(w.firstChild, w); w.remove(); }
+}
+function stack(track, room) {
+  const GAP = 64, hOf = (n) => (n.querySelector(':scope>.wkg-pi') || n).offsetHeight;
+  const pair = (a, b, cls) => { const w = el('div', cls); a.parentNode.insertBefore(w, a); w.append(a, b); };
+  // panels: walk the run, skipping empty ones, pairing neighbours that fit
+  const kids = [...track.children].filter(n => n.offsetWidth > 0);
+  for (let i = 0; i + 1 < kids.length; i++) {
+    const a = kids[i], b = kids[i + 1];
+    if (!a.matches(STACK_PN) || !b.matches(STACK_PN)) continue;
+    if (hOf(a) + hOf(b) + GAP > room - 24) continue;   // 24: the line masks (.22em under each line) are added after this
+    pair(a, b, 'wkg-stk'); i++;
+  }
+  // a pair whose content still spills past the room (text wrapped longer than measured) goes back to two panels
+  for (const w of [...track.querySelectorAll(':scope>.wkg-stk')]) if (w.scrollHeight > w.clientHeight + 1) { while (w.firstChild) w.parentNode.insertBefore(w.firstChild, w); w.remove(); }
+  // behind the scenes: its columns pair the same way, with a tighter gap
+  for (const pi of track.querySelectorAll('.wkg-bts>.wkg-pi')) {
+    const cols = [...pi.children].filter(n => n.classList.contains('wkg-bcol') && n.offsetWidth > 0);
+    for (let i = 0; i + 1 < cols.length; i++) {
+      const a = cols[i], b = cols[i + 1];
+      if (a.offsetHeight + b.offsetHeight + 44 > room) continue;
+      pair(a, b, 'wkg-bstk'); i++;
+    }
+  }
+}
+/* a heading's inked width (its box can span the whole panel) */
+function textW(h) { if (!h) return 0; const r = document.createRange(); r.selectNodeContents(h); return r.getBoundingClientRect().width; }
 const isDark = (c) => c === NAVY || c === INK || c === COBALT;
 /* text into line masks: words in (one write), their lines read (one read), lines out (one write) */
 function splitLines(nodes, fx) {
@@ -2029,6 +2549,7 @@ function fire(page, it, delay) {
   // so a line is never cut at the mask's edge
   if (it.type === 'lines' && n._lines && n._lines.some(l => l.scrollWidth > n.clientWidth + 1)) splitLines([n], page.classList.contains('wkg-fx'));
   n._shown = true;
+  if (it.type === 'col') { n.classList.add('mr-rv'); return; }
   if (!page.classList.contains('wkg-fx')) { if (it.type === 'rule') it.pn.classList.add('wkg-in'); return; }
   const E = 'expo.out';
   if (it.type === 'lines') gsap.to(n._lines, { yPercent: 0, duration: 1.1, ease: E, stagger: 0.08, delay });
@@ -2037,37 +2558,69 @@ function fire(page, it, delay) {
   else if (it.type === 'num') { gsap.to(n, { autoAlpha: 1, y: 0, duration: 0.9, ease: E, delay, clearProps: 'transform' }); countUp(n, delay); }
   else if (it.type === 'rule') { it.pn._ruled = true; it.pn.classList.add('wkg-in'); }
   else if (it.type === 'frame') {
-    gsap.fromTo(n, { clipPath: CLIP0 }, { clipPath: CLIP1, duration: 1.2, ease: E, delay, onComplete: () => { n.style.clipPath = ''; frameFluid(page, n); } });
+    gsap.fromTo(n, { clipPath: CLIP0 }, { clipPath: CLIP1, duration: 1.2, ease: E, delay, onComplete: () => { n.style.clipPath = ''; } });
     if (n._fr) gsap.to(n._fr, { s: 1, duration: 1.7, ease: E, delay });
     page._fxUntil = Math.max(page._fxUntil || 0, performance.now() + (delay + 1.8) * 1000);
   }
 }
-/* a frame goes to the fluid once it is fully shown (its GL copy ignores DOM opacity and clip tweens) */
-function frameFluid(page, f) {
-  if (!FLUID || page !== curPage || f._fl) return; f._fl = true;
-  const m = f.querySelector('.wkg-fm>img') || f.querySelector('.wkg-fm>video');
-  if (m) fluidAttach(m, f);
-}
-function heroFluid(page) {
-  if (!FLUID || page !== curPage || page._hero._fl) return;
-  const h = page._hero, box = h._t; if (!box || h.classList.contains('wkg-txt')) return;
-  if (box.classList.contains('wkg-tri')) { box.querySelectorAll(':scope>div').forEach(d => { const m = d.querySelector('video') || d.querySelector('img'); if (m) fluidAttach(m, d); }); }
-  else { const pick = box.querySelector('video.wkg-ld') || box.querySelector('.wkg-hmi>img:not(.wkg-hi2)'); /* the 1280 copy: a full size original is a long texture upload */ if (pick) fluidAttach(pick, box); }
-  h._fl = true;
-}
 function watchMedia(page) {
   if (page._io) page._io.disconnect();
   const io = new IntersectionObserver((es) => es.forEach(e => {
-    const v = e.target.querySelector('video'); if (!v) return;
-    if (e.isIntersecting) { const go = () => { if (!v.src && v.dataset.src) { v.src = v.dataset.src; v.preload = 'auto'; } if (!RM.matches && page === curPage && v.isConnected) v.play().catch(() => {}); }; if (!v.src && window.requestIdleCallback) requestIdleCallback(go, { timeout: 400 }); else go(); }
+    (page._p._run ? [...e.target.querySelectorAll('video')] : [e.target.querySelector('video')]).forEach(v => { if (!v) return;
+    if (e.isIntersecting) { const go = () => { if (!v.src && v.dataset.src) { v.src = v.dataset.src; v.preload = 'auto'; } if (!RM.matches && page === curPage && v.isConnected && !document.documentElement.classList.contains('mr-lock')) v.play().catch(() => {}); }; if (!v.src && window.requestIdleCallback) requestIdleCallback(go, { timeout: 400 }); else go(); }
     else v.pause();
-  }), { rootMargin: '25% 25% 25% 25%' });
+    });
+  }), { rootMargin: page._p._run ? '0px' : '25% 25% 25% 25%' });   // client runs hold 20+ reels: only what is on screen plays
   page._track.querySelectorAll('.wkg-fr, .wkg-hm').forEach(f => io.observe(f));
   page._io = io;
 }
 
 /* the run's engine, on the one GSAP ticker Lenis also runs on: a smoothed follow on the wheel (the Lusion constant),
    native on touch. Per frame it only writes transforms and opacities from numbers measured at layout. */
+/* phones: the stops of the vertical scroll. Every panel (or box inside one) that is taller than its room becomes a stop at
+   the run position where its panel sits in view: the run holds there while the scroll carries its own content up. */
+function pinLayout(page) {
+  const hx = page._hx, track = page._track, sc = page._sc;
+  const cand = new Set([...track.querySelectorAll(':scope>.wkg-pn:not(.wkg-media):not(.wkg-hero):not(.wkg-next),.wkg-bts,.wkg-railp,.mr-route>.wkg-pi,.mr-vsc')]);
+  const gates = [];
+  for (const n of cand) {
+    if (!n.classList.contains('wkg-gt8') && !/auto|scroll/.test(getComputedStyle(n).overflowY)) continue;
+    n.classList.add('wkg-gt8');
+    const len = Math.max(0, n.scrollHeight - n.clientHeight);
+    if (len < 3) { n.scrollTop = 0; continue; }
+    let pn = n; while (pn.parentNode !== track) pn = pn.parentNode;
+    gates.push({ el: n, pn, pos: clamp(posIn(pn, track, false), 0, hx.max), len, y: -1, d: n === pn ? 0 : 1 });
+  }
+  gates.sort((a, b) => a.pos - b.pos || a.d - b.d);
+  hx.gates = gates;
+  hx.total = hx.max + gates.reduce((a, g) => a + g.len, 0);
+  if (!page._pinsp) { page._pinsp = el('div', 'wkg-pinsp'); page._pinsp.setAttribute('aria-hidden', 'true'); }
+  if (page._pinsp.parentNode !== sc) sc.appendChild(page._pinsp);
+  page._pinsp.style.height = hx.total + 'px';
+  hx.s = -1;   // the next frame maps the scroll again
+}
+/* scroll position to run position, scrolling each stop's own content on the way */
+function pinX(hx, s) {
+  let acc = 0, x = null, nx = null;
+  for (const g of hx.gates || []) {
+    const a = g.pos + acc; let y;
+    if (x !== null || s < a) y = 0;
+    else if (s <= a + g.len) { y = s - a; x = g.pos; if (y > 2 && y < g.len - 2) nx = g.pn.nextElementSibling; }
+    else { y = g.len; acc += g.len; }
+    y = Math.round(y);
+    if (y !== g.y) { g.y = y; g.el.scrollTop = y; }
+  }
+  // while a long stop is being read, the sliver of the next panel at the right edge steps out (PHONE-AUDIT #19); it is
+  // back as soon as the run moves on, as the hint of what comes next
+  if (nx !== hx.snx) { if (hx.snx) hx.snx.classList.remove('wkg-hid'); if (nx) nx.classList.add('wkg-hid'); hx.snx = nx; }
+  return clamp(x !== null ? x : s - acc, 0, hx.max);
+}
+/* run position (and, at a stop, how far into its content) to scroll position */
+function pinS(hx, x, el, y) {
+  let s = x;
+  for (const g of hx.gates || []) { if (g.pos < x - 0.5) s += g.len; else if (el && g.el === el && Math.abs(g.pos - x) < 1) s += clamp(y || 0, 0, g.len); }
+  return s;
+}
 const PG = { dragged: false };
 const ease3 = (q) => 1 - Math.pow(1 - q, 3);
 function ground(page, x, VIEW) {
@@ -2085,26 +2638,49 @@ function pageTick(time, dtMs) {
   const page = curPage; if (!page || !page._live) return;
   const hx = page._hx, V = !!page._v, dt = Math.min(0.05, (dtMs || 16.7) / 1000), VIEW = V ? innerHeight : innerWidth;
   const prevX = hx.x;
-  if (hx.native) hx.x = V ? page._sc.scrollTop : page._sc.scrollLeft;
+  if (hx.pin) {
+    const s = page._sc.scrollTop;
+    if (s !== hx.s || page._dirty) {
+      hx.s = s; hx.x = pinX(hx, s); hx.lastIn = performance.now();
+      page._prog.style.transform = `scaleX(${hx.total ? clamp(s / hx.total, 0, 1).toFixed(4) : 0})`;
+    }
+    if (hx.x !== prevX || page._dirty) page._track.style.transform = `translate3d(${(-hx.x).toFixed(2)}px,0,0)`;
+  } else if (hx.native) hx.x = V ? page._sc.scrollTop : page._sc.scrollLeft;
   else {
     // Lusion's follow, measured: 0.18 of the gap per 60 Hz frame (19% at one frame, 70% at 100 ms, 99% at 400 ms)
     hx.x = RM.matches ? hx.t : hx.t + (hx.x - hx.t) * Math.pow(1 - FOLLOW, dt * 60);
     if (Math.abs(hx.t - hx.x) < 0.1) hx.x = hx.t;
     if (hx.x !== prevX || page._dirty) page._track.style.transform = V ? `translate3d(0,${(-hx.x).toFixed(2)}px,0)` : `translate3d(${(-hx.x).toFixed(2)}px,0,0)`;
   }
+  if (hx.gate && hx.gate.x !== hx.gate.t) {
+    const g = hx.gate; g.x = RM.matches ? g.t : g.t + (g.x - g.t) * Math.pow(1 - FOLLOW, dt * 60);
+    if (Math.abs(g.t - g.x) < 0.5) g.x = g.t;
+    g.el.scrollTop = g.x;
+  }
   hx.vel += ((hx.x - prevX) / dt - hx.vel) * (1 - Math.exp(-dt * 10));
   if (Math.abs(hx.vel) < 4 && hx.x === prevX) hx.vel = 0;
+  if (page._p._run && page._p._run.onTick && hx.vel) page._p._run.onTick(page, hx.vel, dt);
   const now = performance.now();
   if (hx.native && hx.x !== prevX) hx.lastIn = now;
   endHold(page, hx, now, dt);
-  if (hx.x === prevX && !page._dirty && hx.vel === 0 && !hx.skOn && now > (page._fxUntil || 0)) return;
+  if (hx.x === prevX && !page._dirty && hx.vel === 0 && !hx.skOn && now > (page._fxUntil || 0) && (hx.settled || hx.native || V)) return;   // keep ticking until the rest-settle has had its say
   page._dirty = false;
   const x = hx.x;
-  page._prog.style.transform = `scaleX(${hx.max ? (x / hx.max).toFixed(4) : 0})`;
+  if (hx.rd) readout(page, hx, x, VIEW);
+  if (hx.scr && !RM.matches) scrubGrids(hx, x, VIEW);
+  if (hx.band) { const on = x >= hx.band.a && x <= hx.band.b; if (on !== hx.band.on) { hx.band.on = on; page._crew.classList.toggle('mr-on', on); } }
+  if (!hx.pin) page._prog.style.transform = `scaleX(${hx.max ? (x / hx.max).toFixed(4) : 0})`;
   const col = ground(page, x, VIEW);
   const onHero = x < hx.heroW * 0.55;
+  if (hx.pin) {   // the phone scrim under Back and Contact takes the ground the run is on, and shows once past the hero
+    const gn = col || (page.classList.contains('wkg-tx') ? schemeOf(page._p).pc : WING[page._p.wing].ground);
+    if (gn !== page._gn) { page._gn = gn; page.style.setProperty('--wkg-gnow', gn); }
+    if (!onHero !== page._scr) { page._scr = !onHero; page.classList.toggle('wkg-scr', !onHero); }
+  } else if (page._scr) { page._scr = false; page.classList.remove('wkg-scr'); }
   const dark = onHero ? hx.heroDark : isDark(col || (page.classList.contains('wkg-tx') ? schemeOf(page._p).pc : WING[page._p.wing].ground));
   if (dark !== page._dark) { page._dark = dark; page.classList.toggle('wkg-dark', dark); document.documentElement.dataset.ground = dark ? 'dark' : 'light'; }
+  { const gc = onHero && !hx.framed ? (dark ? INK : PAPER) : (col || (page.classList.contains('wkg-tx') ? schemeOf(page._p).pc : WING[page._p.wing].ground));   // the colour under Contact, for its plate
+    if (gc !== page._gc) { page._gc = gc; document.documentElement.style.setProperty('--kp-ground', gc); } }
   // the reveals: everything that has come within 88% of the view, in run order, slightly staggered
   if (hx.rvq.length) {
     const edge = x >= hx.max - 1 ? Infinity : x + VIEW * 0.88; let k = 0;   // at the end everything left comes in
@@ -2113,7 +2689,18 @@ function pageTick(time, dtMs) {
   // settle: after the wheel stops, a text panel cut by the left edge slides fully in (or fully out, if mostly gone)
   if (!hx.native && !V && hx.tp.length && now - (hx.lastIn || 0) > 260 && !hx.settled && Math.abs(hx.t - hx.x) < 1.5 && hx.t < hx.max - 1) {   // never off the end: the end holds
     hx.settled = true;
-    for (const t of hx.tp) { const l = t.pos + hx.pgap - x; if (l < -2 && l > -(t.w - hx.pgap) * 0.35) { hx.t = clamp(t.pos, 0, hx.max); break; } }
+    if (!page._p._run) { for (const t of hx.tp) { const l = t.pos + hx.pgap - x; if (l < -2 && l > -(t.w - hx.pgap) * 0.35) { hx.t = clamp(t.pos, 0, hx.max); break; } } }
+    else {
+      // a Media run never rests on a half-cut heading: of the nearby positions that leave every heading fully in or fully
+      // out, it takes the closest
+      const hs = hx.tp.filter(t => t.hw).map(t => [t.pos + t.pl, t.pos + t.pl + t.hw]);
+      const ok = (p) => hs.every(([a, b]) => b <= p + 1 || a >= p + VIEW - 1 || (a >= p - 1 && b <= p + VIEW + 1));
+      if (!ok(x)) {
+        const c = []; hs.forEach(([a, b]) => c.push(a - 24, b + 8, a - VIEW, b - VIEW + 24));
+        let best = null; for (const p0 of c) { const p = clamp(p0, 0, hx.max); if (ok(p) && (best == null || Math.abs(p - x) < Math.abs(best - x))) best = p; }
+        if (best != null && Math.abs(best - x) < VIEW * 0.6) hx.t = best;
+      }
+    }
   }
   if (RM.matches) return;
   const light = hx.light, h = page._hero;
@@ -2211,15 +2798,97 @@ function pushOn(page, d) {
   if (pr.acc >= NEXT_PUSH) { pr.on = false; const nx = page._track.querySelector('.wkg-next'); if (nx && nx._open) nx._open(); }
   return true;
 }
+/* wheel or key travel through the vertical stop. True when the stop took it */
+function gateMove(hx, d) {
+  const g = hx.gate; if (!g || !g.max || !d) return false;
+  if (d > 0) {
+    if (hx.t < g.pos) { if (hx.t + d < g.pos) return false; hx.t = g.pos; return true; }
+    if (hx.t === g.pos && g.t < g.max) { g.t = Math.min(g.max, g.t + d); return true; }
+    return false;
+  }
+  if (hx.t > g.pos) { if (hx.t + d > g.pos) return false; hx.t = g.pos; return true; }
+  if (hx.t === g.pos && g.t > 0) { g.t = Math.max(0, g.t + d); return true; }
+  return false;
+}
+/* back from the player: the reel that was playing is brought into view */
+function revealIn(page, n, force) {
+  const hx = page._hx, track = page._track, box = n.closest('.mr-vsc'), at = box ? box.closest('.mr-vox') : (n.closest('.mr-col') || n);
+  const pos = clamp(posIn(at, track, false) - (box ? 0 : (innerWidth - at.offsetWidth) / 2), 0, hx.max);
+  if (box) { const y = clamp(n.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 24, 0, Math.max(0, box.scrollHeight - box.clientHeight)); box.scrollTop = y; if (hx.gate) hx.gate.t = hx.gate.x = y; }
+  const r = n.getBoundingClientRect();
+  if (!force && !box && r.left >= 0 && r.right <= innerWidth) return;
+  hx.lastIn = performance.now(); hx.settled = true;
+  if (hx.pin) page._sc.scrollTop = pinS(hx, pos, box, box ? box.scrollTop : 0); else if (hx.native) page._sc.scrollLeft = pos; else { hx.t = pos; hx.x = pos; }
+  page._dirty = true;
+}
+/* ---------- the sized grid of a client's run ----------
+   Columns only, so there are no holes. One cell is a 9:16 film plus its reserved label; rows are 3 on a desktop, 2 on a
+   phone. Layout is measured here once; the frame loop only writes the short scrub at the start of each grid. */
+function sizeGrids(page, phone) {
+  const cs = getComputedStyle(page), probe = page._hero, top = parseFloat(getComputedStyle(page._track.querySelector('.mr-gp') || probe).paddingTop) || 72, bot = parseFloat(getComputedStyle(page._track.querySelector('.mr-gp') || probe).paddingBottom) || 78;
+  const rows = phone ? 2 : 3, G = 8, LS = 30, H = innerHeight - top - bot;   // LS: the one label line and its gap
+  let c = (H - G * (rows - 1)) / rows, w = (c - LS) * 9 / 16;
+  if (phone) { const cap = (innerWidth - 36 - G) / 2; if (w > cap) { w = cap; c = w * 16 / 9 + LS; } }
+  const gh = c * rows + G * (rows - 1);
+  for (const g of page._track.querySelectorAll('.mr-g')) {
+    if (g._ph !== phone) { g._ph = phone; g._fill(phone); }
+    g.style.setProperty('--w', Math.floor(w) + 'px'); g.style.setProperty('--gh', Math.floor(gh) + 'px');
+  }
+  void cs;
+}
+function measureGrids(page) {
+  const hx = page._hx, track = page._track, phone = isPhone(), scr = [], rd = [];
+  let n = 0;
+  for (const g of track.querySelectorAll('.mr-g')) {
+    const cols = [...g.children];
+    cols.forEach(c => { c.style.transform = ''; n += c.querySelectorAll('.mr-gt').length; rd.push({ pos: posIn(c, track, false), n }); });
+    const ls = [], ps = [];
+    for (const c of cols) { if (c.classList.contains('mr-cL') && !ps.length) ls.push(c); else if (!c.classList.contains('mr-cL')) ps.push(c); }
+    if (!ps.length || !ls.length) continue;
+    const last = ls[ls.length - 1], a = posIn(last, track, false) + last.offsetWidth - innerWidth;
+    scr.push({ ls: phone ? [] : ls, ps: phone ? [] : ps.slice(0, 6), a, b: a + innerWidth * 0.45, q: -1 });
+  }
+  hx.scr = scr.length ? scr : null;
+  const base = page._p._run.heroCount || 0;
+  hx.rd = rd.length ? { cols: rd, base, total: n + base, v: -1 } : null;
+  if (!rd.length && page._rd) page._rd.textContent = `${base}/${base}`;   // one film, no grid
+}
+function readout(page, hx, x, VIEW) {
+  const r = hx.rd, edge = x + VIEW * 0.55; let at = r.base;
+  for (const c of r.cols) { if (c.pos < edge) at = r.base + c.n; else break; }
+  at = clamp(at, 1, r.total);
+  if (at !== r.v) { r.v = at; page._rd.textContent = `${at}/${r.total}`; }
+}
+/* the gap between the big films closes from 48 to 8 while the first small columns rise 16 px, one after the other */
+function scrubGrids(hx, x, VIEW) {
+  for (const s of hx.scr) {
+    if (s.q === 1 && x > s.b) continue;
+    const q = clamp((x - s.a) / (s.b - s.a), 0, 1); if (q === s.q) continue; s.q = q;
+    s.ls.forEach((c, i) => { const v = -(s.ls.length - i) * 40 * (1 - q); c.style.transform = v ? `translate3d(${v.toFixed(1)}px,0,0)` : ''; });
+    s.ps.forEach((c, i) => { const k = clamp(q * 1.8 - i * 0.16, 0, 1), y = 16 * (1 - ease3(k)); c.style.transform = y > 0.05 ? `translate3d(0,${y.toFixed(1)}px,0)` : ''; });
+  }
+}
+/* a bar on the timeline: the run travels to that video on its usual follow, and focus goes with it */
+function jumpTo(page, n) {
+  const hx = page._hx, box = n.closest('.mr-col') || n.closest('.wkg-fr') || n;
+  const t = n.closest('.wkg-hero') ? 0 : clamp(posIn(box, page._track, false) - (innerWidth - box.offsetWidth) / 2, 0, hx.max);
+  hx.lastIn = performance.now() + 400; hx.settled = true; hx.t = t;
+  if (hx.pin) page._sc.scrollTo({ top: pinS(hx, t), behavior: RM.matches ? 'auto' : 'smooth' });
+  else if (hx.native) page._sc.scrollTo({ left: t, behavior: RM.matches ? 'auto' : 'smooth' });
+  n.focus({ preventScroll: true });
+}
 function pageInput() {
   addEventListener('wheel', (e) => {
     const page = curPage; if (!page || !openId || !page.contains(e.target)) return;
     const hx = page._hx, V = !!page._v;
+    if (hx.pin) { if (e.deltaY > 0 && pushOn(page, e.deltaY)) e.preventDefault(); return; }   // the vertical scroller moves the run itself
     if (hx.native) {
       if (V) return;
       // a mouse wheel on a narrow window: vertical turns sideways, unless the panel under it scrolls down itself
       const pn = e.target.closest('.wkg-pn');
       if (pn && pn.scrollHeight > pn.clientHeight + 2) return;
+      const vs = e.target.closest('.mr-vsc,.mr-route>.wkg-pi');
+      if (vs && (e.deltaY > 0 ? vs.scrollTop < vs.scrollHeight - vs.clientHeight - 1 : vs.scrollTop > 0)) return;
       if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); if (!pushOn(page, e.deltaY)) page._sc.scrollLeft += e.deltaY; }
       return;
     }
@@ -2227,16 +2896,30 @@ function pageInput() {
     if (e.ctrlKey) return;
     const k = e.deltaMode === 1 ? 32 : e.deltaMode === 2 ? (V ? innerHeight : innerWidth) : 1;
     const d = (Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * k;
+    if (gateMove(hx, d)) { hx.lastIn = performance.now(); hx.settled = false; page._dirty = true; return; }
     if (hx.t >= hx.max - 0.5 && pushOn(page, d)) return;
     hx.t = clamp(hx.t + d, 0, hx.max); hx.lastIn = performance.now(); hx.settled = false;
   }, { passive: false });
   let down = false, sx = 0, st = 0;
   addEventListener('pointerdown', (e) => { const page = curPage; if (!page || page._v || e.pointerType !== 'mouse' || e.button !== 0 || page._hx.native || !page.contains(e.target) || e.target.closest('a,button,video')) return; down = true; sx = e.clientX; st = page._hx.t; PG.dragged = false; });
-  addEventListener('pointermove', (e) => { if (!down || !curPage) return; const dx = e.clientX - sx; if (Math.abs(dx) > 6) { PG.dragged = true; curPage._sc.classList.add('wkg-drag'); } if (PG.dragged) { curPage._hx.t = clamp(st - dx * 1.4, 0, curPage._hx.max); curPage._hx.lastIn = performance.now(); curPage._hx.settled = false; } });
+  addEventListener('pointermove', (e) => { if (!down || !curPage) return; const dx = e.clientX - sx; if (Math.abs(dx) > 6) { PG.dragged = true; curPage._sc.classList.add('wkg-drag'); } if (PG.dragged) { const hx = curPage._hx, g = hx.gate; let to = clamp(st - dx * 1.4, 0, hx.max); if (g && g.max && ((st <= g.pos && to > g.pos && g.t < g.max) || (st >= g.pos && to < g.pos && g.t > 0))) to = g.pos; hx.t = to; curPage._hx.lastIn = performance.now(); curPage._hx.settled = false; } });
   addEventListener('pointerup', () => { if (!down) return; down = false; if (curPage) curPage._sc.classList.remove('wkg-drag'); setTimeout(() => { PG.dragged = false; }, 0); });
   addEventListener('keydown', (e) => {
     const page = curPage; if (!page || !openId) return;
     if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+    if (e.key === 'Tab') {
+      // Tab stays on this page: Back, the page, then Contact (above the page), and round again
+      if (document.documentElement.classList.contains('mr-lock') || document.querySelector('#contact.ct-on')) return;
+      const seen = (n) => n.getClientRects().length && getComputedStyle(n).visibility !== 'hidden';
+      const f = [...page.querySelectorAll('a[href],button:not([disabled]),[tabindex]:not([tabindex="-1"]),video[controls]')].filter(seen);
+      const ct = [...document.querySelectorAll('#contact [aria-haspopup="dialog"]')].filter(seen);
+      const ring = [...f, ...ct], a = document.activeElement, i = ring.indexOf(a);
+      if (!ring.length) return;
+      if (i < 0) { e.preventDefault(); ring[0].focus(); }
+      else if (!e.shiftKey && (i === ring.length - 1 || i === f.length - 1)) { e.preventDefault(); ring[(i + 1) % ring.length].focus(); }
+      else if (e.shiftKey && (i === 0 || i === f.length)) { e.preventDefault(); ring[(i - 1 + ring.length) % ring.length].focus(); }
+      return;
+    }
     const hx = page._hx, V = !!page._v;
     const fwd = e.key === 'ArrowRight' || e.key === 'PageDown' || (V && e.key === 'ArrowDown') || (e.key === ' ' && !e.target.closest('button,a,[role=link]'));
     const bk = e.key === 'ArrowLeft' || e.key === 'PageUp' || (V && e.key === 'ArrowUp');
@@ -2244,9 +2927,11 @@ function pageInput() {
     e.preventDefault();
     if (fwd && hx.pr && hx.pr.on) { pushOn(page, NEXT_PUSH); return; }
     const step = (V ? innerHeight : innerWidth) * 0.8;
+    if ((fwd || bk) && !hx.native && gateMove(hx, fwd ? step : -step)) { hx.lastIn = performance.now() + 400; hx.settled = false; page._dirty = true; return; }
     let t = e.key === 'Home' ? 0 : e.key === 'End' ? hx.max : clamp(hx.t + (fwd ? step : -step), 0, hx.max);
     hx.lastIn = performance.now() + 400; hx.settled = false;
-    if (hx.native) { hx.t = t; page._sc.scrollTo({ [V ? 'top' : 'left']: t, behavior: RM.matches ? 'auto' : 'smooth' }); } else hx.t = t;
+    if (hx.pin) { hx.t = t; page._sc.scrollTo({ top: pinS(hx, t), behavior: RM.matches ? 'auto' : 'smooth' }); }
+    else if (hx.native) { hx.t = t; page._sc.scrollTo({ [V ? 'top' : 'left']: t, behavior: RM.matches ? 'auto' : 'smooth' }); } else hx.t = t;
   });
   addEventListener('resize', () => { if (curPage) { layoutPage(curPage); curPage._dirty = true; } });
   // touch at the end: a fresh swipe onward (left, or up) past the push carries on; it never counts the momentum
@@ -2254,7 +2939,7 @@ function pageInput() {
   addEventListener('touchstart', (e) => { if (!curPage || !e.touches[0]) return; tx = e.touches[0].clientX; ty = e.touches[0].clientY; tl = 0; }, { passive: true });
   addEventListener('touchmove', (e) => {
     const page = curPage; if (!page || !e.touches[0] || !page._hx.pr || !page._hx.pr.on) return;
-    const d = Math.max(tx - e.touches[0].clientX, ty - e.touches[0].clientY) * 2.2;
+    const dy = ty - e.touches[0].clientY, d = (page._hx.pin ? dy : Math.max(tx - e.touches[0].clientX, dy)) * 2.2;   // phones: up only, never sideways
     if (d > tl) { pushOn(page, d - tl); tl = d; }
   }, { passive: true });
 }
@@ -2265,7 +2950,7 @@ function flyer(fromEl, p) {
   if (isText(p)) { f.style.background = 'transparent'; inner.style.background = schemeOf(p).pc; inner.appendChild(plateEl(p)); }
   else {
     let im = takeImg(p);
-    if (!im) { im = el('img'); im.decoding = 'async'; const ci = fromEl && fromEl.querySelector('img'); im.src = (ci && ci.currentSrc) || big(p.hero); }
+    if (!im) { im = el('img'); im.decoding = 'async'; const ci = !p._run && fromEl && fromEl.querySelector('img'); im.src = (ci && ci.currentSrc) || big(p.hero); }
     im.alt = ''; inner.appendChild(im);
   }
   f.appendChild(inner); f._in = inner;
@@ -2306,15 +2991,15 @@ function lock(on) {
   if (KP.lenis) on ? KP.lenis.stop() : KP.lenis.start();
 }
 function pageIn(page) {
-  page._live = true; page._dirty = true; page._dark = null;
+  page._live = true; page._dirty = true; page._dark = null; page._gc = null;
   page._fxUntil = performance.now() + 2500;
   page.classList.add('wkg-show');
-  if (!RM.matches) page._hero.querySelectorAll('video').forEach(v => v.play().catch(() => {}));
+  if (!RM.matches && !document.documentElement.classList.contains('mr-lock')) page._hero.querySelectorAll('video').forEach(v => v.play().catch(() => {}));
   const h = page._hero, words = h._title ? [...h._title.querySelectorAll('.wkg-ln>span')] : [];
   const bm = page._back.firstChild, bt = page._back.querySelector('.wkg-bt>span');
   const allb = page._back._allb, am = allb && allb.firstChild;
   gsap.set(allb ? [page._back, allb] : page._back, { opacity: 1 });
-  if (RM.matches) { setTimeout(() => heroFluid(page), 0); gsap.set(page._progW, { opacity: 1 }); gsap.set(am ? [bm, am] : bm, { autoAlpha: 1 }); if (h._hi) h._hi(); return; }
+  if (RM.matches) { gsap.set(page._progW, { opacity: 1 }); gsap.set(am ? [bm, am] : bm, { autoAlpha: 1 }); if (h._hi) h._hi(); return; }
   // the title rises line by line out of its masks, then the info under it, then the rest
   const tops = words.map(w => w.parentNode.offsetTop), rows = [...new Set(tops)].sort((a, b) => a - b);
   words.forEach((w, i) => gsap.fromTo(w, { yPercent: 115 }, { yPercent: 0, duration: 1.05, ease: 'expo.out', delay: 0.05 + rows.indexOf(tops[i]) * 0.08 }));
@@ -2328,7 +3013,6 @@ function pageIn(page) {
   gsap.fromTo(bt, { yPercent: 115 }, { yPercent: 0, duration: 0.9, ease: 'expo.out', delay: 0.4 });
   gsap.to(page._progW, { opacity: 1, duration: 0.8, ease: 'expo.out', delay: 0.4 });
   if (h._hi) setTimeout(h._hi, 500);
-  setTimeout(() => heroFluid(page), 1400);
 }
 /* before the zoom out: the page's content reverses out quickly (0.4 s), the back control first */
 function contentOut(page) {
@@ -2349,13 +3033,15 @@ const heroHome = (page) => (page._hx.framed && page._hx.hf ? { ...page._hx.hf } 
 async function show(id, fromEl) {
   const p = byId.get(id); if (!p) return;
   if (openId === id && curPage) return;
+  if (!EXTRAS_OK) { wakeWork(); await EXTRAS; if (openId === id && curPage) return; }
   const prev = curPage;
   const sy = prev ? prev._sy : scrollY;
   openId = id; busy = true;
+  wakeWork();
   const page = takePage(p); curPage = page; page._sy = sy;
   if (!page.isConnected) ROOT.appendChild(page);
   if (pre && pre.page === page) pre = null;
-  lock(true);
+  lock(true); behind(true);
   if (page._laid !== innerWidth + 'x' + innerHeight) layoutPage(page);
   const fr = fromEl && fromEl.isConnected ? fromEl.getBoundingClientRect() : null;
   const flying = !RM.matches && fr && onScreen(fr);
@@ -2375,11 +3061,9 @@ async function show(id, fromEl) {
     await until(flight(f, rectOf(fr), heroHome(page), rad, hx.framed ? 20 : 0, z0, hx.heroZ, T.zoom, 'power3.inOut'));
     if (curPage !== page) { f.remove(); return; }
     // the page is under the flyer now, the same picture at the same place; the flyer dissolves into it
-    if (prev) fluidDetach(prev);
-    fluidHome(page); fluidGate();
     pageIn(page);
     if (gl) gl.pause(true);
-    if (prev) { prev._live = false; prev.remove(); prev._io && prev._io.disconnect(); }
+    if (prev) dropPage(prev);
     fromEl.style.visibility = '';
     gsap.to(f, { autoAlpha: 0, duration: T.fade, ease: 'power1.out', onComplete: () => f.remove() });
   } else {
@@ -2388,9 +3072,8 @@ async function show(id, fromEl) {
     page.classList.add('wkg-show');
     if (!RM.matches) await until(track(gsap.fromTo(page, { yPercent: 100 }, { yPercent: 0, duration: 0.9, ease: 'expo.out', clearProps: 'transform' })));
     else await until(gsap.fromTo(page, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.25 }));
-    if (prev) { fluidDetach(prev); prev.remove(); prev._io && prev._io.disconnect(); }
+    if (prev) dropPage(prev);
     if (ui.w) gsap.set(ui.w, { autoAlpha: 0 });
-    fluidHome(page); fluidGate();
     pageIn(page);
   }
   page._back.focus({ preventScroll: true, focusVisible: false });
@@ -2399,13 +3082,12 @@ async function show(id, fromEl) {
 async function hide() {
   if (!openId || !curPage) return;
   const id = openId, page = curPage; busy = true;
-  fluidDetach(page); fluidHome(null);
   page.querySelectorAll('video').forEach(v => v.pause());
   // the list stays where it was left (a phone can lose the document's scroll while the page is open)
   if (page._sy != null && Math.abs(scrollY - page._sy) > 2) scrollTo(0, page._sy);
   const card = ui.cards && ui.cards.find(c => c.dataset.id === id);
-  const slot = card && card.querySelector('.wkg-m');
   const p = byId.get(id);
+  const slot = p && p._run ? (reels && reels.boxOf(p)) : card && card.querySelector('.wkg-m');
   if (slot) { const r = slot.getBoundingClientRect(); if (!onScreen(r)) scrollTo(0, scrollY + r.top - (innerHeight - r.height) / 2); }
   const sr = slot && slot.getBoundingClientRect();
   const canFly = !RM.matches && sr && onScreen(sr);
@@ -2420,8 +3102,8 @@ async function hide() {
     flyAt(f, home, rH, hx.heroZ);
     if (gl) { gl.alpha(id, 0); gl.others(id, 0); }
     await until(gsap.fromTo(f, { autoAlpha: 0 }, { autoAlpha: 1, duration: hx.x > 2 ? 0.26 : 0.18, ease: 'power1.out' }));
-    page._live = false; page.remove(); page._io && page._io.disconnect();
-    openId = null; curPage = null; delete document.documentElement.dataset.ground; fluidGate();
+    dropPage(page);
+    openId = null; curPage = null; delete document.documentElement.dataset.ground; document.documentElement.style.removeProperty('--kp-ground');
     lock(false);
     // back to where the list was left, unless the card coming back is not in view there (after carrying on through Next
     // project it can be elsewhere): then the card comes to the middle of the screen. One target, one native scroll.
@@ -2441,57 +3123,78 @@ async function hide() {
     requestAnimationFrame(() => requestAnimationFrame(() => f.remove()));
   } else {
     if (!RM.matches) await until(track(gsap.to(page, { yPercent: 100, duration: 0.7, ease: 'power3.inOut' })));
-    page._live = false; page.remove(); page._io && page._io.disconnect();
-    openId = null; curPage = null; delete document.documentElement.dataset.ground; fluidGate();
+    dropPage(page);
+    openId = null; curPage = null; delete document.documentElement.dataset.ground; document.documentElement.style.removeProperty('--kp-ground');
     lock(false);
     if (page._sy != null && Math.abs(scrollY - page._sy) > 2) scrollTo(0, page._sy);
     gsap.set(ui.w, { autoAlpha: 1 });
     if (gl) { gl.others('', 1, 0.0001); }
   }
   if (gl) gl.measure();
-  busy = false;
+  busy = false; behind(false);
   if (card) card.focus({ preventScroll: true });
+  else if (p && p._run && slot) slot.focus({ preventScroll: true });
   flush();
 }
 let queued = null;                       // the last click made during a flight, run when it lands
 function flush() { if (!queued) return; const q = queued; queued = null; requestAnimationFrame(q); }
+/* the tab's title follows the route: the project or client that is open, Software or Media on the lists, and the page's
+   own title (whatever index.html says) at home. Called wherever the hash changes, so Back puts the old one back */
+const TITLE0 = document.title, WHO = 'Kirtan Purohit';
+function syncTitle() {
+  const h = location.hash, m = /^#work\/([\w-]+)$/.exec(h), p = m && byId.get(m[1]);
+  let t = '';
+  if (p) t = clean(p.name);
+  else if (/^#media\/./.test(h)) t = (reels && reels.titleOf && reels.titleOf(h)) || WING.media.title;
+  else if (h === '#media') t = WING.media.title;
+  else if (h === '#work') t = WING.software.title;
+  const next = t ? `${t} | ${WHO}` : TITLE0;
+  if (document.title !== next) document.title = next;
+}
 function go(id, fromEl, inPlace) {
   if (busy) { queued = () => go(id, fromEl && fromEl.isConnected ? fromEl : null, true); return; }
-  const h = '#work/' + id;
+  const h = (byId.get(id) && byId.get(id).hash) || '#work/' + id;
   if (location.hash !== h) {
     const st = history.state || {};
     if (inPlace && openId) history.replaceState({ wkg: id, pushed: !!st.pushed }, '', h);
     else history.pushState({ wkg: id, pushed: true }, '', h);
   }
+  syncTitle();
   show(id, fromEl);
 }
 function close() {
   if (busy) { queued = close; return; }
   if (history.state && history.state.pushed) history.back();
-  else { history.replaceState(null, '', location.pathname + location.search + '#work'); hide(); }
+  else { history.replaceState(null, '', location.pathname + location.search + (curPage && curPage._p._run ? '#media' : '#work')); syncTitle(); hide(); }
 }
 function route() {
   const c = readCat(); if (c !== cat) setCat(c, true);
+  if (/^#media(\/|$)/.test(location.hash) && tab !== 'media') setTab('media');
+  if (reels && tab === 'media' && ui.mr.isConnected) reels.route();
   const m = location.hash.match(/^#work\/([\w-]+)$/);
   if (m && ALIAS[m[1]]) { history.replaceState(history.state, '', location.pathname + location.search + '#work/' + ALIAS[m[1]]); return route(); }
   if (m && !byId.has(m[1])) history.replaceState(null, '', location.pathname + location.search + '#work');   // hidden or unknown: the list
-  if (m && byId.has(m[1])) show(m[1]); else hide();
+  const run = reels && reels.runOf(location.hash);
+  syncTitle();
+  if (m && byId.has(m[1])) show(m[1]); else if (run) show(run); else hide();
 }
 
+let EXTRAS = Promise.resolve(), EXTRAS_OK = false;   // the page-only data, see init()
 async function load(path) { const r = await fetch(BASE + path); if (!r.ok) throw new Error(`work-g: ${path} ${r.status}`); return r.json(); }
 async function init() {
   if (!ROOT) return;
   const style = el('style'); style.id = 'wkg-style'; style.textContent = CSS; document.head.appendChild(style);
+  if (DISC_OFF) document.documentElement.classList.add('kp-nodisc');
   if (!document.getElementById('wkg-fonts')) { const lk = el('link'); lk.id = 'wkg-fonts'; lk.rel = 'stylesheet'; lk.href = FONTS; document.head.appendChild(lk); }
   let fontsP = Promise.resolve();
   try {
     const quiet = (path) => fetch(BASE + path).then(r => (r.ok ? r.json() : {})).catch(() => ({}));
-    const [sw, md, br, bs, bm] = await Promise.all([load('software/manifest.json'), load('media/manifest.json'), load('media/brands.json').catch(() => ({})), quiet('software/bts.json'), quiet('media/bts.json')]);
-    BTS = { ...(bs && typeof bs === 'object' ? bs : {}), ...(bm && typeof bm === 'object' ? bm : {}) };
-    const [ns, nm] = await Promise.all([quiet('software/media-notes.json'), quiet('media/media-notes.json')]);
-    NOTES = { ...(ns && typeof ns === 'object' ? ns : {}), ...(nm && typeof nm === 'object' ? nm : {}) };
-    const [bs2, bm2] = await Promise.all([quiet('software/briefs.json'), quiet('media/briefs.json')]);
-    BRIEFS = { ...(bs2 && typeof bs2 === 'object' ? bs2 : {}), ...(bm2 && typeof bm2 === 'object' ? bm2 : {}) };
+    const [sw, md, br] = await Promise.all([load('software/manifest.json'), load('media/manifest.json'), load('media/brands.json').catch(() => ({}))]);
+    // what only a project page reads (behind the scenes, curated pictures, briefs) waits until #work is near or a page is
+    // linked to: the first screen does not pay for it (PHONE-AUDIT #9a). show() waits for it before it builds a page
+    const obj = (o) => (o && typeof o === 'object' ? o : {});
+    EXTRAS = nearWork.then(() => Promise.all(['software/bts.json', 'media/bts.json', 'software/media-notes.json', 'media/media-notes.json', 'software/briefs.json', 'media/briefs.json'].map(quiet)))
+      .then(([bs, bm, ns, nm, bs2, bm2]) => { BTS = { ...obj(bs), ...obj(bm) }; NOTES = { ...obj(ns), ...obj(nm) }; BRIEFS = { ...obj(bs2), ...obj(bm2) }; EXTRAS_OK = true; });
     SW = sw.filter(p => !HIDE.has(p.id) && !ALIAS[p.id] && p.hidden !== true);
     DATA.software = arrange(SW);
     DATA.media = spread(md.filter(p => !HIDE.has(p.id) && p.hidden !== true));
@@ -2512,9 +3215,21 @@ async function init() {
   if (KP.lenis && KP.lenis.options) KP.lenis.options.lerp = -Math.log(1 - FOLLOW);
   buildListing();
   await fontsP;
-  gl = await initGL();
-  if (!gl) ui.w.classList.remove('wkg-glon');
-  await initFluid();
+  /* the card canvas (a full-screen WebGL context, its shader and textures) is made when #work is within two screens, not at
+     load. Until then the cards are their plain pictures, still hidden for their reveal, so the swap is never seen. */
+  ui.w.classList.remove('wkg-glon');
+  nearWork.then(async () => {
+    const g = await initGL(); if (!g) return;
+    gl = g;
+    const cards = ui.cards || [], list = ui.shown || [];
+    if (cards.length && list.length === cards.length) {
+      cards.forEach(c => { const mi = c.querySelector('.wkg-mi'), im = mi && mi.querySelector('img'); if (mi) { gsap.killTweensOf(mi); gsap.set(mi, { clearProps: 'transform' }); } if (im) { gsap.killTweensOf(im); gsap.set(im, { clearProps: 'transform' }); } });
+      gl.setCards(list, cards);
+      cards.forEach(c => { if (REVEALED.has(c.dataset.id)) gl.reveal(c.dataset.id, 0, 0); });
+    }
+    if (curPage) gl.pause(true);
+  });
+  if (/^#media(\/|$)/.test(location.hash)) tab = 'media';
   setTab(tab, true);
   headIn();
   pageInput();
@@ -2522,15 +3237,26 @@ async function init() {
   addEventListener('hashchange', route);
   // anything that changes the page height (the numbers booting, fonts, a tab) moves the triggers
   if (window.ResizeObserver) { let lh = 0, t = 0; new ResizeObserver(() => { const h = document.documentElement.scrollHeight; if (Math.abs(h - lh) > 2) { lh = h; clearTimeout(t); t = setTimeout(() => ScrollTrigger.refresh(), 120); } }).observe(document.body); }
+  if (/^#(work|media)\//.test(location.hash)) await new Promise(r => setTimeout(r, 0));   // a deep link: the listing and the page are two tasks
   route();
+  // #media has no element of its own to land on (#work does, the browser jumps there): land on the work section by
+  // hand, and keep it there while the page above it settles (numbers, fonts), until the visitor moves
+  if (/^#media(\/|$)/.test(location.hash) && !openId) {
+    const toWork = () => { const w = document.getElementById('work'); if (!w || openId) return; const y = Math.round(w.getBoundingClientRect().top + scrollY); if (Math.abs(scrollY - y) < 2) return; if (KP.lenis) KP.lenis.scrollTo(y, { immediate: true, force: true }); else scrollTo(0, y); };
+    let held = true, moved = false; const EV = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
+    const mv = () => { moved = true; stop(); }, stop = () => { held = false; EV.forEach(t => removeEventListener(t, mv, true)); };
+    EV.forEach(t => addEventListener(t, mv, { capture: true, passive: true }));
+    const t0 = performance.now(), hold = () => { if (!held) return; toWork(); if (performance.now() - t0 < 2500) requestAnimationFrame(hold); else stop(); };
+    toWork(); requestAnimationFrame(hold);
+    if (document.readyState !== 'complete') addEventListener('load', () => { if (!moved) toWork(); }, { once: true });
+  }
   window.__wkg = {
-    go, close, show, hide, get openId() { return openId; }, get gl() { return !!gl; }, setCat, get cat() { return cat; },
+    go, close, show, hide, get openId() { return openId; }, get gl() { return !!gl; }, get glApi() { return gl; }, setCat, get cat() { return cat; },
     point: (x, y) => gl && gl.point(x, y),
     hold(t) { holds.forEach(a => { a.pause(); a.progress(t); }); },
     release() { holds.forEach(a => a.play()); },
     get busy() { return busy; },
     get page() { return curPage && curPage._hx; },
-    get fluid() { return FLUID; },
   };
 }
 
