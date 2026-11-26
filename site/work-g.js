@@ -209,7 +209,7 @@ html.wkg-lock,html.wkg-lock body{overflow:hidden!important}
 .wkg-sc.wkg-pin{overflow-x:hidden;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;scroll-snap-type:none;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .wkg-sc.wkg-pin::-webkit-scrollbar{display:none}
 .wkg-pin>.wkg-track{position:sticky;top:0;left:0}
-.wkg-track>.wkg-pn:last-child{margin-right:var(--gut,18px)}   /* with no Next panel, the run ends on the page margin */
+.wkg-track>.wkg-pn:last-child:not(.wkg-next){margin-right:var(--gut,18px)}   /* with no Next panel, the run ends on the page margin */
 .wkg-pin .wkg-track>.wkg-pn{transition:opacity .3s}.wkg-pin .wkg-track>.wkg-pn.wkg-hid{opacity:0}
 .wkg-pinsp{display:block;width:1px;pointer-events:none;visibility:hidden}
 .wkg-pin .wkg-gt8{overflow-y:hidden!important}
@@ -2028,7 +2028,7 @@ function nextOf(p) {
   a.setAttribute('aria-label', `${nxWord}: ${clean(nx.name)}`);
   const t = el('div', 'wkg-nx'); t.append(el('span', 'wkg-nl', nxWord), el('span', 'wkg-nt', clean(nx.name)), el('span', 'wkg-nk', clean(nx._run ? nx._run.line : cardKind(nx))));
   const cue = el('span', 'wkg-ncue'); cue.setAttribute('aria-hidden', 'true');
-  cue.append(el('span', '', HOVER.matches ? 'Scroll to continue' : 'Swipe to continue'), el('i')); cue.lastChild.appendChild(el('b'));
+  cue.append(el('span', '', 'Scroll to continue'), el('i')); cue.lastChild.appendChild(el('b'));
   t.appendChild(cue);
   const m = el('div', 'wkg-nm');
   if (nx._run && nx._run.mark) m.appendChild(nx._run.mark());   // a Media client hands over with its mark, never a video still
@@ -2048,7 +2048,7 @@ function toMediaOf() {
   a.setAttribute('aria-label', 'Next: Media');
   const t = el('div', 'wkg-nx'); t.append(el('span', 'wkg-nl', 'Next'), el('span', 'wkg-nt', 'Media')); if (WING.media.sub) t.appendChild(el('span', 'wkg-nk', WING.media.sub));
   const cue = el('span', 'wkg-ncue'); cue.setAttribute('aria-hidden', 'true');
-  cue.append(el('span', '', HOVER.matches ? 'Scroll to continue' : 'Swipe to continue'), el('i')); cue.lastChild.appendChild(el('b'));
+  cue.append(el('span', '', 'Scroll to continue'), el('i')); cue.lastChild.appendChild(el('b'));
   t.appendChild(cue);
   const m = el('div', 'wkg-nm'); m.style.background = WING.media.ground; m.style.display = 'grid'; m.style.placeItems = 'center';
   const w = el('span', '', 'Media'); w.style.cssText = `font:500 clamp(64px,11vw,200px)/1 ${FF};letter-spacing:-.045em;color:${INK}`; m.appendChild(w);
@@ -2122,9 +2122,10 @@ function buildPage(p) {
   const cmp = compareOf(p); if (cmp) track.appendChild(cmp);
   const bts = btsOf(p); if (bts) { track.appendChild(bts); if (bts._rail) track.appendChild(bts._rail); }
   const cr = creditsOf(p);
-  const nx = null;   // no Next panel at the end of a run, on phones or desktop (Kirtan, 25 Nov; PHONE-AUDIT #6). nextOf() stays unused
+  const nx = nextOf(p);   // back at the end of every run (Kirtan, 26 Nov: 'scroll to next project is not working')
   if (cr) track.appendChild(cr);
   { const end = cr || bts || fa || ab; const go = end && launchEl(p); if (go) end._in.appendChild(go); }
+  track.appendChild(nx);
   sc.appendChild(track);
   const back = backEl(p);
   const prog = el('div', 'wkg-prog'); prog.appendChild(el('i')); prog.setAttribute('aria-hidden', 'true');
@@ -2174,6 +2175,7 @@ function finishRun(p, page, bg, sc, track, hero) {
   const cr = creditsOf(p); if (cr) track.appendChild(cr);
   R.blocks.filter(b => b.ch).forEach(put);
   if (R.grid) track.appendChild(R.grid());
+  track.appendChild(nextOf(p));
   sc.appendChild(track);
   const back = backEl(p);
   const prog = el('div', 'wkg-prog'); prog.appendChild(el('i')); prog.setAttribute('aria-hidden', 'true');
